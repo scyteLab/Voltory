@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(python -c ' *)",
+      "Bash(npx vite *)",
+      "WebFetch(domain:www.jumia.com.ng)",
+      "Bash(timeout 10 bash -c 'cat \"C:\\\\Users\\\\EMMANU~1\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\c--Users-Emmanuel-Ilori-OneDrive---NEW-HOME-DISTRIBUTION--AFRICA--LIMITED-Pictures-voltory\\\\8892720e-d499-4fd5-9242-379b1dc86ec9\\\\tasks\\\\bngkysvej.output\"')"
+    ]
+  }
+}

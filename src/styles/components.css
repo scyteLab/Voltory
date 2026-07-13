@@ -1,0 +1,247 @@
+/* ============================================================
+   REUSABLE COMPONENTS — product cards, rating stars, brand logos.
+   ============================================================ */
+
+/* ---- rating stars ---- */
+.stars {
+  display: inline-flex;
+  align-items: center;
+  gap: 1.5px;
+}
+.stars__on { color: var(--acc); }
+.stars__off { color: #d8dee7; }
+.stars__meta {
+  font-size: 11.5px;
+  color: var(--mut);
+  margin-left: 5px;
+  font-weight: 500;
+}
+
+/* ---- product card (matches the ElectroHub Deals card style) ---- */
+.pcard {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: var(--r);
+  padding: 10px;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  transition: box-shadow 0.2s, border-color 0.2s;
+}
+.pcard:hover {
+  box-shadow: var(--shadow);
+  border-color: var(--p-line);
+}
+.pcard__badge {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  font-size: 10px;
+  font-weight: 700;
+  border-radius: 4px;
+  padding: 2px 7px;
+  z-index: 1;
+  color: #fff;
+  font-family: var(--font-display);
+}
+.pcard__badge--deal { background: var(--err); }
+.pcard__badge--best { background: var(--p-dark); color: var(--acc); }
+.pcard__badge--new { background: var(--ok); }
+
+.pcard__actions-corner {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  z-index: 1;
+  opacity: 0;
+  transition: opacity 0.15s;
+}
+.pcard:hover .pcard__actions-corner { opacity: 1; }
+.pcard__wish,
+.pcard__compare {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: #fff;
+  color: var(--mut);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: color 0.15s, background 0.15s;
+  box-shadow: 0 1px 4px rgba(0,0,0,.1);
+}
+.pcard__wish:hover { color: var(--err); }
+.pcard__wish--on { color: var(--err); opacity: 1; }
+.pcard__compare:hover { color: var(--p); }
+.pcard__compare--on { color: #fff; background: var(--p); }
+
+.pcard__img {
+  aspect-ratio: 1;
+  background: #fff;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 8px;
+  overflow: hidden;
+  position: relative;
+}
+.pcard__img img {
+  width: 70%;
+  height: 70%;
+  object-fit: contain;
+  transition: transform 0.3s ease;
+}
+.pcard:hover .pcard__img img { transform: scale(1.05); }
+.pcard__brand {
+  display: none;
+}
+.pcard__name {
+  font-size: 12px;
+  color: var(--ink);
+  line-height: 1.35;
+  margin-bottom: 4px;
+  font-weight: 400;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.pcard__name:hover { color: var(--p); }
+.pcard__price {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 15px;
+  color: var(--ink);
+  margin: 2px 0 1px;
+}
+.pcard__price s {
+  font-weight: 400;
+  font-size: 11px;
+  color: #9aa5b4;
+  margin-left: 5px;
+  text-decoration: line-through;
+}
+.pcard__stock {
+  font-size: 10px;
+  font-weight: 600;
+}
+.pcard__stock--ok { color: var(--ok); }
+.pcard__stock--low { color: var(--err); }
+.pcard__stock--out { color: var(--mut); }
+.pcard__tags { display: none; }
+.pcard__actions { margin-top: auto; padding-top: 8px; }
+.pcard__add {
+  width: 100%;
+  background: var(--p);
+  color: #fff;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 700;
+  padding: 8px 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  font-family: var(--font-display);
+  transition: filter 0.15s;
+}
+.pcard__add:hover { filter: brightness(1.1); }
+.pcard__add:disabled { background: #c7d0db; cursor: not-allowed; }
+
+/* ---- product slider row ---- */
+.pgrid-wrap {
+  position: relative;
+}
+.pgrid-arrow {
+  position: absolute;
+  top: 50%;
+  translate: 0 -50%;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: #fff;
+  border: 1px solid var(--line);
+  color: var(--ink);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  z-index: 2;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(0,0,0,.1);
+  transition: background .15s;
+}
+.pgrid-arrow:hover { background: var(--p-soft); }
+.pgrid-arrow--l { left: -6px; }
+.pgrid-arrow--r { right: -6px; }
+.pgrid {
+  display: flex;
+  overflow-x: auto;
+  scroll-snap-type: x proximity;
+  scroll-behavior: auto;
+  scrollbar-width: none;
+  gap: 10px;
+  padding: 2px;
+}
+.pgrid::-webkit-scrollbar { display: none; }
+.pgrid .pcard {
+  flex: 0 0 190px;
+  scroll-snap-align: start;
+}
+.pgrid--4 .pcard { flex: 0 0 220px; }
+
+/* Listing mode: responsive grid for category, deals, search, brand pages */
+.pgrid--listing {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  overflow-x: visible;
+  scroll-snap-type: none;
+}
+.pgrid--listing .pcard {
+  flex: none;
+  scroll-snap-align: unset;
+}
+
+@media (min-width: 721px) {
+  .pgrid-arrow { display: flex; }
+}
+@media (max-width: 720px) {
+  .pgrid .pcard { flex: 0 0 150px; }
+  .pgrid--4 .pcard { flex: 0 0 150px; }
+  .pgrid--listing { grid-template-columns: repeat(2, 1fr); }
+  .pgrid--listing .pcard { flex: none; }
+  .pcard__name { font-size: 11px; }
+  .pcard__price { font-size: 13px; }
+  .pcard__add { font-size: 11px; padding: 7px 0; }
+}
+
+/* ---- brand logos (grey by default, full color on hover) ---- */
+.brand-tile {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: var(--r);
+  height: 88px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 18px 22px;
+  transition: border-color 0.2s, transform 0.2s ease, box-shadow 0.2s;
+}
+.brand-tile:hover {
+  border-color: var(--p-line);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-sm);
+}
+.brand-tile img {
+  width: 100px;
+  height: 36px;
+  object-fit: contain;
+  filter: grayscale(1) opacity(0.55);
+  transition: filter 0.25s ease;
+}
+.brand-tile:hover img {
+  filter: grayscale(0) opacity(1);
+}

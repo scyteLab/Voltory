@@ -1,0 +1,320 @@
+/* ============================================================
+   BRAND PAGES \u2014 BrandLogo, directory, storefront hero, about
+   ============================================================ */
+
+/* ---- BrandLogo (image or initial fallback) ---- */
+.blogo {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: #fff;
+  border-radius: 12px;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+.blogo--sm { width: 56px; height: 36px; padding: 6px; }
+.blogo--md { width: 100px; height: 56px; padding: 10px; }
+.blogo--lg { width: 140px; height: 84px; padding: 14px; }
+
+.blogo img {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+  transition: filter 0.25s ease;
+}
+.blogo--gray img {
+  filter: grayscale(1) opacity(0.6);
+}
+.blogo--gray:hover img {
+  filter: grayscale(0) opacity(1);
+}
+
+.blogo--initial {
+  font-family: var(--font-display);
+  font-weight: 800;
+  background: var(--p-soft);
+  color: var(--p);
+}
+.blogo--initial.blogo--sm { font-size: 16px; }
+.blogo--initial.blogo--md { font-size: 26px; }
+.blogo--initial.blogo--lg { font-size: 38px; letter-spacing: -0.02em; }
+
+/* ---- Tier badges ---- */
+.btier {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 10.5px;
+  font-weight: 800;
+  padding: 3px 9px;
+  border-radius: 99px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.btier--official {
+  background: var(--acc);
+  color: var(--acc-ink);
+}
+.btier--featured {
+  background: rgba(255, 255, 255, 0.18);
+  color: #fff;
+  border: 1px solid rgba(255, 255, 255, 0.35);
+}
+
+/* ============================================================
+   /brands DIRECTORY
+   ============================================================ */
+.bdir-hero {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 24px;
+  align-items: center;
+  background: linear-gradient(135deg, var(--p-dark), var(--p-deep));
+  color: #fff;
+  border-radius: var(--r-lg);
+  padding: 32px 36px;
+  margin-top: 14px;
+  position: relative;
+  overflow: hidden;
+}
+.bdir-hero::before {
+  content: "";
+  position: absolute;
+  top: -40%;
+  right: -10%;
+  width: 360px;
+  height: 360px;
+  border-radius: 50%;
+  background: radial-gradient(circle, color-mix(in srgb, var(--p) 35%, transparent), transparent 70%);
+  pointer-events: none;
+}
+.bdir-hero__pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  background: rgba(245, 166, 35, 0.16);
+  border: 1px solid rgba(245, 166, 35, 0.45);
+  color: var(--acc);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  border-radius: 99px;
+  padding: 5px 13px;
+  margin-bottom: 14px;
+  position: relative;
+}
+.bdir-hero h1 {
+  font-size: clamp(22px, 2.8vw, 30px);
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  position: relative;
+}
+.bdir-hero p {
+  margin-top: 10px;
+  color: #c9d6ec;
+  font-size: 14px;
+  max-width: 60ch;
+  position: relative;
+}
+.bdir-hero__icon {
+  color: rgba(255, 255, 255, 0.18);
+  position: relative;
+}
+
+/* ============================================================
+   CATEGORY SECTIONS — Jumia-style brand gallery
+   ============================================================ */
+.bcat-section {
+  margin-top: 24px;
+}
+.bcat-header {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px 20px;
+  border-radius: var(--r) var(--r) 0 0;
+  font-size: 15px;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+}
+.bcat-row {
+  display: flex;
+  flex-wrap: wrap;
+  background: #f3f5f8;
+  border-radius: 0 0 var(--r) var(--r);
+  padding: 16px;
+  gap: 14px;
+}
+
+/* Individual brand tile — rectangular with bg image + dark overlay */
+.bcat-tile {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 150px;
+  height: 88px;
+  border-radius: var(--r);
+  overflow: hidden;
+  background-color: #1a1a2e;
+  background-size: cover;
+  background-position: center;
+  flex-shrink: 0;
+  transition: transform 0.18s, box-shadow 0.18s;
+}
+.bcat-tile:hover {
+  transform: translateY(-3px);
+  box-shadow: var(--shadow);
+}
+.bcat-tile__overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, rgba(0,0,0,0.55), rgba(0,0,0,0.35));
+  pointer-events: none;
+}
+.bcat-tile__logo {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.bcat-tile__logo .blogo {
+  background: rgba(255,255,255,0.92);
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+}
+
+/* ============================================================
+   /brand/:id STOREFRONT
+   ============================================================ */
+.bhero {
+  border-radius: var(--r-lg);
+  padding: 28px 32px;
+  margin-top: 14px;
+  color: #fff;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  position: relative;
+  overflow: hidden;
+}
+.bhero::before {
+  content: "";
+  position: absolute;
+  top: -60%;
+  right: -15%;
+  width: 420px;
+  height: 420px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.08), transparent 70%);
+  pointer-events: none;
+}
+.bhero__main {
+  display: flex;
+  gap: 22px;
+  align-items: center;
+  position: relative;
+}
+.bhero__logo {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.bhero__top {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.bhero__top h1 {
+  font-size: clamp(22px, 2.8vw, 30px);
+  font-weight: 800;
+  letter-spacing: -0.01em;
+}
+.bhero__tag {
+  margin-top: 6px;
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.85);
+  max-width: 60ch;
+}
+.bhero__count {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 10px;
+  font-size: 12.5px;
+  color: rgba(255, 255, 255, 0.75);
+}
+.bhero__trust {
+  display: flex;
+  gap: 16px;
+  position: relative;
+  flex-wrap: wrap;
+  padding-top: 14px;
+  border-top: 1px solid rgba(255, 255, 255, 0.15);
+}
+.bhero__trust span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.85);
+}
+.bhero__trust svg { color: var(--acc); }
+
+/* About strip */
+.babout {
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: var(--r-lg);
+  padding: 22px 26px;
+  margin-top: 14px;
+}
+.babout h2 {
+  font-size: 15px;
+  font-weight: 800;
+  margin-bottom: 8px;
+  letter-spacing: -0.01em;
+}
+.babout p {
+  font-size: 13.5px;
+  color: var(--ink);
+  line-height: 1.6;
+  margin-bottom: 12px;
+}
+.babout__wa {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--p);
+}
+.babout__wa svg { color: #22c05c; }
+.babout__wa:hover { text-decoration: underline; }
+
+/* ============================================================
+   RESPONSIVE
+   ============================================================ */
+@media (max-width: 920px) {
+  .bdir-hero {
+    grid-template-columns: 1fr;
+    padding: 24px 22px;
+  }
+  .bdir-hero__icon { display: none; }
+
+  .bcat-row { padding: 12px; gap: 10px; }
+  .bcat-tile { width: 130px; height: 80px; }
+
+  .bhero { padding: 22px 22px; }
+  .bhero__main { gap: 14px; }
+  .babout { padding: 18px 20px; }
+}
+@media (max-width: 540px) {
+  .bcat-tile { width: calc(50% - 8px); height: 80px; flex-shrink: 1; }
+  .bcat-row { gap: 8px; padding: 10px; }
+  .bhero__main { flex-direction: column; align-items: flex-start; }
+}

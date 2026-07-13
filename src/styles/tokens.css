@@ -1,0 +1,61 @@
+/* ============================================================
+   THEME TOKENS — switched by setting data-theme on <html>.
+   Admin → Settings controls this; customers never see a toggle.
+   ============================================================ */
+:root,
+:root[data-theme="navy"] {
+  --p: #1d4ed8;
+  --p-dark: #0a1c3a;
+  --p-deep: #13294f;
+  --p-soft: #eff4ff;
+  --p-line: #c7d6f4;
+  --acc: #f5a623;
+  --acc-ink: #3a2a05;
+}
+:root[data-theme="green"] {
+  --p: #0a5c49;
+  --p-dark: #06251e;
+  --p-deep: #07382e;
+  --p-soft: #e9f2ed;
+  --p-line: #bfd9cf;
+  --acc: #f2a91e;
+  --acc-ink: #3a2a05;
+}
+:root[data-theme="purple"] {
+  --p: #6d28d9;
+  --p-dark: #1e1038;
+  --p-deep: #321a5e;
+  --p-soft: #f3eefc;
+  --p-line: #d8c9f2;
+  --acc: #f5a623;
+  --acc-ink: #3a2a05;
+}
+
+/* Neutral system (theme-independent) */
+:root {
+  --bg: #f5f7fa;
+  --card: #ffffff;
+  --ink: #101828;
+  --mut: #5b6776;
+  --line: #e5eaf0;
+  --ok: #16a34a;
+  --ok-bg: #e9f7ee;
+  --warn: #b45309;
+  --warn-bg: #fdf3dc;
+  --err: #dc2626;
+  --err-bg: #fbeaea;
+  --r: 12px;
+  --r-lg: 16px;
+  --shadow: 0 8px 28px -14px rgba(16, 24, 40, 0.18);
+  --shadow-sm: 0 2px 8px -3px rgba(16, 24, 40, 0.08);
+
+  /* Image well: a soft platform so PNG product photos never look
+     "flying". Subtle radial fade from light grey to white edges. */
+  --img-well: radial-gradient(ellipse at center bottom,
+                #e9eef5 0%, #f4f6fa 55%, #ffffff 100%);
+  --img-well-flat: #f4f6fa;
+
+  --font-display: "Roboto", system-ui, sans-serif;
+  --font-body: "Roboto", system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", monospace;
+}
