@@ -43,7 +43,7 @@ export default function NotFound() {
         <img className="nf-hero__img" src="/banners/nf-hero.png" alt="" />
         <h1>This page wandered off</h1>
         <p>
-          We couldn\u2019t find <b className="mono">{location.pathname}</b>. The link
+          We couldn’t find <b className="mono">{location.pathname}</b>. The link
           may have changed, or the page may not exist yet. Try one of these popular
           destinations, or search for what you need.
         </p>
@@ -56,7 +56,6 @@ export default function NotFound() {
             onChange={(e) => setQ(e.target.value)}
             placeholder="Search products, brands, categories..."
             aria-label="Search"
-            autoFocus
           />
           <button type="submit">
             <ArrowRight size={16} />

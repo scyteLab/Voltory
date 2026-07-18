@@ -31,6 +31,18 @@
   --acc-ink: #3a2a05;
 }
 
+/* Font pairing — switched by data-font-pair on <html>, same
+   admin-controlled mechanism as data-theme above. */
+:root,
+:root[data-font-pair="default"] {
+  --font-display: "Roboto", system-ui, sans-serif;
+  --font-body: "Roboto", system-ui, sans-serif;
+}
+:root[data-font-pair="playful"] {
+  --font-display: "Fredoka", system-ui, sans-serif;
+  --font-body: "Nunito", system-ui, sans-serif;
+}
+
 /* Neutral system (theme-independent) */
 :root {
   --bg: #f5f7fa;
@@ -55,7 +67,5 @@
                 #e9eef5 0%, #f4f6fa 55%, #ffffff 100%);
   --img-well-flat: #f4f6fa;
 
-  --font-display: "Roboto", system-ui, sans-serif;
-  --font-body: "Roboto", system-ui, sans-serif;
   --font-mono: "JetBrains Mono", monospace;
 }

@@ -7,6 +7,7 @@ import { getStoredWishlist, saveWishlist } from "../utils/wishlist.js";
 import {
   getStoredComparison, saveComparison, MAX_COMPARE,
 } from "../utils/comparison.js";
+import { DEFAULT_SITE_SETTINGS, fetchSiteSettings, updateSiteSettings } from "../lib/siteSettings.js";
 
 /**
  * Global store state: theme, cart, toast, account, wishlist, comparison.
@@ -43,15 +44,29 @@ export function normalisePhone(p) {
 }
 
 export function StoreProvider({ children }) {
-  const [theme, setTheme] = useState(SITE.defaultTheme);
+  const [theme, setTheme] = useState(DEFAULT_SITE_SETTINGS.theme);
+  const [fontPair, setFontPair] = useState(DEFAULT_SITE_SETTINGS.font_pair);
   const [cart, setCart] = useState(() => getStoredCart());
   const [coupon, setCoupon] = useState(SITE.welcomeCoupon.code);
   const [toast, setToast] = useState(null);
+  const [callConfirm, setCallConfirm] = useState(null);
   const [account, setAccount] = useState(() => loadAccount());
   const [wishlist, setWishlist] = useState(() => getStoredWishlist());
   const [compare, setCompare] = useState(() => getStoredComparison());
 
   useEffect(() => { document.documentElement.dataset.theme = theme; }, [theme]);
+  useEffect(() => { document.documentElement.dataset.fontPair = fontPair; }, [fontPair]);
+
+  // Shared across every visitor (not per-browser like the rest of this
+  // file) — admin's Appearance settings live in Supabase. Falls back
+  // to the defaults above if Supabase isn't reachable/configured yet,
+  // so the storefront never breaks over an appearance fetch failing.
+  useEffect(() => {
+    fetchSiteSettings()
+      .then((s) => { setTheme(s.theme); setFontPair(s.font_pair); })
+      .catch(() => {});
+  }, []);
+
   useEffect(() => { saveCart(cart); }, [cart]);
   useEffect(() => { saveWishlist(wishlist); }, [wishlist]);
   useEffect(() => { saveComparison(compare); }, [compare]);
@@ -61,6 +76,14 @@ export function StoreProvider({ children }) {
     const t = setTimeout(() => setToast(null), 3500);
     return () => clearTimeout(t);
   }, [toast]);
+
+  /* ---------- appearance (admin-controlled, shared site-wide) ---------- */
+  const saveAppearance = async ({ theme: t, font_pair: f }) => {
+    const saved = await updateSiteSettings({ theme: t, font_pair: f });
+    setTheme(saved.theme);
+    setFontPair(saved.font_pair);
+    return saved;
+  };
 
   /* ---------- cart ---------- */
   const addToCart = (sku, qty = 1) => {
@@ -73,6 +96,17 @@ export function StoreProvider({ children }) {
     setToast({ sku, qty, ts: Date.now() });
   };
   const dismissToast = () => setToast(null);
+
+  /* ---------- click-to-call ---------- */
+  // Every "tel:" link in the app routes through here instead of
+  // navigating straight away, so a friendly Yes/No always sits
+  // between the tap and actually opening the phone dialer.
+  const requestCall = (phone) => setCallConfirm({ phone });
+  const cancelCall = () => setCallConfirm(null);
+  const confirmCall = () => {
+    if (callConfirm) window.location.href = `tel:${callConfirm.phone.replace(/\s/g, "")}`;
+    setCallConfirm(null);
+  };
   const setQty = (sku, qty) =>
     setCart((c) =>
       qty <= 0 ? c.filter((i) => i.sku !== sku) : c.map((i) => (i.sku === sku ? { ...i, qty } : i))
@@ -198,10 +232,11 @@ export function StoreProvider({ children }) {
   return (
     <Ctx.Provider
       value={{
-        theme, setTheme,
+        theme, setTheme, fontPair, saveAppearance,
         cart, addToCart, setQty, removeFromCart, clearCart,
         coupon, setCoupon, totals, count,
         toast, dismissToast,
+        callConfirm, requestCall, cancelCall, confirmCall,
         account, signIn, signOut, placeOrder,
         wishlist, toggleWishlist, isInWishlist, wishlistCount,
         compare, toggleCompare, isInComparison, removeFromComparison, clearComparison, compareCount,

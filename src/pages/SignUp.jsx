@@ -52,7 +52,6 @@ export default function SignUp() {
               placeholder="e.g. Chinedu Okafor"
               value={name}
               onChange={(e) => { setName(e.target.value); setErrors((er) => ({ ...er, name: undefined })); }}
-              autoFocus
             />
           </span>
           {errors.name && <span className="field__error">{errors.name}</span>}

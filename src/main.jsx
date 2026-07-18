@@ -20,6 +20,7 @@ import "./styles/polish.css";
 import "./styles/compare.css";
 import "./styles/marketing.css";
 import "./styles/all-categories.css";
+import "./styles/admin.css";
 
 ReactDOM.createRoot(document.getElementById("root")).render(
   <React.StrictMode>

@@ -46,7 +46,7 @@ export default function About() {
       <div className="section-head" style={{ marginTop: 32 }}>
         <h2>The problem we set out to fix</h2>
         <p style={{ fontSize: 12.5, color: "var(--mut)", margin: 0 }}>
-          Buying appliances in Nigeria shouldn\u2019t feel like a gamble
+          Buying appliances in Nigeria shouldn’t feel like a gamble
         </p>
       </div>
       <section className="mkt-grid mkt-grid--3">
@@ -65,7 +65,7 @@ export default function About() {
       <div className="section-head" style={{ marginTop: 32 }}>
         <h2>What we promise every customer</h2>
         <p style={{ fontSize: 12.5, color: "var(--mut)", margin: 0 }}>
-          Four commitments \u2014 not just words on a page
+          Four commitments — not just words on a page
         </p>
       </div>
       <section className="mkt-grid mkt-grid--4">
@@ -103,7 +103,7 @@ export default function About() {
       <div className="section-head" style={{ marginTop: 32 }}>
         <h2>Our journey so far</h2>
         <p style={{ fontSize: 12.5, color: "var(--mut)", margin: 0 }}>
-          Real milestones \u2014 no fluff
+          Real milestones — no fluff
         </p>
       </div>
       <section className="mkt-timeline">

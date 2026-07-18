@@ -76,12 +76,12 @@ export default function Blog() {
           </span>
           <h1>The {SITE.name} Blog<br />is on its way.</h1>
           <p>
-            We\u2019re building a library of practical buying guides, energy-saving
-            tips, and honest product breakdowns \u2014 written by people who actually
+            We’re building a library of practical buying guides, energy-saving
+            tips, and honest product breakdowns — written by people who actually
             install these appliances in Nigerian homes.
           </p>
           <p className="blog-hero__sub">
-            Join the list and we\u2019ll let you know the moment our first article goes live.
+            Join the list and we’ll let you know the moment our first article goes live.
             No spam, ever. One email per fortnight at most.
           </p>
         </div>
@@ -91,14 +91,14 @@ export default function Blog() {
       {submitted ? (
         <section className="blog-success">
           <span className="blog-success__icon"><CheckCircle2 size={56} /></span>
-          <h2>You\u2019re on the list</h2>
+          <h2>You’re on the list</h2>
           <p>
-            Thanks \u2014 we\u2019ll send your first email to <b className="mono">{email}</b>{" "}
+            Thanks — we’ll send your first email to <b className="mono">{email}</b>{" "}
             as soon as the blog launches.
           </p>
           {selected.size > 0 && (
             <p className="blog-success__topics">
-              We\u2019ll prioritise <b>{selected.size}</b> topic{selected.size === 1 ? "" : "s"} you picked.
+              We’ll prioritise <b>{selected.size}</b> topic{selected.size === 1 ? "" : "s"} you picked.
             </p>
           )}
           <div className="blog-success__actions">
@@ -112,7 +112,7 @@ export default function Blog() {
         <section className="blog-signup">
           <h2>What would you like to read about?</h2>
           <p className="blog-signup__sub">
-            Pick the topics that interest you. We\u2019ll tailor what we send.
+            Pick the topics that interest you. We’ll tailor what we send.
           </p>
 
           <ul className="blog-topics">
@@ -158,7 +158,7 @@ export default function Blog() {
       <p className="blog-meanwhile">
         In the meantime, browse our{" "}
         <Link to="/help">Help Center</Link>{" "}
-        \u2014 it already has 26 in-depth answers to the most common questions.
+        — it already has 26 in-depth answers to the most common questions.
       </p>
     </main>
   );

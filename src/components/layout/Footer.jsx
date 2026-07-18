@@ -6,6 +6,7 @@ import {
   Phone, ShieldCheck, Truck, Twitter,
 } from "lucide-react";
 import { SITE } from "../../config/site.js";
+import { useStore } from "../../context/StoreContext.jsx";
 import { addSubscriber } from "../../utils/newsletterSubscribers.js";
 import Logo from "./Logo.jsx";
 
@@ -42,6 +43,7 @@ function resolveLink(label) {
 }
 
 export default function Footer() {
+  const { requestCall } = useStore();
   const [email, setEmail] = useState("");
   const [state, setState] = useState("idle"); // idle | ok | dup | err
 
@@ -69,7 +71,12 @@ export default function Footer() {
           <Logo tagline={false} />
           <p className="ftr__promise">{SITE.footerPromise}</p>
           <div className="ftr__contact">
-            <a href={`tel:${SITE.phone.replace(/\s/g, "")}`}><Phone size={13} /> {SITE.phone}</a>
+            <a
+              href={`tel:${SITE.phone.replace(/\s/g, "")}`}
+              onClick={(e) => { e.preventDefault(); requestCall(SITE.phone); }}
+            >
+              <Phone size={13} /> {SITE.phone}
+            </a>
             <a href={`mailto:${SITE.supportEmail}`}><Mail size={13} /> {SITE.supportEmail}</a>
             <span><MapPin size={13} /> Lagos, Nigeria</span>
           </div>

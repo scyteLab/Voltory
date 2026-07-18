@@ -123,7 +123,7 @@ export default function InstallationServices() {
           </span>
           <h1>Professional Installation,<br />Done Right the First Time.</h1>
           <p>
-            Certified technicians for ACs, fridges, washing machines, TVs and more \u2014
+            Certified technicians for ACs, fridges, washing machines, TVs and more —
             across Lagos, Abuja and all 36 states. Manufacturer warranty stays intact.
           </p>
           <div className="ins-hero__cta">
@@ -155,7 +155,7 @@ export default function InstallationServices() {
       <div className="section-head" style={{ marginTop: 32 }}>
         <h2>What We Install</h2>
         <p style={{ fontSize: 12.5, color: "var(--mut)", margin: 0 }}>
-          Transparent fees \u2014 what we quote is what you pay
+          Transparent fees — what we quote is what you pay
         </p>
       </div>
       <section className="ins-grid">
@@ -188,7 +188,7 @@ export default function InstallationServices() {
       <div className="section-head" style={{ marginTop: 40 }}>
         <h2>How It Works</h2>
         <p style={{ fontSize: 12.5, color: "var(--mut)", margin: 0 }}>
-          From booking to done \u2014 typically same day in Lagos & Abuja
+          From booking to done — typically same day in Lagos & Abuja
         </p>
       </div>
       <section className="ins-steps">
@@ -207,7 +207,7 @@ export default function InstallationServices() {
       <div className="section-head" style={{ marginTop: 40 }}>
         <h2>Coverage & Response Times</h2>
         <p style={{ fontSize: 12.5, color: "var(--mut)", margin: 0 }}>
-          We install nationwide \u2014 here\u2019s what to expect by region
+          We install nationwide — here’s what to expect by region
         </p>
       </div>
       <section className="ins-coverage">
@@ -233,7 +233,7 @@ export default function InstallationServices() {
           <span className="ins-success__icon"><CheckCircle2 size={56} /></span>
           <h3>Installation request received</h3>
           <p>
-            Thanks \u2014 a Voltory technician will call you within <b>2 hours</b> to confirm
+            Thanks — a Voltory technician will call you within <b>2 hours</b> to confirm
             your {submitted.applianceName.toLowerCase()} installation slot.
           </p>
           <div className="ins-success__summary">
@@ -247,8 +247,8 @@ export default function InstallationServices() {
             </div>
           </div>
           <p className="ins-success__note">
-            Payment is collected after the install is complete. You\u2019ll receive an SMS
-            with the technician\u2019s name and ETA once your slot is confirmed.
+            Payment is collected after the install is complete. You’ll receive an SMS
+            with the technician’s name and ETA once your slot is confirmed.
           </p>
           <div className="ins-success__actions">
             <Link to="/" className="btn-shop">Back to Home</Link>
@@ -294,7 +294,7 @@ export default function InstallationServices() {
 
                 <label className={"field field--full" + (errors.email ? " has-error" : "")}>
                   <span className="field__label">
-                    Email Address <small className="field__note">\u2014 optional, for the install certificate</small>
+                    Email Address <small className="field__note">— optional, for the install certificate</small>
                   </span>
                   <span className="auth-input">
                     <AtSign size={16} />
@@ -327,7 +327,7 @@ export default function InstallationServices() {
                 </label>
 
                 <label className="field">
-                  <span className="field__label">LGA / Area <small className="field__note">\u2014 optional</small></span>
+                  <span className="field__label">LGA / Area <small className="field__note">— optional</small></span>
                   <span className="auth-input">
                     <MapPin size={16} />
                     <input
@@ -367,7 +367,7 @@ export default function InstallationServices() {
                   >
                     {INSTALL_APPLIANCES.map((a) => (
                       <option key={a.id} value={a.id}>
-                        {a.name} \u2014 {naira(a.fee)}
+                        {a.name} — {naira(a.fee)}
                       </option>
                     ))}
                   </select>
@@ -387,7 +387,7 @@ export default function InstallationServices() {
                 </label>
 
                 <label className="field">
-                  <span className="field__label">Model <small className="field__note">\u2014 optional</small></span>
+                  <span className="field__label">Model <small className="field__note">— optional</small></span>
                   <span className="auth-input">
                     <input
                       type="text"
@@ -412,7 +412,7 @@ export default function InstallationServices() {
                 </label>
 
                 <label className="field field--full">
-                  <span className="field__label">Anything else? <small className="field__note">\u2014 optional</small></span>
+                  <span className="field__label">Anything else? <small className="field__note">— optional</small></span>
                   <textarea
                     className="contact-textarea"
                     rows="3"
@@ -427,7 +427,7 @@ export default function InstallationServices() {
             <div className="ins-form__foot">
               <small>
                 <ShieldCheck size={13} style={{ verticalAlign: "middle", marginRight: 4, color: "var(--ok)" }} />
-                No payment now. Pay the technician after install is complete and you\u2019re happy.
+                No payment now. Pay the technician after install is complete and you’re happy.
               </small>
               <button type="submit" className="auth-submit ins-form__submit">
                 <Send size={15} /> Send Booking Request

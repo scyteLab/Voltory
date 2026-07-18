@@ -85,7 +85,7 @@ function DeliveryPanel() {
       <div className="info-card">
         <Truck size={20} />
         <b>Nationwide Delivery</b>
-        <p>1\u20133 working days within Lagos, Abuja, and Port Harcourt. 3\u20137 days to other states.</p>
+        <p>1–3 working days within Lagos, Abuja, and Port Harcourt. 3–7 days to other states.</p>
       </div>
       <div className="info-card">
         <Wrench size={20} />
@@ -118,7 +118,7 @@ function WarrantyPanel({ product }) {
       <div className="info-card">
         <MessageSquareText size={20} />
         <b>After-sales Support</b>
-        <p>Reach our support team by phone or WhatsApp \u2014 we\u2019re here before and after your purchase.</p>
+        <p>Reach our support team by phone or WhatsApp — we’re here before and after your purchase.</p>
       </div>
     </div>
   );

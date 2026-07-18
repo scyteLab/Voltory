@@ -106,7 +106,7 @@ export default function Compare() {
                   {slots.map((p, i) => (
                     <td key={i}>
                       {!p ? (
-                        <span className="cmp-cell--empty">\u2014</span>
+                        <span className="cmp-cell--empty">—</span>
                       ) : r.render ? (
                         r.render(p)
                       ) : r.format ? (
@@ -125,7 +125,7 @@ export default function Compare() {
                   {slots.map((p, i) => (
                     <td key={i}>
                       {!p ? (
-                        <span className="cmp-cell--empty">\u2014</span>
+                        <span className="cmp-cell--empty">—</span>
                       ) : p.highlights?.length ? (
                         <ul className="cmp-highlights">
                           {p.highlights.map((h) => <li key={h}>{h}</li>)}
@@ -226,7 +226,7 @@ function EmptyState() {
       </p>
       <div className="cmp-empty__actions">
         <Link to="/" className="btn-shop">Browse All Products</Link>
-        <Link to="/deals" className="cmp-empty__alt">See today\u2019s deals <ChevronRight size={14} /></Link>
+        <Link to="/deals" className="cmp-empty__alt">See today’s deals <ChevronRight size={14} /></Link>
       </div>
     </section>
   );

@@ -40,6 +40,30 @@ img {
   max-width: 100%;
   display: block;
 }
+/* Every text input/select/textarea on the site sits on a white
+   field background. Without this, the browser's own autofill UI
+   (Chrome's yellow tint, Safari/mobile's blue-grey highlight) paints
+   straight over that background the moment a field is recognized
+   (name, phone, email, etc.) — it ignores normal CSS entirely unless
+   overridden through this pseudo-class. */
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus,
+input:-webkit-autofill:active,
+textarea:-webkit-autofill,
+select:-webkit-autofill {
+  -webkit-text-fill-color: var(--ink);
+  -webkit-box-shadow: 0 0 0 1000px #fff inset;
+  box-shadow: 0 0 0 1000px #fff inset;
+  caret-color: var(--ink);
+  transition: background-color 9999s ease-in-out 0s, color 9999s ease-in-out 0s;
+}
+input:autofill,
+textarea:autofill,
+select:autofill {
+  background-color: #fff;
+  color: var(--ink);
+}
 .wrap {
   max-width: 1200px;
   margin: 0 auto;

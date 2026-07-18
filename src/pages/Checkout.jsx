@@ -23,7 +23,7 @@ const PAYMENT_METHODS = [
 ];
 
 export default function Checkout() {
-  const { cart, totals, account, placeOrder } = useStore();
+  const { cart, totals, account, placeOrder, requestCall } = useStore();
   const navigate = useNavigate();
 
   // Empty cart → bounce back home
@@ -270,7 +270,13 @@ export default function Checkout() {
             </button>
 
             <p className="ck-summary__secure">
-              <BadgeCheck size={13} /> 100% Original · <Phone size={13} /> Support {SITE.phone}
+              <BadgeCheck size={13} /> 100% Original ·{" "}
+              <a
+                href={`tel:${SITE.phone.replace(/\s/g, "")}`}
+                onClick={(e) => { e.preventDefault(); requestCall(SITE.phone); }}
+              >
+                <Phone size={13} /> Support {SITE.phone}
+              </a>
             </p>
           </div>
         </aside>

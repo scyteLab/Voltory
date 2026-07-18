@@ -40,12 +40,12 @@ export default function Toast() {
         <div className="toast__info">
           <p className="toast__name">{product.name}</p>
           <p className="toast__qty">
-            Qty {toast.qty} \u00B7 {naira(product.price * toast.qty)}
+            Qty {toast.qty} · {naira(product.price * toast.qty)}
           </p>
         </div>
       </div>
       <div className="toast__totals">
-        <span>Cart total \u00B7 {count} item{count === 1 ? "" : "s"}</span>
+        <span>Cart total · {count} item{count === 1 ? "" : "s"}</span>
         <b>{naira(totals.subtotal)}</b>
       </div>
       <div className="toast__actions">

@@ -89,7 +89,7 @@ export default function NewArrivals() {
           </span>
           <h1>New Arrivals</h1>
           <p>
-            Fresh inventory \u2014 the latest models from your favourite brands, now in stock.
+            Fresh inventory — the latest models from your favourite brands, now in stock.
           </p>
           {newlyArrivedCount > 0 && (
             <p className="lhero__sub">

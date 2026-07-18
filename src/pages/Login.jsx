@@ -42,7 +42,6 @@ export default function Login() {
               placeholder="0803 123 4567"
               value={phone}
               onChange={(e) => { setPhone(e.target.value); setError(null); }}
-              autoFocus
             />
           </span>
           {error && <span className="field__error">{error}</span>}

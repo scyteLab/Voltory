@@ -42,7 +42,7 @@ export default function BuyingGuide({ categoryId }) {
         <div>
           <h2>{g.title}</h2>
           <p>{g.sub}</p>
-          <Link to="/help" className="bguide__cta">{g.cta} \u2192</Link>
+          <Link to="/help" className="bguide__cta">{g.cta} →</Link>
         </div>
       </div>
       <ul className="bguide__cells">

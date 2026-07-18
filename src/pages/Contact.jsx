@@ -22,7 +22,7 @@ const SUBJECTS = [
 ];
 
 export default function Contact() {
-  const { account } = useStore();
+  const { account, requestCall } = useStore();
   const [form, setForm] = useState({
     name: account?.name || "",
     email: account?.email || "",
@@ -99,17 +99,21 @@ export default function Contact() {
           <span className="contact-card__icon"><MessageCircle size={24} /></span>
           <div>
             <h3>WhatsApp</h3>
-            <p>Fastest \u2014 we read every message</p>
+            <p>Fastest — we read every message</p>
             <b>{SITE.whatsapp}</b>
           </div>
           <ChevronRight size={16} className="contact-card__chev" />
         </a>
 
-        <a href={`tel:${SITE.phone.replace(/\s/g, "")}`} className="contact-card">
+        <a
+          href={`tel:${SITE.phone.replace(/\s/g, "")}`}
+          className="contact-card"
+          onClick={(e) => { e.preventDefault(); requestCall(SITE.phone); }}
+        >
           <span className="contact-card__icon"><Phone size={24} /></span>
           <div>
             <h3>Phone</h3>
-            <p>Mon\u2013Sat, 8 AM \u2013 7 PM</p>
+            <p>Mon–Sat, 8 AM – 7 PM</p>
             <b>{SITE.phone}</b>
           </div>
           <ChevronRight size={16} className="contact-card__chev" />
@@ -156,8 +160,8 @@ export default function Contact() {
           <div className="contact-form-side">
             <h3>Business hours</h3>
             <ul>
-              <li><Clock size={14} /> Monday \u2013 Friday: 8 AM \u2013 7 PM</li>
-              <li><Clock size={14} /> Saturday: 9 AM \u2013 5 PM</li>
+              <li><Clock size={14} /> Monday – Friday: 8 AM – 7 PM</li>
+              <li><Clock size={14} /> Saturday: 9 AM – 5 PM</li>
               <li><Clock size={14} /> Sunday: Closed (WhatsApp only)</li>
             </ul>
             <h3 style={{ marginTop: 22 }}>Visit us</h3>
@@ -167,7 +171,7 @@ export default function Contact() {
               <small>Showroom address available on appointment.</small>
             </p>
             <p className="contact-form-side__note">
-              Looking for an order update? It\u2019s faster to use our{" "}
+              Looking for an order update? It’s faster to use our{" "}
               <Link to="/track-order">Track Order</Link> page.
             </p>
           </div>

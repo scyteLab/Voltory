@@ -177,6 +177,105 @@
 .pgrid-arrow:hover { background: var(--p-soft); }
 .pgrid-arrow--l { left: -6px; }
 .pgrid-arrow--r { right: -6px; }
+
+/* ---- click-to-call confirm ---- */
+.callconfirm__backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(8, 16, 32, 0.5);
+  z-index: 200;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  animation: fadeIn 0.18s ease both;
+}
+.callconfirm {
+  position: relative;
+  background: #fff;
+  border-radius: var(--r-lg);
+  padding: 32px 28px 26px;
+  max-width: 340px;
+  width: 100%;
+  text-align: center;
+  box-shadow: 0 24px 60px -20px rgba(10, 20, 40, 0.35);
+  animation: callconfirmPop 0.28s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+@keyframes callconfirmPop {
+  from { opacity: 0; transform: scale(0.9) translateY(8px); }
+  to { opacity: 1; transform: scale(1) translateY(0); }
+}
+.callconfirm__x {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--mut);
+  transition: background 0.15s, color 0.15s;
+}
+.callconfirm__x:hover { background: var(--p-soft); color: var(--p); }
+.callconfirm__icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: var(--p-soft);
+  color: var(--p);
+  margin-bottom: 14px;
+  animation: callconfirmRing 1.4s ease-in-out 0.2s 2;
+}
+@keyframes callconfirmRing {
+  0%, 100% { transform: rotate(0); }
+  10% { transform: rotate(-16deg); }
+  20% { transform: rotate(14deg); }
+  30% { transform: rotate(-10deg); }
+  40% { transform: rotate(8deg); }
+  50% { transform: rotate(0); }
+}
+.callconfirm h3 {
+  font-size: 18px;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  margin-bottom: 8px;
+}
+.callconfirm p {
+  font-size: 13.5px;
+  color: var(--mut);
+  line-height: 1.55;
+}
+.callconfirm p b { color: var(--ink); }
+.callconfirm__actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 22px;
+}
+.callconfirm__no,
+.callconfirm__yes {
+  flex: 1;
+  padding: 12px;
+  border-radius: 10px;
+  font-weight: 700;
+  font-size: 13.5px;
+  transition: filter 0.15s, background 0.15s;
+}
+.callconfirm__no {
+  background: #fff;
+  border: 1.5px solid var(--line);
+  color: var(--ink);
+}
+.callconfirm__no:hover { background: #f4f6fa; }
+.callconfirm__yes {
+  background: var(--ok);
+  color: #fff;
+}
+.callconfirm__yes:hover { filter: brightness(1.08); }
 .pgrid {
   display: flex;
   overflow-x: auto;

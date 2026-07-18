@@ -105,7 +105,7 @@ export default function HelpCenter() {
       {filtered.length === 0 ? (
         <div className="help-empty">
           <h3>No results for "{query}"</h3>
-          <p>Try a different keyword, or contact our team and we\u2019ll get back to you within a few hours.</p>
+          <p>Try a different keyword, or contact our team and we’ll get back to you within a few hours.</p>
           <Link to="/contact" className="btn-shop">Contact Support</Link>
         </div>
       ) : (

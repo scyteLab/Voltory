@@ -2,8 +2,10 @@ import { useEffect } from "react";
 import { Link } from "react-router-dom";
 import { ChevronRight, Home as HomeIcon } from "lucide-react";
 import { SITE } from "../config/site.js";
+import { useStore } from "../context/StoreContext.jsx";
 
 export default function Returns() {
+  const { requestCall } = useStore();
   useEffect(() => {
     const prev = document.title;
     document.title = `Returns & Refunds — ${SITE.name}`;
@@ -73,7 +75,7 @@ export default function Returns() {
           <li>
             <strong>Step 1 — Contact us:</strong> Reach out to our customer support team via
             email at <a href={`mailto:${SITE.supportEmail}`}>{SITE.supportEmail}</a>, call
-            us at <a href={`tel:${SITE.phone}`}>{SITE.phone}</a>, or message us
+            us at <a href={`tel:${SITE.phone.replace(/\s/g, "")}`} onClick={(e) => { e.preventDefault(); requestCall(SITE.phone); }}>{SITE.phone}</a>, or message us
             on <a href={SITE.whatsappLink} target="_blank" rel="noreferrer">WhatsApp</a>.
             Provide your order number and the reason for the return.
           </li>
@@ -203,7 +205,7 @@ export default function Returns() {
         </p>
         <ul>
           <li>Email: <a href={`mailto:${SITE.supportEmail}`}>{SITE.supportEmail}</a></li>
-          <li>Phone: <a href={`tel:${SITE.phone}`}>{SITE.phone}</a></li>
+          <li>Phone: <a href={`tel:${SITE.phone.replace(/\s/g, "")}`} onClick={(e) => { e.preventDefault(); requestCall(SITE.phone); }}>{SITE.phone}</a></li>
           <li>WhatsApp: <a href={SITE.whatsappLink} target="_blank" rel="noreferrer">{SITE.whatsapp}</a></li>
         </ul>
         <p>

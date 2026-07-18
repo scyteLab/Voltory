@@ -1,5 +1,12 @@
 import { BrowserRouter, Link, Outlet, Route, Routes } from "react-router-dom";
 import { StoreProvider } from "./context/StoreContext.jsx";
+import { AdminProvider } from "./context/AdminContext.jsx";
+import AdminGuard from "./components/admin/AdminGuard.jsx";
+import AdminLayout from "./components/admin/AdminLayout.jsx";
+import AdminLogin from "./pages/admin/AdminLogin.jsx";
+import AdminDashboard from "./pages/admin/AdminDashboard.jsx";
+import CatalogProducts from "./pages/admin/CatalogProducts.jsx";
+import AdminSettings from "./pages/admin/AdminSettings.jsx";
 import TopBar from "./components/layout/TopBar.jsx";
 import Header from "./components/layout/Header.jsx";
 import MainNav from "./components/layout/MainNav.jsx";
@@ -7,6 +14,7 @@ import Footer from "./components/layout/Footer.jsx";
 import WhatsAppBubble from "./components/layout/WhatsAppBubble.jsx";
 import MobileBottomNav from "./components/layout/MobileBottomNav.jsx";
 import Toast from "./components/ui/Toast.jsx";
+import CallConfirmModal from "./components/ui/CallConfirmModal.jsx";
 import ScrollToTop from "./components/ui/ScrollToTop.jsx";
 import AuthGuard from "./components/ui/AuthGuard.jsx";
 import Logo from "./components/layout/Logo.jsx";
@@ -64,6 +72,7 @@ function StoreLayout() {
       <WhatsAppBubble />
       <MobileBottomNav />
       <Toast />
+      <CallConfirmModal />
     </>
   );
 }
@@ -103,53 +112,62 @@ function AuthLayout() {
 export default function App() {
   return (
     <StoreProvider>
-      <BrowserRouter>
-        <ScrollToTop />
-        <Routes>
-          <Route element={<StoreLayout />}>
-            <Route path="/" element={<Home />} />
-            <Route path="/search" element={<Search />} />
-            <Route path="/categories" element={<AllCategories />} />
-            <Route path="/category/:id" element={<Category />} />
-            <Route path="/product/:slug" element={<Product />} />
-            <Route path="/brands" element={<Brands />} />
-            <Route path="/brand/:id" element={<Brand />} />
-            <Route path="/deals" element={<Deals />} />
-            <Route path="/new" element={<NewArrivals />} />
-            <Route path="/best-sellers" element={<BestSellers />} />
-            <Route path="/compare" element={<Compare />} />
-            <Route path="/cart" element={<Cart />} />
-            <Route path="/checkout" element={<Checkout />} />
-            <Route path="/order/:id" element={<OrderConfirmation />} />
-            <Route path="/track-order" element={<TrackOrder />} />
-            <Route path="/help" element={<HelpCenter />} />
-            <Route path="/contact" element={<Contact />} />
-            <Route path="/services/installation" element={<InstallationServices />} />
-            <Route path="/blog" element={<Blog />} />
-            <Route path="/about" element={<About />} />
-            <Route path="/careers" element={<Careers />} />
-            <Route path="/affiliate" element={<Affiliate />} />
-            <Route path="/terms" element={<Terms />} />
-            <Route path="/privacy" element={<Privacy />} />
-            <Route path="/returns" element={<Returns />} />
+      <AdminProvider>
+        <BrowserRouter>
+          <ScrollToTop />
+          <Routes>
+            <Route element={<StoreLayout />}>
+              <Route path="/" element={<Home />} />
+              <Route path="/search" element={<Search />} />
+              <Route path="/categories" element={<AllCategories />} />
+              <Route path="/category/:id" element={<Category />} />
+              <Route path="/product/:slug" element={<Product />} />
+              <Route path="/brands" element={<Brands />} />
+              <Route path="/brand/:id" element={<Brand />} />
+              <Route path="/deals" element={<Deals />} />
+              <Route path="/new" element={<NewArrivals />} />
+              <Route path="/best-sellers" element={<BestSellers />} />
+              <Route path="/compare" element={<Compare />} />
+              <Route path="/cart" element={<Cart />} />
+              <Route path="/checkout" element={<Checkout />} />
+              <Route path="/order/:id" element={<OrderConfirmation />} />
+              <Route path="/track-order" element={<TrackOrder />} />
+              <Route path="/help" element={<HelpCenter />} />
+              <Route path="/contact" element={<Contact />} />
+              <Route path="/services/installation" element={<InstallationServices />} />
+              <Route path="/blog" element={<Blog />} />
+              <Route path="/about" element={<About />} />
+              <Route path="/careers" element={<Careers />} />
+              <Route path="/affiliate" element={<Affiliate />} />
+              <Route path="/terms" element={<Terms />} />
+              <Route path="/privacy" element={<Privacy />} />
+              <Route path="/returns" element={<Returns />} />
 
-            <Route path="/account" element={<AuthGuard><AccountLayout /></AuthGuard>}>
-              <Route index element={<AccountOverview />} />
-              <Route path="orders" element={<AccountOrders />} />
-              <Route path="orders/:id" element={<OrderConfirmation />} />
-              <Route path="addresses" element={<AccountAddresses />} />
-              <Route path="wishlist" element={<AccountWishlist />} />
+              <Route path="/account" element={<AuthGuard><AccountLayout /></AuthGuard>}>
+                <Route index element={<AccountOverview />} />
+                <Route path="orders" element={<AccountOrders />} />
+                <Route path="orders/:id" element={<OrderConfirmation />} />
+                <Route path="addresses" element={<AccountAddresses />} />
+                <Route path="wishlist" element={<AccountWishlist />} />
+              </Route>
+
+              <Route path="*" element={<NotFound />} />
+            </Route>
+            <Route element={<AuthLayout />}>
+              <Route path="/login" element={<Login />} />
+              <Route path="/signup" element={<SignUp />} />
+              <Route path="/verify-otp" element={<VerifyOtp />} />
             </Route>
 
-            <Route path="*" element={<NotFound />} />
-          </Route>
-          <Route element={<AuthLayout />}>
-            <Route path="/login" element={<Login />} />
-            <Route path="/signup" element={<SignUp />} />
-            <Route path="/verify-otp" element={<VerifyOtp />} />
-          </Route>
-        </Routes>
-      </BrowserRouter>
+            <Route path="/admin/login" element={<AdminLogin />} />
+            <Route element={<AdminGuard><AdminLayout /></AdminGuard>}>
+              <Route path="/admin" element={<AdminDashboard />} />
+              <Route path="/admin/products" element={<CatalogProducts />} />
+              <Route path="/admin/settings" element={<AdminSettings />} />
+            </Route>
+          </Routes>
+        </BrowserRouter>
+      </AdminProvider>
     </StoreProvider>
   );
 }

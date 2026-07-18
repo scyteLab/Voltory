@@ -80,7 +80,7 @@ export default function Deals() {
           </span>
           <h1>Deals of the Day</h1>
           <p>
-            Up to {biggestDiscount}% off original electronics \u2014 every deal verified, every product authentic.
+            Up to {biggestDiscount}% off original electronics — every deal verified, every product authentic.
           </p>
           <div className="lhero__cdown">
             <span>Offers refresh in:</span>

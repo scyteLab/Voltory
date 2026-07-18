@@ -146,9 +146,9 @@ export default function Product() {
           )}
 
           <p className={`pdp__stock pdp__stock--${st}`}>
-            {st === "ok" && <>\u25CF In Stock \u00B7 Ships within 24 hours</>}
-            {st === "low" && <>\u25CF Only {product.stock} left \u2014 order soon</>}
-            {st === "out" && <>\u25CF Currently Out of Stock</>}
+            {st === "ok" && <>● In Stock · Ships within 24 hours</>}
+            {st === "low" && <>● Only {product.stock} left — order soon</>}
+            {st === "out" && <>● Currently Out of Stock</>}
           </p>
 
           <ul className="pdp__trust">

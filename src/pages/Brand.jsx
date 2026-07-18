@@ -150,7 +150,7 @@ export default function Brand() {
       {allProducts.length === 0 ? (
         <div className="cempty" style={{ marginTop: 18 }}>
           <h3>No {brand.name} products yet</h3>
-          <p>Check back soon \u2014 we're constantly expanding our catalogue.</p>
+          <p>Check back soon — we're constantly expanding our catalogue.</p>
           <Link to="/brands" className="btn-shop">Browse All Brands</Link>
         </div>
       ) : (

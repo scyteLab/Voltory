@@ -65,14 +65,13 @@ export default function TrackOrder() {
                 value={input}
                 onChange={(e) => { setInput(e.target.value); setError(null); }}
                 placeholder="e.g. VLT-202611031245-A8C2"
-                autoFocus
                 autoComplete="off"
                 spellCheck="false"
               />
             </span>
             {error && <span className="field__error">{error}</span>}
             <small className="field__hint">
-              Your order ID is in the confirmation SMS we sent after checkout, or in My Account \u2192 My Orders.
+              Your order ID is in the confirmation SMS we sent after checkout, or in My Account → My Orders.
             </small>
           </label>
           <button type="submit" className="auth-submit">
@@ -86,17 +85,17 @@ export default function TrackOrder() {
         <div className="track-noresult">
           <span className="track-noresult__icon"><AlertCircle size={24} /></span>
           <div>
-            <h3>We couldn\u2019t find that order</h3>
+            <h3>We couldn’t find that order</h3>
             <p>
-              Double-check the ID for typos \u2014 it should look like <b className="mono">VLT-YYYYMMDDHHmm-XXXX</b>.
-              If you\u2019re still stuck, our team can look it up by your phone number.
+              Double-check the ID for typos — it should look like <b className="mono">VLT-YYYYMMDDHHmm-XXXX</b>.
+              If you’re still stuck, our team can look it up by your phone number.
             </p>
             <div className="track-noresult__actions">
               <a href={SITE.whatsappLink} target="_blank" rel="noreferrer" className="btn-shop">
                 <MessageCircle size={14} /> Chat on WhatsApp
               </a>
               <Link to="/contact" className="track-noresult__link">
-                Or contact support \u2192
+                Or contact support →
               </Link>
             </div>
           </div>
@@ -126,7 +125,7 @@ function OrderTrack({ order }) {
         <div className="track-result__total">
           <span>Order total</span>
           <b>{naira(order.totals.grand)}</b>
-          <Link to={`/order/${order.id}`}>View full receipt \u2192</Link>
+          <Link to={`/order/${order.id}`}>View full receipt →</Link>
         </div>
       </div>
 
@@ -185,7 +184,7 @@ function OrderTrack({ order }) {
           <MessageCircle size={18} />
           <span>
             <b>Need help with this order?</b>
-            <small>Chat with our team on WhatsApp \u2014 we\u2019ll find you fast</small>
+            <small>Chat with our team on WhatsApp — we’ll find you fast</small>
           </span>
           <ChevronRight size={16} />
         </a>

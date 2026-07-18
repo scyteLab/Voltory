@@ -164,9 +164,9 @@ export default function Careers() {
                   <b>{r.title}</b>
                   <div className="cr-role__meta">
                     <span><MapPin size={11} /> {r.location}</span>
-                    <span>\u00B7</span>
+                    <span>·</span>
                     <span>{r.department}</span>
-                    <span>\u00B7</span>
+                    <span>·</span>
                     <span>{r.type}</span>
                   </div>
                 </div>
@@ -240,8 +240,8 @@ export default function Careers() {
           <span className="cr-success__icon"><CheckCircle2 size={56} /></span>
           <h3>Application received</h3>
           <p>
-            Thanks \u2014 we\u2019ve recorded your application for{" "}
-            <b>{submitted.roleTitle}</b>. You\u2019ll hear from us within
+            Thanks — we’ve recorded your application for{" "}
+            <b>{submitted.roleTitle}</b>. You’ll hear from us within
             <b> 5 working days</b>.
           </p>
           <div className="cr-success__id">
@@ -293,7 +293,7 @@ export default function Careers() {
 
               <label className={"field field--full" + (errors.phone ? " has-error" : "")}>
                 <span className="field__label">
-                  Phone Number <small className="field__note">\u2014 optional but recommended</small>
+                  Phone Number <small className="field__note">— optional but recommended</small>
                 </span>
                 <span className="auth-input">
                   <Smartphone size={16} />
@@ -322,7 +322,7 @@ export default function Careers() {
                 >
                   {CAREERS_ROLES.map((r) => (
                     <option key={r.id} value={r.id}>
-                      {r.title} \u2014 {r.location}
+                      {r.title} — {r.location}
                     </option>
                   ))}
                   <option value={OPEN_APPLICATION.id}>{OPEN_APPLICATION.title}</option>
@@ -331,7 +331,7 @@ export default function Careers() {
 
               <label className="field">
                 <span className="field__label">
-                  LinkedIn Profile <small className="field__note">\u2014 optional</small>
+                  LinkedIn Profile <small className="field__note">— optional</small>
                 </span>
                 <span className="auth-input">
                   <Link2 size={16} />
@@ -346,7 +346,7 @@ export default function Careers() {
 
               <label className="field">
                 <span className="field__label">
-                  Portfolio / CV Link <small className="field__note">\u2014 optional</small>
+                  Portfolio / CV Link <small className="field__note">— optional</small>
                 </span>
                 <span className="auth-input">
                   <Link2 size={16} />
@@ -418,7 +418,7 @@ export default function Careers() {
       <section className="mkt-cta">
         <div>
           <h2>Questions before applying?</h2>
-          <p>WhatsApp us \u2014 we\u2019re honest about whether a role fits.</p>
+          <p>WhatsApp us — we’re honest about whether a role fits.</p>
         </div>
         <div className="mkt-cta__actions">
           <a href={SITE.whatsappLink} target="_blank" rel="noreferrer" className="mkt-cta__wa">

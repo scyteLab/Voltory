@@ -513,7 +513,7 @@ a.ftr__social-icon:hover {
   .logo__bolt svg { width: 14px; height: 14px; }
   .search { flex: 1; min-width: 0; order: 0; max-width: 58%; }
   .search__cat { display: none; }
-  .hdr__counters { gap: 10px; margin-left: 4px; }
+  .hdr__counters { gap: 10px; margin-left: 4px; align-items: center; }
   .hdr-counter span:last-child { display: none; }
   .hdr-counter__icon { width: 24px; height: 24px; }
   .hdr-counter__icon svg { width: 18px; height: 18px; }
@@ -524,13 +524,14 @@ a.ftr__social-icon:hover {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    width: 36px;
-    height: 36px;
+    width: 32px;
+    height: 32px;
     border-radius: 8px;
     color: var(--ink);
     flex-shrink: 0;
     transition: background 0.15s;
   }
+  .hdr__burger svg { width: 20px; height: 20px; }
   .hdr__burger:hover { background: var(--p-soft); color: var(--p); }
 
   .hdr-drawer__backdrop {
@@ -642,6 +643,8 @@ a.ftr__social-icon:hover {
   .hdr__counters { gap: 6px; margin-left: 2px; }
   .hdr-counter__icon { width: 22px; height: 22px; }
   .hdr-counter__icon svg { width: 16px; height: 16px; }
+  .hdr__burger { width: 28px; height: 28px; }
+  .hdr__burger svg { width: 18px; height: 18px; }
   .topbar__links { gap: 10px; font-size: 10px; }
   .mainnav__inner { height: 34px; }
   .mainnav__link { padding: 4px 7px; font-size: 11px; }
