@@ -9,11 +9,13 @@ import {
   ABOUT_FOUNDER, ABOUT_MISSION, ABOUT_PARTNERS, ABOUT_PROBLEM,
   ABOUT_PROMISES, ABOUT_TIMELINE, ABOUT_VALUES,
 } from "../config/aboutContent.js";
-import { BRANDS } from "../data/products.js";
+import { useCatalog } from "../context/CatalogContext.jsx";
 import Icon from "../components/ui/Icon.jsx";
 import BrandLogo from "../components/brand/BrandLogo.jsx";
 
 export default function About() {
+  const { brands: BRANDS } = useCatalog();
+
   useEffect(() => {
     const prev = document.title;
     document.title = `About \u2014 ${SITE.name}`;

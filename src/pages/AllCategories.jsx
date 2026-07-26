@@ -4,7 +4,7 @@ import {
   ArrowRight, ChevronRight, Flame, Home as HomeIcon, MessageCircle,
 } from "lucide-react";
 import { SITE } from "../config/site.js";
-import { CATEGORIES, BRANDS, byCategory } from "../data/products.js";
+import { useCatalog } from "../context/CatalogContext.jsx";
 import Icon from "../components/ui/Icon.jsx";
 
 const CAT_IMAGES = {
@@ -19,6 +19,8 @@ const CAT_IMAGES = {
 };
 
 export default function AllCategories() {
+  const { categories: CATEGORIES, brands: BRANDS, byCategory } = useCatalog();
+
   useEffect(() => {
     const prev = document.title;
     document.title = `All Categories — ${SITE.name}`;

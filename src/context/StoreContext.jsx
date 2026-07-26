@@ -1,8 +1,12 @@
 import { createContext, useContext, useEffect, useMemo, useState } from "react";
 import { SITE } from "../config/site.js";
-import { bySku } from "../data/products.js";
+import { snapshotBySku } from "../lib/catalogSnapshot.js";
 import { getStoredCart, saveCart, clearStoredCart } from "../utils/cartPersistence.js";
-import { generateOrderId, saveOrder, ORDER_STATUS } from "../utils/orders.js";
+import {
+  generateOrderId, saveOrder, ORDER_STATUS,
+  markOrderSynced, getUnsyncedOrders,
+} from "../utils/orders.js";
+import { insertOrderToSupabase } from "../lib/ordersClient.js";
 import { getStoredWishlist, saveWishlist } from "../utils/wishlist.js";
 import {
   getStoredComparison, saveComparison, MAX_COMPARE,
@@ -70,6 +74,26 @@ export function StoreProvider({ children }) {
   useEffect(() => { saveCart(cart); }, [cart]);
   useEffect(() => { saveWishlist(wishlist); }, [wishlist]);
   useEffect(() => { saveComparison(compare); }, [compare]);
+
+  // Boot-time sweep: retry any locally-persisted orders that failed to
+  // reach Supabase last time (customer was offline, RLS blip, network
+  // flake, etc). Runs once, silently. If Supabase still isn't reachable,
+  // orders wait for the next boot.
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      // A tiny delay so we don't compete with the initial page render
+      await new Promise((r) => setTimeout(r, 1200));
+      if (cancelled) return;
+      const pending = getUnsyncedOrders();
+      for (const order of pending) {
+        if (cancelled) break;
+        const res = await insertOrderToSupabase(order);
+        if (res.ok) markOrderSynced(order.id);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, []);
 
   useEffect(() => {
     if (!toast) return;
@@ -151,7 +175,7 @@ export function StoreProvider({ children }) {
 
   /* ---------- totals ---------- */
   const totals = useMemo(() => {
-    const subtotal = cart.reduce((s, i) => s + (bySku(i.sku)?.price ?? 0) * i.qty, 0);
+    const subtotal = cart.reduce((s, i) => s + (snapshotBySku(i.sku)?.price ?? 0) * i.qty, 0);
     const discount = coupon === SITE.welcomeCoupon.code
       ? Math.round((subtotal * SITE.welcomeCoupon.percent) / 100)
       : 0;
@@ -185,7 +209,7 @@ export function StoreProvider({ children }) {
   const placeOrder = ({ contact, address, payment, installation }) => {
     const id = generateOrderId();
     const items = cart.map((i) => {
-      const p = bySku(i.sku);
+      const p = snapshotBySku(i.sku);
       return {
         sku: i.sku,
         qty: i.qty,
@@ -222,10 +246,22 @@ export function StoreProvider({ children }) {
       totals: { subtotal, discount, deliveryFee, installationFee: installFee, grand },
       account: { phone: next.phone, name: next.name },
       accountCreated,
+      // syncedAt gets stamped when the background insert lands
     };
 
+    // Write-through cache: localStorage now, Supabase in background.
+    // The customer never waits on the network for their confirmation.
     saveOrder(order);
     clearCart();
+
+    // Fire the Supabase insert without awaiting. On success it flips
+    // syncedAt on the local record; on failure the boot-time sweeper
+    // retries. Errors are intentionally swallowed \u2014 nothing user-
+    // facing depends on this promise resolving.
+    insertOrderToSupabase(order).then((res) => {
+      if (res.ok) markOrderSynced(id);
+    });
+
     return id;
   };
 

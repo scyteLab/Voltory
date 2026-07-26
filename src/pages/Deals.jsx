@@ -3,7 +3,7 @@ import { Link, useSearchParams } from "react-router-dom";
 import {
   ChevronRight, Flame, Home as HomeIcon, SlidersHorizontal, Tag, X,
 } from "lucide-react";
-import { getDeals } from "../data/products.js";
+import { useCatalog } from "../context/CatalogContext.jsx";
 import { naira, discountPct } from "../utils/format.js";
 import { SITE } from "../config/site.js";
 import ProductCard from "../components/product/ProductCard.jsx";
@@ -23,6 +23,7 @@ const FILTER_CONFIG = ["brand", "price", "availability"];
 export default function Deals() {
   const [searchParams, setSearchParams] = useSearchParams();
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const { products } = useCatalog();
 
   useEffect(() => {
     const prev = document.title;
@@ -30,7 +31,7 @@ export default function Deals() {
     return () => { document.title = prev; };
   }, []);
 
-  const all = useMemo(() => getDeals(), []);
+  const all = useMemo(() => products.filter((p) => p.was), [products]);
   const filters = useMemo(() => readFiltersFromUrl(searchParams), [searchParams]);
   const sort = searchParams.get("sort") || "discount";
   const page = Math.max(1, parseInt(searchParams.get("page") || "1", 10));

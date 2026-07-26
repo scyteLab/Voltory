@@ -5,7 +5,7 @@ import {
   Refrigerator, AirVent, WashingMachine, Tv, UtensilsCrossed,
   CookingPot, Zap, Cable,
 } from "lucide-react";
-import { BRANDS, CATEGORIES, PRODUCTS } from "../data/products.js";
+import { useCatalog } from "../context/CatalogContext.jsx";
 import { SITE } from "../config/site.js";
 import BrandLogo from "../components/brand/BrandLogo.jsx";
 
@@ -26,6 +26,8 @@ const SECTION_COLORS = [
 ];
 
 export default function Brands() {
+  const { products, categories, brands } = useCatalog();
+
   useEffect(() => {
     const prev = document.title;
     document.title = `Official Stores — ${SITE.name}`;
@@ -33,22 +35,22 @@ export default function Brands() {
   }, []);
 
   const categoryBrands = useMemo(() => {
-    return CATEGORIES
+    return categories
       .map((cat) => {
-        const catProducts = PRODUCTS.filter((p) => p.category === cat.id);
+        const catProducts = products.filter((p) => p.category === cat.id);
         const brandNames = [...new Set(catProducts.map((p) => p.brand))];
-        const brands = brandNames
+        const brandsInCat = brandNames
           .map((name) => {
-            const brand = BRANDS.find((b) => b.name === name);
+            const brand = brands.find((b) => b.name === name);
             if (!brand) return null;
             const firstProduct = catProducts.find((p) => p.brand === name);
             return { ...brand, bgImage: firstProduct?.image };
           })
           .filter(Boolean);
-        return { cat, brands };
+        return { cat, brands: brandsInCat };
       })
       .filter(({ brands }) => brands.length > 0);
-  }, []);
+  }, [products, categories, brands]);
 
   return (
     <main className="wrap">

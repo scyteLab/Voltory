@@ -227,7 +227,7 @@ export default function Contact() {
                   rows="5"
                   value={form.message}
                   onChange={(e) => field("message", e.target.value)}
-                  placeholder="Tell us what we can help with. If it\u2019s about an order, include the order ID."
+                  placeholder="Tell us what we can help with. If it’s about an order, include the order ID."
                   className="contact-textarea"
                 />
                 {errors.message && <span className="field__error">{errors.message}</span>}

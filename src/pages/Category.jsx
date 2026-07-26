@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useParams, useSearchParams } from "react-router-dom";
 import { ChevronRight, Home as HomeIcon, SlidersHorizontal, X } from "lucide-react";
-import { byCategory, CATEGORIES, BRANDS, PRODUCTS } from "../data/products.js";
+import { useCatalog } from "../context/CatalogContext.jsx";
 import { BRAND_PAGES } from "../config/brandPages.js";
 import { naira, discountPct } from "../utils/format.js";
 import { SITE } from "../config/site.js";
@@ -23,7 +23,8 @@ const PAGE_SIZE = 12;
 
 export default function Category() {
   const { id: categoryId } = useParams();
-  const category = CATEGORIES.find((c) => c.id === categoryId);
+  const { products, brands, byCategory, byId } = useCatalog();
+  const category = byId(categoryId);
   const [searchParams, setSearchParams] = useSearchParams();
 
   const filters = useMemo(() => readFiltersFromUrl(searchParams), [searchParams]);
@@ -83,7 +84,7 @@ export default function Category() {
   // Brands in this category
   const categoryBrands = useMemo(() => {
     const names = [...new Set(baseProducts.map((p) => p.brand))];
-    return names.map((n) => BRANDS.find((b) => b.name === n)).filter(Boolean);
+    return names.map((n) => brands.find((b) => b.name === n)).filter(Boolean);
   }, [baseProducts]);
 
   // Sub-categories from megamenu
@@ -147,7 +148,7 @@ export default function Category() {
                   to={`/brand/${b.id}`}
                   key={b.id}
                   className="cbrands__tile"
-                  style={b.logo ? { backgroundImage: `url(${PRODUCTS.find((p) => p.brand === b.name)?.image || ""})` } : undefined}
+                  style={b.logo ? { backgroundImage: `url(${products.find((p) => p.brand === b.name)?.image || ""})` } : undefined}
                 >
                   <span className="cbrands__overlay" />
                   <span className="cbrands__logo">

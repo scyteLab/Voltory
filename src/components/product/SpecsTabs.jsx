@@ -256,7 +256,7 @@ function ReviewsPanel({ product }) {
   const rating = product.rating ?? 0;
   const total = product.reviews ?? 0;
 
-  if (!total) return <Placeholder text="No reviews yet \u2014 be the first to share your experience after purchase." />;
+  if (!total) return <Placeholder text="No reviews yet — be the first to share your experience after purchase." />;
 
   const breakdown = generateRatingBreakdown(rating, total);
   const mockReviews = generateMockReviews(product.sku, rating, total);

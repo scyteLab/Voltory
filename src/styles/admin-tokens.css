@@ -1,0 +1,81 @@
+/* ============================================================
+   ADMIN TOKENS
+   These variables are set on .adm-shell by AdminShell.jsx via
+   inline style from resolveThemeVars(). Everything else in the
+   admin reads from --adm-* variables \u2014 never hardcoded colors.
+   ============================================================ */
+
+.adm-shell {
+  /* Set by AdminShell inline style. Defaults below only kick in if
+     a component uses tokens outside .adm-shell. */
+  --adm-brand:       #0B1F3A;
+  --adm-brand-deep:  #081428;
+  --adm-brand-soft:  #E8EEF7;
+  --adm-brand-line:  #C7D2E4;
+  --adm-brand-ink:   #FFFFFF;
+
+  --adm-accent:      #F59E0B;
+  --adm-accent-ink:  #1F2937;
+
+  --adm-font:        "Inter", system-ui, -apple-system, sans-serif;
+
+  --adm-r-sm:        6px;
+  --adm-r-md:        10px;
+  --adm-r-lg:        14px;
+
+  --adm-row-h:       44px;
+  --adm-pad-y:       12px;
+  --adm-pad-x:       16px;
+  --adm-font-base:   14px;
+
+  /* Static tokens \u2014 not user-editable, but ride the mode. */
+  --adm-ok:          #059669;
+  --adm-ok-bg:       #D1FAE5;
+  --adm-warn:        #D97706;
+  --adm-warn-bg:     #FEF3C7;
+  --adm-err:         #DC2626;
+  --adm-err-bg:      #FEE2E2;
+  --adm-info:        #2563EB;
+  --adm-info-bg:     #DBEAFE;
+
+  --adm-shadow-sm:   0 1px 2px rgba(15, 23, 42, 0.06);
+  --adm-shadow:      0 4px 12px -4px rgba(15, 23, 42, 0.10);
+  --adm-shadow-lg:   0 12px 32px -8px rgba(15, 23, 42, 0.18);
+
+  --adm-tr-fast:     0.14s;
+  --adm-tr-med:      0.22s;
+
+  font-family: var(--adm-font);
+  font-size: var(--adm-font-base);
+}
+
+/* ---- LIGHT MODE (default) ---- */
+.adm-shell[data-mode="light"] {
+  --adm-canvas:      #F5F7FB;   /* page background */
+  --adm-surface:     #FFFFFF;   /* cards, panels */
+  --adm-surface-2:   #F8FAFC;   /* subtle nested surfaces */
+  --adm-border:      #E5E9F1;
+  --adm-border-hi:   #D5DCE7;
+  --adm-ink:         #0F172A;   /* primary text */
+  --adm-ink-2:       #334155;   /* secondary text */
+  --adm-ink-3:       #64748B;   /* muted / labels */
+  --adm-hover:       #F1F5F9;   /* row hover, subtle interactive bg */
+  --adm-focus-ring:  rgba(11, 31, 58, 0.15);
+}
+
+/* ---- DARK MODE ---- */
+.adm-shell[data-mode="dark"] {
+  --adm-canvas:      #0F172A;
+  --adm-surface:     #1E293B;
+  --adm-surface-2:   #172033;
+  --adm-border:      #334155;
+  --adm-border-hi:   #475569;
+  --adm-ink:         #F1F5F9;
+  --adm-ink-2:       #CBD5E1;
+  --adm-ink-3:       #94A3B8;
+  --adm-hover:       #263449;
+  --adm-focus-ring:  rgba(245, 158, 11, 0.25);
+  --adm-shadow-sm:   0 1px 2px rgba(0, 0, 0, 0.4);
+  --adm-shadow:      0 4px 12px -4px rgba(0, 0, 0, 0.5);
+  --adm-shadow-lg:   0 12px 32px -8px rgba(0, 0, 0, 0.6);
+}

@@ -1,11 +1,12 @@
 import { Link } from "react-router-dom";
 import { Heart, ShoppingCart, Trash2 } from "lucide-react";
 import { useStore } from "../../context/StoreContext.jsx";
-import { bySku } from "../../data/products.js";
+import { useCatalog } from "../../context/CatalogContext.jsx";
 import { naira, stockState } from "../../utils/format.js";
 
 export default function AccountWishlist() {
   const { wishlist, toggleWishlist, addToCart } = useStore();
+  const { bySku } = useCatalog();
   const items = wishlist.map((sku) => bySku(sku)).filter(Boolean);
 
   return (

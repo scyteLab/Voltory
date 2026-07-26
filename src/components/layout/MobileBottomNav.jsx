@@ -4,7 +4,7 @@ import {
   Grid, Home as HomeIcon, ShoppingCart, User, X,
 } from "lucide-react";
 import { useStore } from "../../context/StoreContext.jsx";
-import { CATEGORIES } from "../../data/products.js";
+import { useCatalog } from "../../context/CatalogContext.jsx";
 import Icon from "../ui/Icon.jsx";
 
 /**
@@ -20,6 +20,7 @@ import Icon from "../ui/Icon.jsx";
  */
 export default function MobileBottomNav() {
   const { count, account } = useStore();
+  const { categories: CATEGORIES } = useCatalog();
   const [catsOpen, setCatsOpen] = useState(false);
   const location = useLocation();
 

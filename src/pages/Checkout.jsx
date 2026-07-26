@@ -5,7 +5,7 @@ import {
   Info, Lock, MapPin, Phone, Smartphone as PhoneIcon, User, Wrench,
 } from "lucide-react";
 import { useStore } from "../context/StoreContext.jsx";
-import { bySku } from "../data/products.js";
+import { useCatalog } from "../context/CatalogContext.jsx";
 import { naira } from "../utils/format.js";
 import { SITE } from "../config/site.js";
 
@@ -24,6 +24,7 @@ const PAYMENT_METHODS = [
 
 export default function Checkout() {
   const { cart, totals, account, placeOrder, requestCall } = useStore();
+  const { bySku } = useCatalog();
   const navigate = useNavigate();
 
   // Empty cart → bounce back home

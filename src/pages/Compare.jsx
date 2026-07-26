@@ -4,7 +4,7 @@ import {
   ChevronRight, Home as HomeIcon, Plus, Repeat, ShoppingCart, Trash2, X,
 } from "lucide-react";
 import { useStore } from "../context/StoreContext.jsx";
-import { bySku } from "../data/products.js";
+import { useCatalog } from "../context/CatalogContext.jsx";
 import { naira, stockState } from "../utils/format.js";
 import { MAX_COMPARE } from "../utils/comparison.js";
 import { SITE } from "../config/site.js";
@@ -32,6 +32,7 @@ const ATTRIBUTE_ROWS = [
 
 export default function Compare() {
   const { compare, removeFromComparison, clearComparison, addToCart } = useStore();
+  const { bySku } = useCatalog();
   const items = compare.map((sku) => bySku(sku)).filter(Boolean);
   const slots = Array.from({ length: MAX_COMPARE }, (_, i) => items[i] || null);
 

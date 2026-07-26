@@ -4,7 +4,7 @@ import {
   BadgeCheck, ChevronRight, Home as HomeIcon, MessageCircle,
   ShieldCheck, SlidersHorizontal, Store, Truck, X,
 } from "lucide-react";
-import { byBrand, findBrand } from "../data/products.js";
+import { useCatalog } from "../context/CatalogContext.jsx";
 import { BRAND_PAGES, TIER_META } from "../config/brandPages.js";
 import { SITE } from "../config/site.js";
 import ProductCard from "../components/product/ProductCard.jsx";
@@ -30,11 +30,12 @@ const BRAND_FILTER_CONFIG = ["price", "availability"];
 
 export default function Brand() {
   const { id: brandId } = useParams();
+  const { findBrand, byBrand } = useCatalog();
   const brand = findBrand(brandId);
   const [searchParams, setSearchParams] = useSearchParams();
   const [drawerOpen, setDrawerOpen] = useState(false);
 
-  const allProducts = useMemo(() => brand ? byBrand(brand.name) : [], [brand]);
+  const allProducts = useMemo(() => brand ? byBrand(brand.name) : [], [brand, byBrand]);
   const filters = useMemo(() => readFiltersFromUrl(searchParams), [searchParams]);
 
   useEffect(() => {

@@ -5,13 +5,14 @@ import {
   Trash2, Truck, X,
 } from "lucide-react";
 import { useStore } from "../context/StoreContext.jsx";
-import { bySku, PRODUCTS } from "../data/products.js";
+import { useCatalog } from "../context/CatalogContext.jsx";
 import { naira } from "../utils/format.js";
 import { SITE } from "../config/site.js";
 import ProductCard from "../components/product/ProductCard.jsx";
 
 export default function Cart() {
   const { cart, setQty, removeFromCart, totals, coupon, setCoupon, count } = useStore();
+  const { products, bySku } = useCatalog();
   const navigate = useNavigate();
 
   if (cart.length === 0) return <EmptyCart />;
@@ -150,7 +151,7 @@ export default function Cart() {
         <Link to="/">View more <ChevronRight size={14} style={{ verticalAlign: "middle" }} /></Link>
       </div>
       <section className="pgrid">
-        {PRODUCTS.filter((p) => !cart.find((i) => i.sku === p.sku)).slice(0, 5).map((p) => (
+        {products.filter((p) => !cart.find((i) => i.sku === p.sku)).slice(0, 5).map((p) => (
           <ProductCard key={p.sku} product={p} />
         ))}
       </section>
@@ -206,6 +207,7 @@ function CouponInput({ coupon, setCoupon }) {
 }
 
 function EmptyCart() {
+  const { products } = useCatalog();
   return (
     <main className="wrap">
       <div className="cart-empty">
@@ -221,7 +223,7 @@ function EmptyCart() {
         <h2>Popular Right Now</h2>
       </div>
       <section className="pgrid">
-        {PRODUCTS.slice(0, 5).map((p) => (
+        {products.slice(0, 5).map((p) => (
           <ProductCard key={p.sku} product={p} />
         ))}
       </section>

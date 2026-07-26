@@ -179,7 +179,7 @@ export default function Careers() {
 
                   <div className="cr-role__cols">
                     <div>
-                      <h4>What you\u2019ll own</h4>
+                      <h4>What you’ll own</h4>
                       <ul>
                         {r.youll.map((line) => (
                           <li key={line}><CheckCircle2 size={13} /> {line}</li>
@@ -366,7 +366,7 @@ export default function Careers() {
                   rows="5"
                   value={form.coverNote}
                   onChange={(e) => field("coverNote", e.target.value)}
-                  placeholder="Tell us briefly: what you do well, what you\u2019d want to own at Voltory, and anything relevant about your background. One paragraph is fine."
+                  placeholder="Tell us briefly: what you do well, what you’d want to own at Voltory, and anything relevant about your background. One paragraph is fine."
                 />
                 {errors.coverNote && <span className="field__error">{errors.coverNote}</span>}
               </label>

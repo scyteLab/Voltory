@@ -3,7 +3,7 @@ import { Link, useSearchParams } from "react-router-dom";
 import {
   ChevronRight, Home as HomeIcon, Sparkles, SlidersHorizontal, X,
 } from "lucide-react";
-import { PRODUCTS } from "../data/products.js";
+import { useCatalog } from "../context/CatalogContext.jsx";
 import { naira } from "../utils/format.js";
 import { SITE } from "../config/site.js";
 import ProductCard from "../components/product/ProductCard.jsx";
@@ -22,6 +22,7 @@ const FILTER_CONFIG = ["brand", "price", "availability"];
 export default function NewArrivals() {
   const [searchParams, setSearchParams] = useSearchParams();
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const { products } = useCatalog();
 
   useEffect(() => {
     const prev = document.title;
@@ -32,13 +33,13 @@ export default function NewArrivals() {
   // "Newest" = anything badged "new" OR with fewer reviews (proxy for recency).
   // When the backend lands, this becomes ORDER BY created_at DESC.
   const all = useMemo(() => {
-    return [...PRODUCTS].sort((a, b) => {
+    return [...products].sort((a, b) => {
       const aNew = a.badge === "new" ? 0 : 1;
       const bNew = b.badge === "new" ? 0 : 1;
       if (aNew !== bNew) return aNew - bNew;
       return (a.reviews || 0) - (b.reviews || 0);
     });
-  }, []);
+  }, [products]);
 
   const filters = useMemo(() => readFiltersFromUrl(searchParams), [searchParams]);
   const sort = searchParams.get("sort") || "newest";

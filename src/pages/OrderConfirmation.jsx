@@ -1,7 +1,8 @@
+import { useEffect, useState } from "react";
 import { Link, Navigate, useParams } from "react-router-dom";
 import {
-  BadgeCheck, Check, ChevronRight, CircleCheck, Home as HomeIcon,
-  Mail, MapPin, MessageCircle, Phone, Receipt, ShieldCheck, Truck,
+  BadgeCheck, Check, ChevronRight, CircleCheck, Cloud, CloudOff,
+  Home as HomeIcon, Mail, MapPin, MessageCircle, Phone, Receipt, ShieldCheck, Truck,
 } from "lucide-react";
 import { getOrder, STATUS_FLOW, STATUS_LABEL, ORDER_STATUS } from "../utils/orders.js";
 import { naira } from "../utils/format.js";
@@ -16,7 +17,21 @@ const PAYMENT_LABEL = {
 
 export default function OrderConfirmation() {
   const { id } = useParams();
-  const order = getOrder(id);
+  const [order, setOrder] = useState(() => getOrder(id));
+
+  // Poll every 4 seconds until the order shows syncedAt \u2014 keeps the
+  // sync pill honest without hammering localStorage. Stops once synced.
+  useEffect(() => {
+    if (!order || order.syncedAt) return;
+    const t = setInterval(() => {
+      const next = getOrder(id);
+      if (next?.syncedAt) {
+        setOrder(next);
+        clearInterval(t);
+      }
+    }, 4000);
+    return () => clearInterval(t);
+  }, [id, order]);
 
   if (!order) return <Navigate to="/" replace />;
 
@@ -32,6 +47,7 @@ export default function OrderConfirmation() {
         <p>Thank you, {order.contact.name.split(" ")[0]}! Your order has been received and we'll be in touch shortly.</p>
         <div className="conf-hero__id">
           <Receipt size={14} /> Order ID: <b className="mono">{order.id}</b>
+          <SyncPill synced={!!order.syncedAt} />
         </div>
       </section>
 
@@ -158,5 +174,36 @@ export default function OrderConfirmation() {
         </Link>
       </section>
     </main>
+  );
+}
+
+/**
+ * A tiny pill next to the Order ID showing sync state.
+ *
+ * We deliberately soft-pedal the un-synced state:
+ *   "Saved locally" \u2014 not "Failed" or "Error"
+ *
+ * The customer's order IS placed (localStorage source of truth) and
+ * WILL sync once connectivity is available. Alarming language would
+ * scare a customer who just paid.
+ */
+function SyncPill({ synced }) {
+  if (synced) {
+    return (
+      <span
+        className="conf-hero__syncpill conf-hero__syncpill--ok"
+        title="Order synced to our system"
+      >
+        <Cloud size={12} /> Confirmed on server
+      </span>
+    );
+  }
+  return (
+    <span
+      className="conf-hero__syncpill conf-hero__syncpill--pending"
+      title="Order saved locally \u2014 finishing sync in the background"
+    >
+      <CloudOff size={12} /> Saved locally
+    </span>
   );
 }

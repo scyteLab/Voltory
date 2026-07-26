@@ -5,21 +5,23 @@
  * Adding a new icon = one import + one line in the map.
  */
 import {
-  AirVent, ArrowRight, BadgeCheck, Banknote, Blend, Building2, Cable,
-  ChevronDown, ChevronRight, Circle, Clock, CookingPot, CreditCard,
-  Eye, FileBadge, Headphones, Heart, Home, LayoutGrid, LifeBuoy, Lock,
-  MapPin, MessageCircle, Package, Phone, Play, Refrigerator, Repeat,
-  ScrollText, Search, ShieldCheck, ShoppingCart, Smartphone, Tag,
-  Truck, Tv, User, UserPlus, Users, Wallet, WashingMachine, Wrench, Zap,
+  AirVent, AlertTriangle, ArrowRight, Award, BadgeCheck, Banknote, Blend,
+  Building2, Cable, ChevronDown, ChevronRight, Circle, Clock, CookingPot,
+  CreditCard, Eye, FileBadge, Headphones, Heart, Home, LayoutGrid, LifeBuoy,
+  Lock, MapPin, MessageCircle, Package, Phone, PhoneOff, Play, Receipt,
+  Refrigerator, Repeat, Rocket, ScrollText, Search, ShieldCheck, ShoppingCart,
+  Smartphone, Tag, TrendingUp, Truck, Tv, User, UserPlus, Users, Wallet,
+  WashingMachine, Wrench, Zap,
 } from "lucide-react";
 
 const REGISTRY = {
-  AirVent, ArrowRight, BadgeCheck, Banknote, Blend, Building2, Cable,
-  ChevronDown, ChevronRight, Clock, CookingPot, CreditCard, Eye, FileBadge,
-  Headphones, Heart, Home, LayoutGrid, LifeBuoy, Lock, MapPin, MessageCircle,
-  Package, Phone, Play, Refrigerator, Repeat, ScrollText, Search, ShieldCheck,
-  ShoppingCart, Smartphone, Tag, Truck, Tv, User, UserPlus, Users, Wallet,
-  WashingMachine, Wrench, Zap,
+  AirVent, AlertTriangle, ArrowRight, Award, BadgeCheck, Banknote, Blend,
+  Building2, Cable, ChevronDown, ChevronRight, Clock, CookingPot, CreditCard,
+  Eye, FileBadge, Headphones, Heart, Home, LayoutGrid, LifeBuoy, Lock, MapPin,
+  MessageCircle, Package, Phone, PhoneOff, Play, Receipt, Refrigerator,
+  Repeat, Rocket, ScrollText, Search, ShieldCheck, ShoppingCart, Smartphone,
+  Tag, TrendingUp, Truck, Tv, User, UserPlus, Users, Wallet, WashingMachine,
+  Wrench, Zap,
 };
 
 export default function Icon({ name, size = 16, ...rest }) {

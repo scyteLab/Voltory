@@ -4,7 +4,9 @@ import {
   BadgeCheck, ChevronRight, FileBadge, Heart, Home as HomeIcon,
   MessageCircle, Minus, Plus, Repeat, ShieldCheck, ShoppingCart, Truck, Wrench,
 } from "lucide-react";
-import { PRODUCTS, CATEGORIES, byCategory, bySku, RECOMMENDED_ADDON } from "../data/products.js";
+import { RECOMMENDED_ADDON } from "../data/products.js";
+import { useCatalog } from "../context/CatalogContext.jsx";
+import { snapshotByCategory, snapshotCategoryById } from "../lib/catalogSnapshot.js";
 import { naira, discountPct, stockState } from "../utils/format.js";
 import { addRecentlyViewed } from "../utils/recentlyViewed.js";
 import { useStore } from "../context/StoreContext.jsx";
@@ -62,8 +64,9 @@ function ProductJsonLd({ product }) {
 
 export default function Product() {
   const { slug } = useParams();
+  const { bySlug, bySku, byCategory } = useCatalog();
   const navigate = useNavigate();
-  const product = PRODUCTS.find((p) => p.slug === slug);
+  const product = bySlug(slug);
   const {
     addToCart, toggleWishlist, isInWishlist,
     toggleCompare, isInComparison,
@@ -268,13 +271,13 @@ export default function Product() {
 }
 
 function categoryLabel(id) {
-  const cat = CATEGORIES.find((c) => c.id === id);
+  const cat = snapshotCategoryById(id);
   return cat ? cat.label : id;
 }
 
 function productImages(product) {
   const imgs = [product.image];
-  const siblings = byCategory(product.category)
+  const siblings = snapshotByCategory(product.category)
     .filter((p) => p.sku !== product.sku && p.image && p.image !== product.image);
   for (const s of siblings) {
     if (!imgs.includes(s.image)) imgs.push(s.image);

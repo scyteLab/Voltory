@@ -3,7 +3,8 @@ import { useNavigate } from "react-router-dom";
 import {
   Check, ChevronDown, Clock, Search, Tag, TrendingUp, X,
 } from "lucide-react";
-import { CATEGORIES, POPULAR_SEARCHES } from "../../data/products.js";
+import { POPULAR_SEARCHES } from "../../data/products.js";
+import { useCatalog } from "../../context/CatalogContext.jsx";
 import { naira } from "../../utils/format.js";
 import { search, searchUrl } from "../../utils/searchEngine.js";
 import {
@@ -24,6 +25,7 @@ import Icon from "../ui/Icon.jsx";
  *   - Click outside: close dropdowns
  */
 export default function SearchBar() {
+  const { categories: CATEGORIES } = useCatalog();
   const [query, setQuery] = useState("");
   const [scope, setScope] = useState(null); // null = All Categories
   const [openCat, setOpenCat] = useState(false);

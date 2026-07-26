@@ -20,6 +20,12 @@ import "./styles/polish.css";
 import "./styles/compare.css";
 import "./styles/marketing.css";
 import "./styles/all-categories.css";
+import "./styles/admin-tokens.css";
+import "./styles/admin-shell.css";
+import "./styles/admin-catalog.css";
+import "./styles/admin-orders.css";
+import "./styles/admin-warranty.css";
+import "./styles/admin-settings.css";
 import "./styles/admin.css";
 
 ReactDOM.createRoot(document.getElementById("root")).render(

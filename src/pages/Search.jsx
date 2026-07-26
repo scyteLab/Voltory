@@ -3,7 +3,7 @@ import { Link, useSearchParams } from "react-router-dom";
 import {
   ChevronRight, Home as HomeIcon, Search as SearchIcon, SlidersHorizontal, X,
 } from "lucide-react";
-import { PRODUCTS, CATEGORIES, BRANDS } from "../data/products.js";
+import { useCatalog } from "../context/CatalogContext.jsx";
 import { search } from "../utils/searchEngine.js";
 import { addRecentSearch } from "../utils/recentSearches.js";
 import { SITE } from "../config/site.js";
@@ -28,6 +28,7 @@ const SEARCH_FILTER_CONFIG_GENERIC = ["brand", "price", "availability"];
 
 export default function Search() {
   const [searchParams, setSearchParams] = useSearchParams();
+  const { products, categories, brands } = useCatalog();
   const q = searchParams.get("q") || "";
   const scope = searchParams.get("category") || null;
   const sort = searchParams.get("sort") || "relevance";
@@ -50,7 +51,7 @@ export default function Search() {
   }, [q, scope]);
 
   // ---- build a synthetic "category" object so FilterSidebar can render ----
-  const scopedCategory = scope ? CATEGORIES.find((c) => c.id === scope) : null;
+  const scopedCategory = scope ? categories.find((c) => c.id === scope) : null;
   const filterCategory = useMemo(() => {
     if (scopedCategory) return scopedCategory;
     return { filterConfig: SEARCH_FILTER_CONFIG_GENERIC };
@@ -294,7 +295,7 @@ function NoResults({ query }) {
       <h3>No results for "{query}"</h3>
       <p>Try a different keyword, check your spelling, or browse popular categories below.</p>
       <div className="search-noresults__brands">
-        {BRANDS.slice(0, 6).map((b) => (
+        {brands.slice(0, 6).map((b) => (
           <Link key={b.id} to={`/search?q=${encodeURIComponent(b.name)}`} className="brand-tile">
             <img src={b.logo} alt={b.name} />
           </Link>
@@ -304,7 +305,7 @@ function NoResults({ query }) {
         <h2 style={{ fontSize: 17 }}>You might like</h2>
       </div>
       <div className="pgrid" style={{ textAlign: "left" }}>
-        {PRODUCTS.slice(0, 5).map((p) => <ProductCard key={p.sku} product={p} />)}
+        {products.slice(0, 5).map((p) => <ProductCard key={p.sku} product={p} />)}
       </div>
     </section>
   );

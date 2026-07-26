@@ -1,4 +1,4 @@
-import { PRODUCTS, CATEGORIES, BRANDS } from "../data/products.js";
+import { getSnapshot } from "../lib/catalogSnapshot.js";
 
 /**
  * Search engine — scored matching across product name, brand,
@@ -53,6 +53,7 @@ export function search(query, { categoryScope = null, maxProducts = 6 } = {}) {
   if (!q) return { products: [], categories: [], brands: [], query };
 
   const qTokens = tokens(query);
+  const { products: PRODUCTS, categories: CATEGORIES, brands: BRANDS } = getSnapshot();
 
   // Products
   const productHits = [];

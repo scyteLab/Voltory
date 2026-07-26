@@ -1,11 +1,19 @@
 import { BrowserRouter, Link, Outlet, Route, Routes } from "react-router-dom";
 import { StoreProvider } from "./context/StoreContext.jsx";
+import { CatalogProvider } from "./context/CatalogContext.jsx";
 import { AdminProvider } from "./context/AdminContext.jsx";
 import AdminGuard from "./components/admin/AdminGuard.jsx";
-import AdminLayout from "./components/admin/AdminLayout.jsx";
+import AdminShell from "./components/admin/AdminShell.jsx";
 import AdminLogin from "./pages/admin/AdminLogin.jsx";
 import AdminDashboard from "./pages/admin/AdminDashboard.jsx";
 import CatalogProducts from "./pages/admin/CatalogProducts.jsx";
+import AdminOrders from "./pages/admin/AdminOrders.jsx";
+import AdminOrderDetail from "./pages/admin/AdminOrderDetail.jsx";
+import AdminCustomers from "./pages/admin/AdminCustomers.jsx";
+import AdminCustomerDetail from "./pages/admin/AdminCustomerDetail.jsx";
+import AdminWarranty from "./pages/admin/AdminWarranty.jsx";
+import AdminWarrantyDetail from "./pages/admin/AdminWarrantyDetail.jsx";
+import AdminReports from "./pages/admin/AdminReports.jsx";
 import AdminSettings from "./pages/admin/AdminSettings.jsx";
 import TopBar from "./components/layout/TopBar.jsx";
 import Header from "./components/layout/Header.jsx";
@@ -111,6 +119,7 @@ function AuthLayout() {
 
 export default function App() {
   return (
+    <CatalogProvider>
     <StoreProvider>
       <AdminProvider>
         <BrowserRouter>
@@ -160,14 +169,22 @@ export default function App() {
             </Route>
 
             <Route path="/admin/login" element={<AdminLogin />} />
-            <Route element={<AdminGuard><AdminLayout /></AdminGuard>}>
+            <Route element={<AdminGuard><AdminShell /></AdminGuard>}>
               <Route path="/admin" element={<AdminDashboard />} />
               <Route path="/admin/products" element={<CatalogProducts />} />
+              <Route path="/admin/orders" element={<AdminOrders />} />
+              <Route path="/admin/orders/:id" element={<AdminOrderDetail />} />
+              <Route path="/admin/customers" element={<AdminCustomers />} />
+              <Route path="/admin/customers/:phone" element={<AdminCustomerDetail />} />
+              <Route path="/admin/warranty" element={<AdminWarranty />} />
+              <Route path="/admin/warranty/:id" element={<AdminWarrantyDetail />} />
+              <Route path="/admin/reports" element={<AdminReports />} />
               <Route path="/admin/settings" element={<AdminSettings />} />
             </Route>
           </Routes>
         </BrowserRouter>
       </AdminProvider>
     </StoreProvider>
+    </CatalogProvider>
   );
 }

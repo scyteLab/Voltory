@@ -3,7 +3,7 @@ import { Link, useSearchParams } from "react-router-dom";
 import {
   Award, ChevronRight, Home as HomeIcon, SlidersHorizontal, Star, X,
 } from "lucide-react";
-import { PRODUCTS } from "../data/products.js";
+import { useCatalog } from "../context/CatalogContext.jsx";
 import { naira } from "../utils/format.js";
 import { SITE } from "../config/site.js";
 import ProductCard from "../components/product/ProductCard.jsx";
@@ -22,6 +22,7 @@ const FILTER_CONFIG = ["brand", "price", "availability"];
 export default function BestSellers() {
   const [searchParams, setSearchParams] = useSearchParams();
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const { products } = useCatalog();
 
   useEffect(() => {
     const prev = document.title;
@@ -32,8 +33,8 @@ export default function BestSellers() {
   // Bestseller proxy = review count descending. Backend will replace with
   // an order-count based ranking.
   const all = useMemo(
-    () => [...PRODUCTS].sort((a, b) => (b.reviews || 0) - (a.reviews || 0)),
-    []
+    () => [...products].sort((a, b) => (b.reviews || 0) - (a.reviews || 0)),
+    [products]
   );
 
   const filters = useMemo(() => readFiltersFromUrl(searchParams), [searchParams]);

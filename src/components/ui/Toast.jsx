@@ -1,7 +1,7 @@
 import { Link } from "react-router-dom";
 import { Check, X } from "lucide-react";
 import { useStore } from "../../context/StoreContext.jsx";
-import { bySku } from "../../data/products.js";
+import { useCatalog } from "../../context/CatalogContext.jsx";
 import { naira } from "../../utils/format.js";
 
 /**
@@ -13,6 +13,7 @@ import { naira } from "../../utils/format.js";
  */
 export default function Toast() {
   const { toast, dismissToast, totals, count } = useStore();
+  const { bySku } = useCatalog();
   if (!toast) return null;
 
   const product = bySku(toast.sku);
