@@ -3,14 +3,17 @@ import { Link, useNavigate } from "react-router-dom";
 import {
   ChevronDown, Heart, LogOut, MapPin, Package, User,
 } from "lucide-react";
-import { useStore } from "../../context/StoreContext.jsx";
+import { useCustomerAuth } from "../../context/AuthContext.jsx";
 
 /**
  * Account dropdown in the main nav. Shown only when the user is
- * signed in; sign-out clears the account and routes home.
+ * signed in; sign-out clears the Supabase session and routes home.
+ *
+ * Reads the real signed-in state from AuthContext (Supabase-backed
+ * session), not the old localStorage account fiction.
  */
 export default function AccountMenu() {
-  const { account, signOut } = useStore();
+  const { customer, signOut } = useCustomerAuth();
   const [open, setOpen] = useState(false);
   const wrapRef = useRef(null);
   const navigate = useNavigate();
@@ -24,11 +27,16 @@ export default function AccountMenu() {
     return () => document.removeEventListener("mousedown", onDown);
   }, []);
 
-  if (!account) return null;
-  const firstName = (account.name || "").split(/\s+/)[0] || "there";
+  if (!customer) return null;
 
-  function handleSignOut() {
-    signOut();
+  const firstName = (customer.name || "").split(/\s+/)[0] || "there";
+  // Phone in DB is +2348012345678; show as 08012345678 for familiarity
+  const displayPhone = (customer.phone || "").startsWith("+234")
+    ? "0" + customer.phone.slice(4)
+    : customer.phone;
+
+  async function handleSignOut() {
+    await signOut();
     setOpen(false);
     navigate("/");
   }
@@ -55,8 +63,8 @@ export default function AccountMenu() {
           <div className="acctmenu__head">
             <span className="acctmenu__bigavatar"><User size={20} /></span>
             <div>
-              <b>{account.name || "Voltory customer"}</b>
-              <small className="mono">{account.phone}</small>
+              <b>{customer.name || "Voltory customer"}</b>
+              <small className="mono">{displayPhone}</small>
             </div>
           </div>
           <Link to="/account" className="acctmenu__link" onClick={() => setOpen(false)}>

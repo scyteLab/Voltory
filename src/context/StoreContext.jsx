@@ -7,6 +7,7 @@ import {
   markOrderSynced, getUnsyncedOrders,
 } from "../utils/orders.js";
 import { insertOrderToSupabase } from "../lib/ordersClient.js";
+import { upsertFromCheckout } from "../lib/customerAuth.js";
 import { getStoredWishlist, saveWishlist } from "../utils/wishlist.js";
 import {
   getStoredComparison, saveComparison, MAX_COMPARE,
@@ -246,6 +247,7 @@ export function StoreProvider({ children }) {
       totals: { subtotal, discount, deliveryFee, installationFee: installFee, grand },
       account: { phone: next.phone, name: next.name },
       accountCreated,
+      customer_id: null, // filled by the silent upsert below; may stay null if Supabase is unreachable
       // syncedAt gets stamped when the background insert lands
     };
 
@@ -254,13 +256,32 @@ export function StoreProvider({ children }) {
     saveOrder(order);
     clearCart();
 
-    // Fire the Supabase insert without awaiting. On success it flips
-    // syncedAt on the local record; on failure the boot-time sweeper
-    // retries. Errors are intentionally swallowed \u2014 nothing user-
-    // facing depends on this promise resolving.
-    insertOrderToSupabase(order).then((res) => {
-      if (res.ok) markOrderSynced(id);
-    });
+    // Silently create-or-find the customer record and link this order
+    // to it. Fire in the background \u2014 if it fails, the order still
+    // exists (just without a customer_id), and next boot will retry
+    // the order sync but not the customer link. Acceptable at this
+    // scale; Session 32 formalises with real auth.
+    upsertFromCheckout({ phone: contact.phone, name: contact.name, email: contact.email })
+      .then((res) => {
+        if (res.ok && res.id) {
+          // Attach to the local order so the sync sweep has it
+          const patched = { ...order, customer_id: res.id };
+          saveOrder(patched);
+          insertOrderToSupabase(patched).then((r) => {
+            if (r.ok) markOrderSynced(id);
+          });
+        } else {
+          // Couldn't create the customer \u2014 still sync the order without a link
+          insertOrderToSupabase(order).then((r) => {
+            if (r.ok) markOrderSynced(id);
+          });
+        }
+      })
+      .catch(() => {
+        insertOrderToSupabase(order).then((r) => {
+          if (r.ok) markOrderSynced(id);
+        });
+      });
 
     return id;
   };

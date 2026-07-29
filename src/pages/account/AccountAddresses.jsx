@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 import { Info, MapPin, Phone } from "lucide-react";
 import { useStore, normalisePhone } from "../../context/StoreContext.jsx";
+import { useCustomerAuth } from "../../context/AuthContext.jsx";
 import { listOrders } from "../../utils/orders.js";
 
 /**
@@ -10,7 +11,9 @@ import { listOrders } from "../../utils/orders.js";
  * persistence and land with the API phase.
  */
 export default function AccountAddresses() {
-  const { account } = useStore();
+  const { customer } = useCustomerAuth();
+  if (!customer) return null;
+  const account = { name: customer.name || "", phone: customer.phone || "" };
   const myOrders = listOrders().filter(
     (o) => normalisePhone(o.contact?.phone) === normalisePhone(account.phone)
   );

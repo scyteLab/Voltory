@@ -1,5 +1,5 @@
 import { Navigate, useLocation } from "react-router-dom";
-import { useStore } from "../../context/StoreContext.jsx";
+import { useCustomerAuth } from "../../context/AuthContext.jsx";
 
 /**
  * Wrap a route element in <AuthGuard>...</AuthGuard> to require
@@ -9,11 +9,20 @@ import { useStore } from "../../context/StoreContext.jsx";
  *   <Route element={<AuthGuard><AccountLayout/></AuthGuard>}>
  *     <Route path="orders" element={<AccountOrders/>} />
  *   </Route>
+ *
+ * Reads sign-in state from the AuthProvider (real Supabase-backed
+ * session). Renders nothing while the initial session resolve is
+ * in flight \u2014 avoids the flash of "not signed in \u2192 redirect" that
+ * would happen on a fresh page load / refresh.
  */
 export default function AuthGuard({ children }) {
-  const { account } = useStore();
+  const { customer, loading } = useCustomerAuth();
   const location = useLocation();
-  if (!account) {
+
+  // Session still being resolved on mount \u2014 wait, don't redirect.
+  if (loading) return null;
+
+  if (!customer) {
     return (
       <Navigate
         to={`/login?return=${encodeURIComponent(location.pathname + location.search)}`}

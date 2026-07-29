@@ -1,11 +1,14 @@
 import { Link } from "react-router-dom";
 import { ChevronRight, Package } from "lucide-react";
 import { useStore, normalisePhone } from "../../context/StoreContext.jsx";
+import { useCustomerAuth } from "../../context/AuthContext.jsx";
 import { listOrders, STATUS_LABEL } from "../../utils/orders.js";
 import { naira } from "../../utils/format.js";
 
 export default function AccountOrders() {
-  const { account } = useStore();
+  const { customer } = useCustomerAuth();
+  if (!customer) return null;
+  const account = { name: customer.name || "", phone: customer.phone || "" };
   const myOrders = listOrders().filter(
     (o) => normalisePhone(o.contact?.phone) === normalisePhone(account.phone)
   );

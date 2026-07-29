@@ -1,7 +1,8 @@
 import { BrowserRouter, Link, Outlet, Route, Routes } from "react-router-dom";
 import { StoreProvider } from "./context/StoreContext.jsx";
-import { CatalogProvider } from "./context/CatalogContext.jsx";
 import { AdminProvider } from "./context/AdminContext.jsx";
+import { CatalogProvider } from "./context/CatalogContext.jsx";
+import { AuthProvider } from "./context/AuthContext.jsx";
 import AdminGuard from "./components/admin/AdminGuard.jsx";
 import AdminShell from "./components/admin/AdminShell.jsx";
 import AdminLogin from "./pages/admin/AdminLogin.jsx";
@@ -119,9 +120,10 @@ function AuthLayout() {
 
 export default function App() {
   return (
-    <CatalogProvider>
     <StoreProvider>
       <AdminProvider>
+        <CatalogProvider>
+          <AuthProvider>
         <BrowserRouter>
           <ScrollToTop />
           <Routes>
@@ -183,8 +185,9 @@ export default function App() {
             </Route>
           </Routes>
         </BrowserRouter>
+          </AuthProvider>
+        </CatalogProvider>
       </AdminProvider>
     </StoreProvider>
-    </CatalogProvider>
   );
 }

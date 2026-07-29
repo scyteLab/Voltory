@@ -7,6 +7,7 @@ import {
 } from "lucide-react";
 import { SITE } from "../config/site.js";
 import { useStore } from "../context/StoreContext.jsx";
+import { useCustomerAuth } from "../context/AuthContext.jsx";
 import {
   INSTALL_APPLIANCES, INSTALL_STEPS, INSTALL_COVERAGE,
   INSTALL_TRUST, INSTALL_FAQ,
@@ -26,7 +27,8 @@ const NG_STATES = [
 ];
 
 export default function InstallationServices() {
-  const { account } = useStore();
+  const { customer } = useCustomerAuth();
+  const account = customer;
   const formRef = useRef(null);
   const [openFaq, setOpenFaq] = useState({});
   const [form, setForm] = useState({

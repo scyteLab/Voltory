@@ -5,6 +5,7 @@ import {
 } from "lucide-react";
 import { useStore } from "../../context/StoreContext.jsx";
 import { useCatalog } from "../../context/CatalogContext.jsx";
+import { useCustomerAuth } from "../../context/AuthContext.jsx";
 import Icon from "../ui/Icon.jsx";
 
 /**
@@ -19,7 +20,9 @@ import Icon from "../ui/Icon.jsx";
  * tapping a category navigates and the sheet dismisses naturally.
  */
 export default function MobileBottomNav() {
-  const { count, account } = useStore();
+  const { count } = useStore();
+  const { customer } = useCustomerAuth();
+  const account = customer;
   const { categories: CATEGORIES } = useCatalog();
   const [catsOpen, setCatsOpen] = useState(false);
   const location = useLocation();

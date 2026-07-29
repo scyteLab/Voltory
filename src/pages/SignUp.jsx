@@ -2,17 +2,32 @@ import { useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { AtSign, ChevronRight, Smartphone, User, UserPlus } from "lucide-react";
 import { SITE } from "../config/site.js";
+import { useCustomerAuth } from "../context/AuthContext.jsx";
 
+/**
+ * SignUp \u2014 Session 30
+ *
+ * Explicit signup path. Collects name, phone, optional email; calls
+ * requestOtp({ purpose: 'signup' }) which drops a challenge row into
+ * customer_otp_challenges; then navigates to /verify-otp with the
+ * profile payload so VerifyOtp can complete the signup.
+ *
+ * We deliberately gate on requestOtp succeeding before navigating \u2014
+ * that way an obvious "Supabase unreachable" error surfaces here
+ * rather than on the OTP screen.
+ */
 export default function SignUp() {
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
   const [email, setEmail] = useState("");
   const [errors, setErrors] = useState({});
+  const [submitting, setSubmitting] = useState(false);
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const returnTo = searchParams.get("return") || "/account";
+  const { requestOtp } = useCustomerAuth();
 
-  function onSubmit(e) {
+  async function onSubmit(e) {
     e.preventDefault();
     const errs = {};
     if (!name.trim()) errs.name = "Full name required";
@@ -24,6 +39,15 @@ export default function SignUp() {
       errs.email = "Invalid email format";
     }
     if (Object.keys(errs).length) { setErrors(errs); return; }
+
+    setSubmitting(true);
+    const res = await requestOtp({ phone: cleanedPhone, purpose: "signup" });
+    setSubmitting(false);
+
+    if (!res.ok) {
+      setErrors({ phone: res.error || "Couldn't send verification code. Try again." });
+      return;
+    }
 
     const payload = encodeURIComponent(
       JSON.stringify({ name: name.trim(), phone: cleanedPhone, email: email.trim() })
@@ -59,7 +83,7 @@ export default function SignUp() {
 
         <label className={"field" + (errors.phone ? " has-error" : "")}>
           <span className="field__label">
-            Phone Number <small className="field__note">— your account ID</small>
+            Phone Number <small className="field__note">\u2014 your account ID</small>
           </span>
           <span className="auth-input">
             <Smartphone size={16} />
@@ -77,7 +101,7 @@ export default function SignUp() {
 
         <label className={"field" + (errors.email ? " has-error" : "")}>
           <span className="field__label">
-            Email Address <small className="field__note">— optional</small>
+            Email Address <small className="field__note">\u2014 optional</small>
           </span>
           <span className="auth-input">
             <AtSign size={16} />
@@ -92,8 +116,8 @@ export default function SignUp() {
           {errors.email && <span className="field__error">{errors.email}</span>}
         </label>
 
-        <button type="submit" className="auth-submit">
-          Send Verification Code <ChevronRight size={16} />
+        <button type="submit" className="auth-submit" disabled={submitting}>
+          {submitting ? "Sending code\u2026" : <>Send Verification Code <ChevronRight size={16} /></>}
         </button>
       </form>
 
@@ -106,7 +130,7 @@ export default function SignUp() {
 
       <p className="auth-terms">
         By creating an account you agree to {SITE.name}'s Terms of Service and Privacy Policy.
-        You don't need an account to shop — we can create one for you at checkout instead.
+        You don't need an account to shop \u2014 we can create one for you at checkout instead.
       </p>
     </div>
   );

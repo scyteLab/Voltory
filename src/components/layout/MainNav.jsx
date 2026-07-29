@@ -1,15 +1,18 @@
 import { NavLink, Link } from "react-router-dom";
 import { LogIn, UserPlus } from "lucide-react";
 import { SITE } from "../../config/site.js";
-import { useStore } from "../../context/StoreContext.jsx";
+import { useCustomerAuth } from "../../context/AuthContext.jsx";
 import AccountMenu from "./AccountMenu.jsx";
 
 /**
  * Main nav row under the header. When signed out: Sign In / Sign Up
  * buttons. When signed in: AccountMenu dropdown.
+ *
+ * Reads sign-in state from AuthContext (Supabase-backed session).
  */
 export default function MainNav() {
-  const { account } = useStore();
+  const { customer } = useCustomerAuth();
+  const account = customer;
   return (
     <nav className="mainnav" aria-label="Primary">
       <div className="wrap mainnav__inner">

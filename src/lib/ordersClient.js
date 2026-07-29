@@ -47,6 +47,7 @@ function toSupabaseShape(order) {
     customer_name:  order.contact?.name  || order.account?.name  || "",
     customer_phone: order.contact?.phone || order.account?.phone || "",
     customer_email: order.contact?.email || null,
+    customer_id: order.customer_id || null,
     address: order.address || {},
     payment_method: paymentMethod,
     status: normaliseOutgoingStatus(order.status),

@@ -2,13 +2,16 @@ import { useEffect, useState } from "react";
 import { Link, NavLink, useLocation } from "react-router-dom";
 import { Heart, LogIn, Menu, Repeat, ShoppingCart, UserPlus, X } from "lucide-react";
 import { useStore } from "../../context/StoreContext.jsx";
+import { useCustomerAuth } from "../../context/AuthContext.jsx";
 import { SITE } from "../../config/site.js";
 import Logo from "./Logo.jsx";
 import SearchBar from "../search/SearchBar.jsx";
 import AccountMenu from "./AccountMenu.jsx";
 
 export default function Header() {
-  const { count, wishlistCount, compareCount, account } = useStore();
+  const { count, wishlistCount, compareCount } = useStore();
+  const { customer } = useCustomerAuth();
+  const account = customer; // JSX below uses `account ? ...` \u2014 keep the name local
   const [menuOpen, setMenuOpen] = useState(false);
   const location = useLocation();
 

@@ -6,6 +6,7 @@ import {
 } from "lucide-react";
 import { SITE } from "../config/site.js";
 import { useStore } from "../context/StoreContext.jsx";
+import { useCustomerAuth } from "../context/AuthContext.jsx";
 import {
   generateTicketId, saveTicket, TICKET_STATUS,
 } from "../utils/supportTickets.js";
@@ -22,7 +23,9 @@ const SUBJECTS = [
 ];
 
 export default function Contact() {
-  const { account, requestCall } = useStore();
+  const { requestCall } = useStore();
+  const { customer } = useCustomerAuth();
+  const account = customer;
   const [form, setForm] = useState({
     name: account?.name || "",
     email: account?.email || "",

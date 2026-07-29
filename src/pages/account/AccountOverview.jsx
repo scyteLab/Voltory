@@ -3,12 +3,16 @@ import {
   ChevronRight, Heart, MapPin, Package, ShoppingBag, User,
 } from "lucide-react";
 import { useStore } from "../../context/StoreContext.jsx";
+import { useCustomerAuth } from "../../context/AuthContext.jsx";
 import { normalisePhone } from "../../context/StoreContext.jsx";
 import { listOrders, STATUS_LABEL } from "../../utils/orders.js";
 import { naira } from "../../utils/format.js";
 
 export default function AccountOverview() {
-  const { account, wishlistCount } = useStore();
+  const { customer } = useCustomerAuth();
+  const { wishlistCount } = useStore();
+  if (!customer) return null; // AccountLayout redirects; this is belt+braces
+  const account = { name: customer.name || "", phone: customer.phone || "" };
 
   // Filter orders to this account's phone (anyone could place an order on this
   // device; we only show the ones placed under the signed-in phone number).

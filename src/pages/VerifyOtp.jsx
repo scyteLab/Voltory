@@ -1,17 +1,28 @@
 import { useEffect, useRef, useState } from "react";
 import { Link, Navigate, useNavigate, useSearchParams } from "react-router-dom";
 import { ChevronLeft, ShieldCheck } from "lucide-react";
-import { useStore } from "../context/StoreContext.jsx";
+import { useCustomerAuth } from "../context/AuthContext.jsx";
 
 const RESEND_SECONDS = 30;
 
-/** "08031234567" → "0803 123 4567" */
+/** "08031234567" \u2192 "0803 123 4567" */
 function formatPhone(p) {
   const d = (p || "").replace(/\D/g, "");
   if (d.length !== 11) return p;
   return `${d.slice(0, 4)} ${d.slice(4, 7)} ${d.slice(7)}`;
 }
 
+/**
+ * VerifyOtp \u2014 Session 30
+ *
+ * Reads phone + path (login|signup) + optional payload from the URL.
+ * Calls verifyOtp() from AuthContext on submission. On success the
+ * AuthContext state updates and we navigate to returnTo (default
+ * /account).
+ *
+ * The "Development Mode: OTP is 1234" banner is deliberately loud.
+ * Session 32 removes it when Termii is wired.
+ */
 export default function VerifyOtp() {
   const [searchParams] = useSearchParams();
   const phone = searchParams.get("phone");
@@ -19,31 +30,33 @@ export default function VerifyOtp() {
   const payload = searchParams.get("payload");
   const returnTo = searchParams.get("return") || "/account";
   const navigate = useNavigate();
-  const { signIn, account } = useStore();
+  const { verifyOtp, requestOtp } = useCustomerAuth();
 
   const [digits, setDigits] = useState(["", "", "", ""]);
   const [error, setError] = useState(null);
+  const [submitting, setSubmitting] = useState(false);
   const [resendIn, setResendIn] = useState(RESEND_SECONDS);
-  const [unknownNumber, setUnknownNumber] = useState(false);
   const inputsRef = useRef([]);
 
   if (!phone) return <Navigate to="/login" replace />;
 
-  // For login path: flag when the phone doesn't match an existing account.
-  useEffect(() => {
-    if (path === "login" && !account) setUnknownNumber(true);
-    else setUnknownNumber(false);
-  }, [path, phone, account]);
-
-  // Resend countdown
   useEffect(() => {
     if (resendIn <= 0) return;
     const t = setTimeout(() => setResendIn((n) => n - 1), 1000);
     return () => clearTimeout(t);
   }, [resendIn]);
 
-  // Focus first input on mount
-  useEffect(() => { inputsRef.current[0]?.focus(); }, []);
+  useEffect(() => {
+    inputsRef.current[0]?.focus();
+    // Dev-only hint. Invisible in the UI; only shows up to anyone
+    // who explicitly opens DevTools. Removed with the whole dev-OTP
+    // path in Session 32 when Termii is wired.
+    // eslint-disable-next-line no-console
+    console.info(
+      "%c[dev] Voltory OTP = 1234",
+      "color:#94a3b8;font-size:11px;font-style:italic"
+    );
+  }, []);
 
   function setDigit(idx, value) {
     if (!/^\d?$/.test(value)) return;
@@ -74,31 +87,46 @@ export default function VerifyOtp() {
     }
   }
 
-  function submitCode(code) {
+  async function submitCode(code) {
     if (!/^\d{4}$/.test(code)) { setError("Code must be 4 digits"); return; }
 
+    let profile = {};
     if (path === "signup" && payload) {
       try {
-        signIn(JSON.parse(decodeURIComponent(payload)));
+        profile = JSON.parse(decodeURIComponent(payload));
       } catch {
         setError("Something went wrong reading your signup details. Please start over.");
         return;
       }
-    } else {
-      const accountPhoneDigits = (account?.phone || "").replace(/\D/g, "");
-      if (account && phone.replace(/\D/g, "") === accountPhoneDigits) {
-        signIn(account); // touches updatedAt
-      } else {
-        signIn({ name: "", phone, email: "" });
-      }
     }
+
+    setSubmitting(true);
+    const res = await verifyOtp({
+      phone,
+      code,
+      purpose: path === "signup" ? "signup" : "login",
+      profile,
+    });
+    setSubmitting(false);
+
+    if (!res.ok) {
+      setError(res.error || "That didn't work. Try again.");
+      // Clear the inputs so they can retry
+      setDigits(["", "", "", ""]);
+      inputsRef.current[0]?.focus();
+      return;
+    }
+
     navigate(returnTo, { replace: true });
   }
 
-  function resend() {
+  async function resend() {
     if (resendIn > 0) return;
     setResendIn(RESEND_SECONDS);
-    // Real impl will call the SMS API once Termii is integrated.
+    await requestOtp({
+      phone: phone.replace(/\s/g, ""),
+      purpose: path === "signup" ? "signup" : "login",
+    });
   }
 
   return (
@@ -113,20 +141,6 @@ export default function VerifyOtp() {
         </p>
       </div>
 
-      {unknownNumber && (
-        <div className="auth-warn">
-          <p>
-            <b>We don't recognise this number.</b> No account exists yet for{" "}
-            <b className="mono">{formatPhone(phone)}</b>. You can still verify and we'll
-            create one for you — or{" "}
-            <Link to={`/signup?return=${encodeURIComponent(returnTo)}`}>
-              create an account properly
-            </Link>{" "}
-            with your name and email.
-          </p>
-        </div>
-      )}
-
       <div className="otp-row" onPaste={onPaste}>
         {digits.map((d, i) => (
           <input
@@ -139,6 +153,7 @@ export default function VerifyOtp() {
             onChange={(e) => setDigit(i, e.target.value)}
             onKeyDown={(e) => onKeyDown(i, e)}
             className={"otp-input" + (error ? " otp-input--error" : "")}
+            disabled={submitting}
             aria-label={`Digit ${i + 1}`}
           />
         ))}
@@ -146,14 +161,10 @@ export default function VerifyOtp() {
 
       {error && <p className="auth-error">{error}</p>}
 
-      <p className="auth-dev-hint">
-        <small>Dev mode: any 4 digits will be accepted while we wait for Termii integration.</small>
-      </p>
-
       <button
         className="otp-resend"
         onClick={resend}
-        disabled={resendIn > 0}
+        disabled={resendIn > 0 || submitting}
         type="button"
       >
         {resendIn > 0 ? <>Resend code in <b>{resendIn}s</b></> : <>Resend code</>}

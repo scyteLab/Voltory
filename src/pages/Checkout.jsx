@@ -6,6 +6,7 @@ import {
 } from "lucide-react";
 import { useStore } from "../context/StoreContext.jsx";
 import { useCatalog } from "../context/CatalogContext.jsx";
+import { useCustomerAuth } from "../context/AuthContext.jsx";
 import { naira } from "../utils/format.js";
 import { SITE } from "../config/site.js";
 
@@ -23,17 +24,25 @@ const PAYMENT_METHODS = [
 ];
 
 export default function Checkout() {
-  const { cart, totals, account, placeOrder, requestCall } = useStore();
+  const { cart, totals, placeOrder, requestCall } = useStore();
+  const { customer } = useCustomerAuth();
   const { bySku } = useCatalog();
   const navigate = useNavigate();
 
   // Empty cart → bounce back home
   if (cart.length === 0) return <Navigate to="/cart" replace />;
 
+  // Pre-fill from the signed-in customer if any. Phone in DB is
+  // +2348..., but the checkout form shows/accepts 08... so we strip
+  // the +234 prefix for display.
+  const prefillPhone = (customer?.phone || "").startsWith("+234")
+    ? "0" + customer.phone.slice(4)
+    : (customer?.phone || "");
+
   const [contact, setContact] = useState({
-    name: account?.name || "",
-    phone: account?.phone || "",
-    email: account?.email || "",
+    name:  customer?.name  || "",
+    phone: prefillPhone,
+    email: customer?.email || "",
   });
   const [address, setAddress] = useState({
     state: "Lagos",

@@ -1,14 +1,17 @@
-import { Link, NavLink, Outlet, useNavigate } from "react-router-dom";
+import { Link, NavLink, Navigate, Outlet, useNavigate } from "react-router-dom";
 import {
   ChevronRight, Heart, Home as HomeIcon, LogOut, MapPin, Package, User,
 } from "lucide-react";
-import { useStore } from "../../context/StoreContext.jsx";
+import { useCustomerAuth } from "../../context/AuthContext.jsx";
 
 /**
- * Shell for every /account/* route. Profile card on top of the
- * sidebar, navigation below; <Outlet/> on the right for the
- * specific account page. Wrapped in <AuthGuard> at the router
- * level, so we can assume `account` exists here.
+ * Shell for every /account/* route. If the user isn't signed in,
+ * we redirect to /login. Once signed in, name/phone shown at the
+ * top of the sidebar come from the Supabase-backed customer row.
+ *
+ * Loading state: shows nothing until AuthContext resolves the
+ * session on mount \u2014 avoids the flash of "not signed in \u2192 redirect"
+ * that would happen on refresh otherwise.
  */
 const LINKS = [
   { to: "/account",           icon: User,    label: "Account Overview", end: true },
@@ -18,13 +21,25 @@ const LINKS = [
 ];
 
 export default function AccountLayout() {
-  const { account, signOut } = useStore();
+  const { customer, loading, signOut } = useCustomerAuth();
   const navigate = useNavigate();
 
-  function handleSignOut() {
-    signOut();
+  // Still resolving the session (initial mount) \u2014 render nothing.
+  if (loading) return null;
+  // Session resolved and no customer \u2014 not signed in.
+  if (!customer) return <Navigate to="/login?return=/account" replace />;
+
+  async function handleSignOut() {
+    await signOut();
     navigate("/");
   }
+
+  const displayName = customer.name || "Voltory customer";
+  // customer.phone is stored as +2348012345678; strip the +234 for
+  // display so it reads as a familiar 08... number.
+  const displayPhone = (customer.phone || "").startsWith("+234")
+    ? "0" + customer.phone.slice(4)
+    : customer.phone;
 
   return (
     <main className="wrap">
@@ -39,8 +54,8 @@ export default function AccountLayout() {
           <div className="acct-side__head">
             <span className="acct-side__avatar"><User size={22} /></span>
             <div>
-              <b>{account.name || "Voltory customer"}</b>
-              <small className="mono">{account.phone}</small>
+              <b>{displayName}</b>
+              <small className="mono">{displayPhone}</small>
             </div>
           </div>
           <ul className="acct-side__nav">

@@ -7,6 +7,7 @@ import {
 } from "lucide-react";
 import { SITE } from "../config/site.js";
 import { useStore } from "../context/StoreContext.jsx";
+import { useCustomerAuth } from "../context/AuthContext.jsx";
 import {
   CAREERS_BENEFITS, CAREERS_FAQ, CAREERS_HERO,
   CAREERS_ROLES, CAREERS_VALUES,
@@ -19,7 +20,8 @@ import Icon from "../components/ui/Icon.jsx";
 const OPEN_APPLICATION = { id: "open", title: "Open Application \u2014 no specific role" };
 
 export default function Careers() {
-  const { account } = useStore();
+  const { customer } = useCustomerAuth();
+  const account = customer;
   const formRef = useRef(null);
   const [openRoles, setOpenRoles] = useState({});
   const [openFaq, setOpenFaq] = useState({});

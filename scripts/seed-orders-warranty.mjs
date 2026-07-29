@@ -7,7 +7,7 @@
 //  Usage:
 //    SUPABASE_URL=... SUPABASE_SERVICE_ROLE_KEY=... node scripts/seed-orders-warranty.mjs
 //
-//  Or add to .env.local (both keys) and run just:
+//  Or add both keys to .env (see .env.example) and run just:
 //    node scripts/seed-orders-warranty.mjs
 // ============================================================
 
@@ -16,15 +16,15 @@ import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
 
-// Load .env.local if present (no dependency on dotenv)
+// Load .env if present (no dependency on dotenv)
 try {
   const __dirname = dirname(fileURLToPath(import.meta.url));
-  const env = readFileSync(join(__dirname, "..", ".env.local"), "utf8");
+  const env = readFileSync(join(__dirname, "..", ".env"), "utf8");
   for (const line of env.split("\n")) {
     const m = line.match(/^\s*([A-Z_]+)\s*=\s*(.+?)\s*$/);
     if (m && !process.env[m[1]]) process.env[m[1]] = m[2].replace(/^["']|["']$/g, "");
   }
-} catch { /* .env.local optional */ }
+} catch { /* .env optional if vars are exported instead */ }
 
 const url = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
 const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
