@@ -4,21 +4,20 @@ import {
 } from "lucide-react";
 import { useStore } from "../../context/StoreContext.jsx";
 import { useCustomerAuth } from "../../context/AuthContext.jsx";
-import { normalisePhone } from "../../context/StoreContext.jsx";
-import { listOrders, STATUS_LABEL } from "../../utils/orders.js";
+import { useCustomerOrders } from "../../hooks/useCustomerOrders.js";
+import { STATUS_LABEL } from "../../utils/orders.js";
 import { naira } from "../../utils/format.js";
 
 export default function AccountOverview() {
   const { customer } = useCustomerAuth();
   const { wishlistCount } = useStore();
+  const { orders: myOrders } = useCustomerOrders();
   if (!customer) return null; // AccountLayout redirects; this is belt+braces
-  const account = { name: customer.name || "", phone: customer.phone || "" };
+  const displayPhone = (customer.phone || "").startsWith("+234")
+    ? "0" + customer.phone.slice(4)
+    : (customer.phone || "");
+  const account = { name: customer.name || "", phone: displayPhone };
 
-  // Filter orders to this account's phone (anyone could place an order on this
-  // device; we only show the ones placed under the signed-in phone number).
-  const myOrders = listOrders().filter(
-    (o) => normalisePhone(o.contact?.phone) === normalisePhone(account.phone)
-  );
   const recent = myOrders.slice(0, 3);
   const lastAddress = myOrders[0]?.address;
 

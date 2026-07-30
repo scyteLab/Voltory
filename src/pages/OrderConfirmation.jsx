@@ -5,6 +5,7 @@ import {
   Home as HomeIcon, Mail, MapPin, MessageCircle, Phone, Receipt, ShieldCheck, Truck,
 } from "lucide-react";
 import { getOrder, STATUS_FLOW, STATUS_LABEL, ORDER_STATUS } from "../utils/orders.js";
+import { fetchOrderById } from "../lib/customerOrdersClient.js";
 import { naira } from "../utils/format.js";
 import { SITE } from "../config/site.js";
 
@@ -18,6 +19,23 @@ const PAYMENT_LABEL = {
 export default function OrderConfirmation() {
   const { id } = useParams();
   const [order, setOrder] = useState(() => getOrder(id));
+  const [remoteChecked, setRemoteChecked] = useState(false);
+
+  // If we didn't find the order locally (customer opened this URL on a
+  // different device from where they placed the order), fetch from
+  // Supabase. Only run once \u2014 the polling effect below handles the
+  // syncedAt refresh for the local-first case.
+  useEffect(() => {
+    if (order || remoteChecked) return;
+    let cancelled = false;
+    (async () => {
+      const res = await fetchOrderById(id);
+      if (cancelled) return;
+      if (res.order) setOrder(res.order);
+      setRemoteChecked(true);
+    })();
+    return () => { cancelled = true; };
+  }, [id, order, remoteChecked]);
 
   // Poll every 4 seconds until the order shows syncedAt \u2014 keeps the
   // sync pill honest without hammering localStorage. Stops once synced.
@@ -33,6 +51,18 @@ export default function OrderConfirmation() {
     return () => clearInterval(t);
   }, [id, order]);
 
+  // Wait for the remote check before deciding the order doesn't exist \u2014
+  // otherwise a customer opening this URL on a fresh device would flash
+  // a redirect to home before Supabase has had a chance to respond.
+  if (!order && !remoteChecked) {
+    return (
+      <main className="wrap">
+        <div style={{ padding: "60px 20px", textAlign: "center", color: "var(--ink-3)" }}>
+          Loading your order\u2026
+        </div>
+      </main>
+    );
+  }
   if (!order) return <Navigate to="/" replace />;
 
   const currentIndex = STATUS_FLOW.indexOf(order.status);

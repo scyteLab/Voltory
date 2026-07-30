@@ -1,22 +1,26 @@
 import { Link } from "react-router-dom";
 import { Info, MapPin, Phone } from "lucide-react";
-import { useStore, normalisePhone } from "../../context/StoreContext.jsx";
 import { useCustomerAuth } from "../../context/AuthContext.jsx";
-import { listOrders } from "../../utils/orders.js";
+import { useCustomerOrders } from "../../hooks/useCustomerOrders.js";
 
 /**
- * Saved Addresses \u2014 read-only for now, extracted from the addresses
- * the customer has used at checkout. Deduped by street + LGA. Most
- * recent address marked Default. Add/Edit forms require backend
- * persistence and land with the API phase.
+ * Saved Addresses \u2014 read-only for now, derived from the addresses
+ * the customer has used at checkout across every device. Now that
+ * orders come from Supabase, this stays in sync across devices
+ * automatically.
+ *
+ * Deduped by street + LGA. Most recent address marked Default.
+ * Add / edit / set-default arrive with the customer_addresses
+ * table wiring (later session).
  */
 export default function AccountAddresses() {
   const { customer } = useCustomerAuth();
+  const { orders: myOrders, loading } = useCustomerOrders();
   if (!customer) return null;
-  const account = { name: customer.name || "", phone: customer.phone || "" };
-  const myOrders = listOrders().filter(
-    (o) => normalisePhone(o.contact?.phone) === normalisePhone(account.phone)
-  );
+  const displayPhone = (customer.phone || "").startsWith("+234")
+    ? "0" + customer.phone.slice(4)
+    : (customer.phone || "");
+  const account = { name: customer.name || "", phone: displayPhone };
 
   // Dedupe by street + LGA, keeping the most recent
   const seen = new Map();
@@ -26,6 +30,17 @@ export default function AccountAddresses() {
     if (!seen.has(key)) seen.set(key, { ...o.address, lastUsed: o.createdAt });
   }
   const addresses = Array.from(seen.values());
+
+  if (loading) {
+    return (
+      <div className="addr-list">
+        <header className="ord-list__head">
+          <h1>Saved Addresses</h1>
+          <p>Loading\u2026</p>
+        </header>
+      </div>
+    );
+  }
 
   return (
     <div className="addr-list">

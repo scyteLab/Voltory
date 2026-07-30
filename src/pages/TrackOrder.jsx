@@ -5,6 +5,7 @@ import {
   Package, Phone, Receipt, Search, Truck,
 } from "lucide-react";
 import { getOrder, STATUS_FLOW, STATUS_LABEL, ORDER_STATUS } from "../utils/orders.js";
+import { fetchOrderById } from "../lib/customerOrdersClient.js";
 import { naira } from "../utils/format.js";
 import { SITE } from "../config/site.js";
 
@@ -13,6 +14,8 @@ export default function TrackOrder() {
   const initialId = searchParams.get("id") || "";
   const [input, setInput] = useState(initialId);
   const [submitted, setSubmitted] = useState(initialId);
+  const [order, setOrder] = useState(() => (initialId ? getOrder(initialId) : null));
+  const [looking, setLooking] = useState(false);
   const [error, setError] = useState(null);
 
   useEffect(() => {
@@ -20,6 +23,23 @@ export default function TrackOrder() {
     document.title = `Track Order \u2014 ${SITE.name}`;
     return () => { document.title = prev; };
   }, []);
+
+  // Fetch whenever `submitted` changes. Try local first (instant),
+  // then Supabase (works across devices).
+  useEffect(() => {
+    if (!submitted) { setOrder(null); return; }
+    let cancelled = false;
+    const local = getOrder(submitted);
+    if (local) setOrder(local);
+    setLooking(true);
+    fetchOrderById(submitted).then((res) => {
+      if (cancelled) return;
+      setLooking(false);
+      if (res.order) setOrder(res.order);
+      // Don't null out a local order just because remote lookup failed
+    });
+    return () => { cancelled = true; };
+  }, [submitted]);
 
   function onSubmit(e) {
     e.preventDefault();
@@ -35,8 +55,6 @@ export default function TrackOrder() {
     }
     setSubmitted(cleaned);
   }
-
-  const order = submitted ? getOrder(submitted) : null;
 
   return (
     <main className="wrap support-page">
@@ -81,7 +99,17 @@ export default function TrackOrder() {
       </section>
 
       {/* Result */}
-      {submitted && !order && (
+      {submitted && !order && looking && (
+        <div className="track-noresult" style={{ borderColor: "var(--line)" }}>
+          <span className="track-noresult__icon"><Search size={24} /></span>
+          <div>
+            <h3>Looking up your order\u2026</h3>
+            <p>One moment.</p>
+          </div>
+        </div>
+      )}
+
+      {submitted && !order && !looking && (
         <div className="track-noresult">
           <span className="track-noresult__icon"><AlertCircle size={24} /></span>
           <div>

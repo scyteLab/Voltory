@@ -3,6 +3,7 @@ import { StoreProvider } from "./context/StoreContext.jsx";
 import { AdminProvider } from "./context/AdminContext.jsx";
 import { CatalogProvider } from "./context/CatalogContext.jsx";
 import { AuthProvider } from "./context/AuthContext.jsx";
+import { SiteSectionsProvider } from "./context/SiteSectionsContext.jsx";
 import AdminGuard from "./components/admin/AdminGuard.jsx";
 import AdminShell from "./components/admin/AdminShell.jsx";
 import AdminLogin from "./pages/admin/AdminLogin.jsx";
@@ -124,6 +125,7 @@ export default function App() {
       <AdminProvider>
         <CatalogProvider>
           <AuthProvider>
+            <SiteSectionsProvider>
         <BrowserRouter>
           <ScrollToTop />
           <Routes>
@@ -185,6 +187,7 @@ export default function App() {
             </Route>
           </Routes>
         </BrowserRouter>
+            </SiteSectionsProvider>
           </AuthProvider>
         </CatalogProvider>
       </AdminProvider>
