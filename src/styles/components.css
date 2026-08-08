@@ -7,6 +7,7 @@
   display: inline-flex;
   align-items: center;
   gap: 1.5px;
+  min-height: 16px; /* prevent card height jump when empty */
 }
 .stars__on { color: var(--acc); }
 .stars__off { color: #d8dee7; }
@@ -15,6 +16,15 @@
   color: var(--mut);
   margin-left: 5px;
   font-weight: 500;
+}
+.stars--empty {
+  /* No stars rendered here \u2014 keeps the row's height without lying
+     about a rating that doesn't exist yet. */
+}
+.stars__meta--empty {
+  margin-left: 0;
+  font-style: italic;
+  color: var(--mut);
 }
 
 /* ---- product card (matches the ElectroHub Deals card style) ---- */

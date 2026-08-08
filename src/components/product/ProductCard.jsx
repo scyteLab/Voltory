@@ -83,7 +83,7 @@ export default function ProductCard({ product }) {
         )}
       </Link>
       <Link to={`/product/${p.slug}`} className="pcard__name" onClick={recordView}>{p.name}</Link>
-      <RatingStars rating={p.rating} reviews={p.reviews} />
+      <RatingStars rating={p.rating} reviews={p.reviews} variant="compact" />
       <span className="pcard__price">
         {naira(p.price)}
         {p.was && <s>{naira(p.was)}</s>}
