@@ -15,6 +15,7 @@ import { MAX_COMPARE } from "../utils/comparison.js";
 import RatingStars from "../components/product/RatingStars.jsx";
 import Gallery from "../components/product/Gallery.jsx";
 import SpecsTabs from "../components/product/SpecsTabs.jsx";
+import ReviewsSection from "../components/product/ReviewsSection.jsx";
 import AddToCartBar from "../components/product/AddToCartBar.jsx";
 import ProductCard from "../components/product/ProductCard.jsx";
 import LastViewed from "../components/home/LastViewed.jsx";
@@ -245,6 +246,8 @@ export default function Product() {
       )}
 
       <SpecsTabs product={product} />
+
+      <ReviewsSection productSku={product.sku} productName={product.name} />
 
       {related.length > 0 && (
         <>

@@ -64,6 +64,7 @@ import AccountLayout from "./pages/account/AccountLayout.jsx";
 import AccountOverview from "./pages/account/AccountOverview.jsx";
 import AccountOrders from "./pages/account/AccountOrders.jsx";
 import AccountAddresses from "./pages/account/AccountAddresses.jsx";
+import AccountReviews from "./pages/account/AccountReviews.jsx";
 import AccountWishlist from "./pages/account/AccountWishlist.jsx";
 import { SITE } from "./config/site.js";
 import { BadgeCheck, ShieldCheck, Truck } from "lucide-react";
@@ -164,6 +165,7 @@ export default function App() {
                 <Route path="orders" element={<AccountOrders />} />
                 <Route path="orders/:id" element={<OrderConfirmation />} />
                 <Route path="addresses" element={<AccountAddresses />} />
+                <Route path="reviews"   element={<AccountReviews />} />
                 <Route path="wishlist" element={<AccountWishlist />} />
               </Route>
 

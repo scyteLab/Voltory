@@ -14,7 +14,7 @@ export default function CategorySidebar() {
   }, []);
 
   const scheduleClose = useCallback(() => {
-    closeTimer.current = setTimeout(() => setActive(null), 250);
+    closeTimer.current = setTimeout(() => setActive(null), 400);
   }, []);
 
   const cancelClose = useCallback(() => {

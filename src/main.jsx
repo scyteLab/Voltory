@@ -28,6 +28,8 @@ import "./styles/admin-warranty.css";
 import "./styles/admin-settings.css";
 import "./styles/admin-homepage.css";
 import "./styles/admin-categories.css";
+import "./styles/account-addresses.css";
+import "./styles/reviews.css";
 import "./styles/admin.css";
 
 ReactDOM.createRoot(document.getElementById("root")).render(

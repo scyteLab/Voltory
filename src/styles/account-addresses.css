@@ -1,0 +1,137 @@
+/* ============================================================
+   ACCOUNT ADDRESSES \u2014 additions for CRUD UI
+   Existing .addr-card / .addr-cards live in account.css.
+   ============================================================ */
+
+.addr-list__head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.addr-list__add {
+  align-self: flex-start;
+  white-space: nowrap;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* Section subhead for "Recently used" split */
+.addr-sec-head {
+  margin: 28px 0 12px;
+  padding-top: 20px;
+  border-top: 1px solid var(--line);
+}
+.addr-sec-head h2 {
+  margin: 0 0 4px;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--ink);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+.addr-sec-head p {
+  margin: 0;
+  font-size: 12.5px;
+  color: var(--mut);
+}
+
+/* Label chip inside a saved card */
+.addr-card__label {
+  display: inline-block;
+  padding: 1px 8px;
+  border-radius: 99px;
+  background: var(--p-soft);
+  color: var(--p);
+  font-size: 10.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin-bottom: 6px;
+}
+
+/* Action buttons row */
+.addr-card__actions {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  flex-wrap: wrap;
+  margin-top: 10px;
+}
+
+.addr-card__btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 5px 10px;
+  background: var(--surface, #fff);
+  border: 1.5px solid var(--line);
+  border-radius: 6px;
+  font: inherit;
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--ink);
+  cursor: pointer;
+  transition: background 120ms, border-color 120ms, color 120ms;
+}
+.addr-card__btn:hover:not(:disabled) {
+  background: var(--p-soft);
+  border-color: var(--p);
+  color: var(--p);
+}
+.addr-card__btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.addr-card__btn--muted {
+  background: var(--p-soft);
+  color: var(--p);
+  border-color: var(--p-soft);
+  cursor: default;
+}
+.addr-card__btn--muted:hover { background: var(--p-soft); color: var(--p); }
+
+.addr-card__btn--danger:hover:not(:disabled) {
+  background: rgba(220, 38, 38, 0.08);
+  border-color: #dc2626;
+  color: #dc2626;
+}
+
+.addr-card__btn--primary {
+  background: var(--p);
+  color: #fff;
+  border-color: var(--p);
+}
+.addr-card__btn--primary:hover:not(:disabled) {
+  filter: brightness(1.08);
+  color: #fff;
+}
+
+.addr-card--recent {
+  border-style: dashed;
+  opacity: 0.9;
+}
+
+/* ============ Modal additions ============ */
+
+.cat-modal--wide {
+  max-width: 640px;
+}
+
+.addr-modal__row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+@media (max-width: 560px) {
+  .addr-modal__row { grid-template-columns: 1fr; }
+}
+
+.addr-modal__opt {
+  font-weight: 500;
+  text-transform: none;
+  color: var(--adm-ink-3, var(--mut));
+  letter-spacing: 0;
+  font-size: 11px;
+}

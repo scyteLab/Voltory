@@ -495,6 +495,99 @@ a.ovw-stat:hover { border-color: var(--p-line); background: var(--p-soft); }
 }
 .addr-note svg { color: var(--p); flex-shrink: 0; margin-top: 2px; }
 
+/* ---- Address form modal ---- */
+.addr-modal__backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(8, 16, 32, 0.5);
+  z-index: 200;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  animation: fadeIn 0.18s ease both;
+}
+.addr-modal {
+  position: relative;
+  background: #fff;
+  border-radius: var(--r-lg);
+  padding: 28px 26px 24px;
+  max-width: 560px;
+  width: 100%;
+  max-height: calc(100vh - 40px);
+  overflow-y: auto;
+  box-shadow: 0 24px 60px -20px rgba(10, 20, 40, 0.35);
+  animation: callconfirmPop 0.28s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+.addr-modal__x {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--mut);
+  transition: background 0.15s, color 0.15s;
+}
+.addr-modal__x:hover { background: var(--p-soft); color: var(--p); }
+.addr-modal h3 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 17px;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  margin-bottom: 18px;
+}
+.addr-modal h3 svg { color: var(--p); }
+.addr-modal__err {
+  padding: 10px 14px;
+  background: #fef2f2;
+  color: var(--err);
+  border: 1px solid var(--err);
+  border-radius: 8px;
+  font-size: 12.5px;
+  font-weight: 600;
+  margin-bottom: 14px;
+}
+.addr-modal__default {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 16px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink);
+}
+.addr-modal__actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 22px;
+}
+.addr-modal__cancel,
+.addr-modal__save {
+  flex: 1;
+  padding: 12px;
+  border-radius: 10px;
+  font-weight: 700;
+  font-size: 13.5px;
+}
+.addr-modal__cancel {
+  background: #fff;
+  border: 1.5px solid var(--line);
+  color: var(--ink);
+}
+.addr-modal__cancel:hover { background: var(--bg); }
+.addr-modal__save {
+  background: var(--p);
+  color: #fff;
+}
+.addr-modal__save:hover { filter: brightness(1.05); }
+.addr-modal__save:disabled { background: #c7d0db; cursor: not-allowed; }
+
 /* ============================================================
    WISHLIST
    ============================================================ */

@@ -1,6 +1,7 @@
 import { Link, NavLink, Navigate, Outlet, useNavigate } from "react-router-dom";
 import {
-  ChevronRight, Heart, Home as HomeIcon, LogOut, MapPin, Package, User,
+  ChevronRight, Heart, Home as HomeIcon, LogOut, MapPin,
+  MessageSquare, Package, User,
 } from "lucide-react";
 import { useCustomerAuth } from "../../context/AuthContext.jsx";
 
@@ -14,10 +15,11 @@ import { useCustomerAuth } from "../../context/AuthContext.jsx";
  * that would happen on refresh otherwise.
  */
 const LINKS = [
-  { to: "/account",           icon: User,    label: "Account Overview", end: true },
-  { to: "/account/orders",    icon: Package, label: "My Orders" },
-  { to: "/account/addresses", icon: MapPin,  label: "Saved Addresses" },
-  { to: "/account/wishlist",  icon: Heart,   label: "Wishlist" },
+  { to: "/account",           icon: User,          label: "Account Overview", end: true },
+  { to: "/account/orders",    icon: Package,       label: "My Orders" },
+  { to: "/account/addresses", icon: MapPin,        label: "Saved Addresses" },
+  { to: "/account/reviews",   icon: MessageSquare, label: "My Reviews" },
+  { to: "/account/wishlist",  icon: Heart,         label: "Wishlist" },
 ];
 
 export default function AccountLayout() {

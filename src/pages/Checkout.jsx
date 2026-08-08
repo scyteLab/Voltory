@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link, Navigate, useNavigate } from "react-router-dom";
 import {
   BadgeCheck, Banknote, ChevronRight, CreditCard, Home as HomeIcon,
@@ -7,6 +7,8 @@ import {
 import { useStore } from "../context/StoreContext.jsx";
 import { useCatalog } from "../context/CatalogContext.jsx";
 import { useCustomerAuth } from "../context/AuthContext.jsx";
+import { useCustomerAddresses } from "../hooks/useCustomerAddresses.js";
+import AddressPicker from "../components/checkout/AddressPicker.jsx";
 import { naira } from "../utils/format.js";
 import { SITE } from "../config/site.js";
 
@@ -44,6 +46,17 @@ export default function Checkout() {
     phone: prefillPhone,
     email: customer?.email || "",
   });
+
+  // Saved addresses (only relevant for signed-in customers). If any
+  // saved addresses exist, we default to the customer's default
+  // address (or the first one) instead of an empty form. Setting
+  // pickedAddressId to null means "the customer wants to enter a
+  // new address" and the manual form is shown.
+  const { addresses: savedAddresses, create: createSavedAddress } = useCustomerAddresses();
+  const [pickedAddressId, setPickedAddressId] = useState(null);
+  const [pickerInitialised, setPickerInitialised] = useState(false);
+  const [saveForNextTime, setSaveForNextTime] = useState(false);
+
   const [address, setAddress] = useState({
     state: "Lagos",
     lga: "",
@@ -58,13 +71,53 @@ export default function Checkout() {
   const installFee = installation ? SITE.installationFee : 0;
   const grand = totals.grand + installFee;
 
+  // First time saved addresses arrive, auto-pick the default one
+  // (or the first one if none is marked default). Only runs once
+  // per session so we don't override the user's later choice.
+  useEffect(() => {
+    if (pickerInitialised) return;
+    if (!savedAddresses || savedAddresses.length === 0) return;
+    const def = savedAddresses.find((a) => a.is_default) || savedAddresses[0];
+    setPickedAddressId(def.id);
+    setPickerInitialised(true);
+  }, [savedAddresses, pickerInitialised]);
+
+  // Whenever a saved address is picked, mirror its fields into the
+  // manual `address` state so all downstream code (validate, order
+  // save) keeps working unchanged.
+  useEffect(() => {
+    if (!pickedAddressId) return;
+    const picked = savedAddresses.find((a) => a.id === pickedAddressId);
+    if (!picked) return;
+    setAddress({
+      state:    picked.state    || "Lagos",
+      lga:      picked.lga      || "",
+      street:   picked.street   || "",
+      landmark: picked.landmark || "",
+    });
+    // Also mirror name/phone into contact if the saved address has
+    // recipient info \u2014 useful for gift deliveries
+    if (picked.name || picked.phone) {
+      setContact((c) => ({
+        ...c,
+        name:  picked.name  || c.name,
+        phone: picked.phone || c.phone,
+      }));
+    }
+  }, [pickedAddressId, savedAddresses]);
+
   function validate() {
     const e = {};
     if (!contact.name.trim()) e.name = "Full name required";
     if (!/^0[789][01]\d{8}$/.test(contact.phone.replace(/\s/g, ""))) e.phone = "Enter a valid Nigerian phone number";
     if (contact.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(contact.email)) e.email = "Invalid email format";
-    if (!address.lga.trim()) e.lga = "LGA / City required";
-    if (!address.street.trim()) e.street = "Street address required";
+    // Only validate address fields when the customer is typing a new
+    // address. If they've picked a saved one, its fields were already
+    // validated when it was created.
+    if (!pickedAddressId) {
+      if (!address.lga.trim()) e.lga = "LGA / City required";
+      if (!address.street.trim()) e.street = "Street address required";
+    }
     setErrors(e);
     return Object.keys(e).length === 0;
   }
@@ -80,7 +133,26 @@ export default function Checkout() {
       return;
     }
     setSubmitting(true);
-    // Simulate payment processing — replace with Paystack when backend lands
+
+    // If the customer typed a new address AND ticked "save for next
+    // time", fire an async save to customer_addresses. We don't wait
+    // for it \u2014 the order should proceed even if the save fails
+    // (they can always add it manually on /account/addresses later).
+    if (customer && !pickedAddressId && saveForNextTime) {
+      createSavedAddress({
+        label: "",
+        name:  contact.name,
+        phone: contact.phone,
+        state: address.state,
+        lga:   address.lga,
+        street: address.street,
+        landmark: address.landmark,
+        // First-ever save becomes default automatically
+        is_default: savedAddresses.length === 0,
+      }).catch(() => { /* silent; not order-blocking */ });
+    }
+
+    // Simulate payment processing \u2014 replace with Paystack when backend lands
     setTimeout(() => {
       const id = placeOrder({ contact, address, payment, installation });
       navigate(`/order/${id}`);
@@ -145,6 +217,24 @@ export default function Checkout() {
           <section className="ck-card">
             <h2><span className="ck-card__step">2</span><MapPin size={18} /> Delivery Address</h2>
 
+            {/* Saved addresses picker \u2014 only shown for signed-in
+                customers who have at least one saved address. */}
+            {customer && savedAddresses.length > 0 && (
+              <AddressPicker
+                addresses={savedAddresses}
+                selectedId={pickedAddressId}
+                onSelect={(id) => setPickedAddressId(id)}
+                onNew={() => {
+                  setPickedAddressId(null);
+                  // Clear the form so the customer starts fresh
+                  setAddress({ state: "Lagos", lga: "", street: "", landmark: "" });
+                }}
+              />
+            )}
+
+            {/* Manual form \u2014 shown when no saved address is picked
+                (guest checkout, no saved addresses, or "new" toggle) */}
+            {!pickedAddressId && (
             <div className="ck-grid">
               <Field label="State" error={errors.state}>
                 <select
@@ -182,6 +272,20 @@ export default function Checkout() {
                 />
               </Field>
             </div>
+            )}
+
+            {/* Save-for-next-time \u2014 only when signed in AND typing a
+                new address. Guests don't have anywhere to save to. */}
+            {customer && !pickedAddressId && (
+              <label className="ck-savefornext">
+                <input
+                  type="checkbox"
+                  checked={saveForNextTime}
+                  onChange={(e) => setSaveForNextTime(e.target.checked)}
+                />
+                <span>Save this address for next time</span>
+              </label>
+            )}
 
             {/* Installation toggle */}
             <label className="ck-install">

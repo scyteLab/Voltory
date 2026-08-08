@@ -1005,3 +1005,112 @@
   .conf-help { grid-template-columns: 1fr; }
   .checkout__title { font-size: 20px; }
 }
+/* ============================================================
+   ADDRESS PICKER — inside Checkout section 2 (Session 32d)
+   ============================================================ */
+
+.ck-addrpicker {
+  margin-bottom: 18px;
+}
+
+.ck-addrpicker__label {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--mut);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  margin-bottom: 8px;
+}
+
+.ck-addrpicker__list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.ck-addropt {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 12px 14px;
+  border: 1.5px solid var(--line);
+  border-radius: 10px;
+  background: #fff;
+  cursor: pointer;
+  transition: border-color 120ms, background 120ms;
+}
+.ck-addropt:hover { border-color: var(--ink-3, #94a3b8); }
+.ck-addropt--picked {
+  border-color: var(--p);
+  background: var(--p-soft);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.06);
+}
+
+.ck-addropt input[type="radio"] {
+  margin-top: 2px;
+  accent-color: var(--p);
+  flex-shrink: 0;
+}
+
+.ck-addropt__icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  background: var(--p-soft);
+  color: var(--p);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.ck-addropt__icon--new { background: var(--bg, #f8fafc); color: var(--mut); }
+
+.ck-addropt__body { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.ck-addropt__top { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.ck-addropt__label {
+  padding: 1px 8px;
+  border-radius: 99px;
+  background: var(--p);
+  color: #fff;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.ck-addropt__default {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 1px 7px;
+  border-radius: 99px;
+  background: rgba(245, 158, 11, 0.14);
+  color: #b45309;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+.ck-addropt__name { font-size: 13.5px; font-weight: 700; color: var(--ink); }
+.ck-addropt__addr { font-size: 12.5px; color: var(--ink-2, #334155); line-height: 1.4; }
+.ck-addropt__land { font-size: 11.5px; color: var(--mut); }
+
+.ck-addropt--new .ck-addropt__body b { font-size: 13.5px; color: var(--ink); }
+.ck-addropt--new .ck-addropt__body small { font-size: 11.5px; color: var(--mut); }
+
+/* Save-for-next-time checkbox */
+.ck-savefornext {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 12px;
+  font-size: 13px;
+  color: var(--ink);
+  cursor: pointer;
+}
+.ck-savefornext input[type="checkbox"] {
+  accent-color: var(--p);
+  width: 16px;
+  height: 16px;
+}
