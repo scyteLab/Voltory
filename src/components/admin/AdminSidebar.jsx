@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Link, NavLink } from "react-router-dom";
 import {
-  Boxes, ChevronDown, LayoutDashboard, LifeBuoy, Megaphone,
+  Boxes, ChevronDown, LayoutDashboard, LayoutGrid, LifeBuoy, Megaphone,
   Package, Settings as SettingsIcon, ShieldCheck, ShoppingCart,
   Star, Tags, Users,
 } from "lucide-react";
@@ -18,14 +18,15 @@ import { useAdminCounters } from "../../hooks/useAdminCounters.js";
  */
 const CATALOG_ITEMS = [
   { label: "Products", to: "/admin/products", live: true },
-  { label: "Categories", live: false },
-  { label: "Brands", live: false },
+  { label: "Categories", to: "/admin/catalog/categories", live: true },
+  { label: "Brands", to: "/admin/catalog/brands", live: true },
   { label: "Attributes", live: false },
   { label: "Collections", live: false },
 ];
 
 const TOP_LINKS = [
   { label: "Orders",     icon: ShoppingCart, live: true,  to: "/admin/orders",    badgeKey: "pendingOrders" },
+  { label: "Homepage",   icon: LayoutGrid,   live: true,  to: "/admin/homepage" },
   { label: "Customers",  icon: Users,        live: true,  to: "/admin/customers" },
   { label: "Inventory",  icon: Boxes,        live: false },
   { label: "Marketing",  icon: Megaphone,    live: false },

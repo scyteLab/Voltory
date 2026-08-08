@@ -9,6 +9,8 @@ import AdminShell from "./components/admin/AdminShell.jsx";
 import AdminLogin from "./pages/admin/AdminLogin.jsx";
 import AdminDashboard from "./pages/admin/AdminDashboard.jsx";
 import CatalogProducts from "./pages/admin/CatalogProducts.jsx";
+import AdminCategories from "./pages/admin/AdminCategories.jsx";
+import AdminBrands from "./pages/admin/AdminBrands.jsx";
 import AdminOrders from "./pages/admin/AdminOrders.jsx";
 import AdminOrderDetail from "./pages/admin/AdminOrderDetail.jsx";
 import AdminCustomers from "./pages/admin/AdminCustomers.jsx";
@@ -17,6 +19,7 @@ import AdminWarranty from "./pages/admin/AdminWarranty.jsx";
 import AdminWarrantyDetail from "./pages/admin/AdminWarrantyDetail.jsx";
 import AdminReports from "./pages/admin/AdminReports.jsx";
 import AdminSettings from "./pages/admin/AdminSettings.jsx";
+import AdminHomepage from "./pages/admin/AdminHomepage.jsx";
 import TopBar from "./components/layout/TopBar.jsx";
 import Header from "./components/layout/Header.jsx";
 import MainNav from "./components/layout/MainNav.jsx";
@@ -176,6 +179,8 @@ export default function App() {
             <Route element={<AdminGuard><AdminShell /></AdminGuard>}>
               <Route path="/admin" element={<AdminDashboard />} />
               <Route path="/admin/products" element={<CatalogProducts />} />
+              <Route path="/admin/catalog/categories" element={<AdminCategories />} />
+              <Route path="/admin/catalog/brands" element={<AdminBrands />} />
               <Route path="/admin/orders" element={<AdminOrders />} />
               <Route path="/admin/orders/:id" element={<AdminOrderDetail />} />
               <Route path="/admin/customers" element={<AdminCustomers />} />
@@ -183,6 +188,7 @@ export default function App() {
               <Route path="/admin/warranty" element={<AdminWarranty />} />
               <Route path="/admin/warranty/:id" element={<AdminWarrantyDetail />} />
               <Route path="/admin/reports" element={<AdminReports />} />
+              <Route path="/admin/homepage" element={<AdminHomepage />} />
               <Route path="/admin/settings" element={<AdminSettings />} />
             </Route>
           </Routes>
