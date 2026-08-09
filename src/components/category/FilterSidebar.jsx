@@ -18,7 +18,7 @@ export default function FilterSidebar({
   onClear,
   onClose, // mobile drawer dismiss
 }) {
-  const config = category?.filterConfig ?? ["brand", "price", "availability"];
+  const config = category?.filterConfig ?? ["brand", "rating", "price", "availability"];
   const counts = useFacetCounts(products);
 
   // Set / unset individual filter values
@@ -39,6 +39,7 @@ export default function FilterSidebar({
     (filters.litres?.length || 0) +
     (filters.doors?.length || 0) +
     (filters.availability?.length || 0) +
+    (filters.rating ? 1 : 0) +
     (filters.priceMin || filters.priceMax ? 1 : 0) >
     0;
 
@@ -224,6 +225,36 @@ const RENDERERS = {
       active={filters.availability || []}
       onToggle={(v) => toggleArray("availability", v)}
     />
+  ),
+  rating: ({ filters, setValue }) => (
+    <div className="cfilter__group">
+      <h4>Customer Rating</h4>
+      <ul className="cfilter__list cfilter__list--rating">
+        {[4, 3, 2, 1].map((min) => {
+          const active = filters.rating === min;
+          return (
+            <li key={min}>
+              <button
+                type="button"
+                className={"cfilter__rating" + (active ? " cfilter__rating--on" : "")}
+                onClick={() => setValue("rating", active ? "" : min)}
+              >
+                <span className="cfilter__rating-stars">
+                  {[1, 2, 3, 4, 5].map((n) => (
+                    <span
+                      key={n}
+                      className={n <= min ? "cfilter__star cfilter__star--on" : "cfilter__star"}
+                      aria-hidden="true"
+                    >\u2605</span>
+                  ))}
+                </span>
+                <span className="cfilter__rating-lbl">& up</span>
+              </button>
+            </li>
+          );
+        })}
+      </ul>
+    </div>
   ),
 };
 

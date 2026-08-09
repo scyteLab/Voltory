@@ -1,0 +1,131 @@
+/* ============================================================
+   SEND CART TO WHATSAPP  \u2014 cart page button + modal
+   Prefix: .cart-wa / .swa-modal
+   WhatsApp brand green: #25D366
+   ============================================================ */
+
+/* ---- "or" separator between checkout buttons ---- */
+.cart-orsep {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 14px 0 12px;
+  color: var(--mut);
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+.cart-orsep::before,
+.cart-orsep::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: var(--line);
+}
+
+/* ---- the button itself ---- */
+.cart-wa {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  padding: 14px 20px;
+  background: #25D366;
+  color: #fff;
+  border: none;
+  border-radius: 10px;
+  font: inherit;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 140ms, transform 60ms;
+}
+.cart-wa:hover  { background: #1FB959; }
+.cart-wa:active { transform: translateY(1px); }
+
+/* ---- MODAL ---- */
+.swa-modal .swa-modal__icon { color: #25D366; }
+
+.swa-modal__row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.swa-modal__preview {
+  margin-top: 4px;
+  padding: 12px 14px;
+  background: var(--bg, #f8fafc);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+}
+.swa-modal__preview-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+  font-size: 13px;
+}
+.swa-modal__preview-head b { color: var(--ink); }
+.swa-modal__preview-head span { color: var(--mut); }
+
+.swa-modal__preview ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.swa-modal__preview li {
+  display: grid;
+  grid-template-columns: 32px 1fr auto;
+  gap: 8px;
+  font-size: 12.5px;
+  color: var(--ink-2, #334155);
+  align-items: baseline;
+}
+.swa-modal__preview-qty {
+  font-weight: 700;
+  color: var(--p);
+}
+.swa-modal__preview-name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.swa-modal__preview-price {
+  font-weight: 600;
+  color: var(--ink);
+  white-space: nowrap;
+}
+.swa-modal__preview-more {
+  color: var(--mut);
+  font-style: italic;
+  padding-top: 4px;
+  grid-column: 1 / -1;
+  text-align: center;
+}
+
+.swa-modal__submit {
+  background: #25D366;
+  color: #fff;
+}
+.swa-modal__submit:hover:not(:disabled) { background: #1FB959; }
+
+.swa-modal__note {
+  margin: 4px 0 0;
+  padding: 10px 12px;
+  background: rgba(37, 211, 102, 0.08);
+  border-left: 3px solid #25D366;
+  border-radius: 6px;
+  font-size: 12px;
+  color: var(--ink-2, #334155);
+  line-height: 1.5;
+}
+
+@media (max-width: 640px) {
+  .swa-modal__row { grid-template-columns: 1fr; }
+}

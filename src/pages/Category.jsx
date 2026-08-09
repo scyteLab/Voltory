@@ -292,6 +292,7 @@ function readFiltersFromUrl(sp) {
     litres: list("litres"),
     doors: list("doors").map((d) => Number(d)),
     availability: list("availability"),
+    rating: num("rating"), // minimum stars, integer 1-5
     priceMin: num("priceMin"),
     priceMax: num("priceMax"),
   };
@@ -308,6 +309,7 @@ function writeFiltersToUrl(sp, f) {
   setList("litres", f.litres);
   setList("doors", f.doors);
   setList("availability", f.availability);
+  if (f.rating) sp.set("rating", String(f.rating)); else sp.delete("rating");
   if (f.priceMin) sp.set("priceMin", String(f.priceMin)); else sp.delete("priceMin");
   if (f.priceMax) sp.set("priceMax", String(f.priceMax)); else sp.delete("priceMax");
 }
@@ -330,6 +332,12 @@ function applyFilters(products, f) {
     if (f.availability.length) {
       const flag = p.stock > 0 ? "In Stock" : "Out of Stock";
       if (!f.availability.includes(flag)) return false;
+    }
+    // Minimum rating filter \u2014 excludes products with fewer stars OR no reviews.
+    // A "4 stars & up" filter should show 4.x-star products but hide 3.5-stars and unreviewed ones.
+    if (f.rating) {
+      const stars = Number(p.rating) || 0;
+      if (stars < f.rating) return false;
     }
     if (f.priceMin !== "" && p.price < f.priceMin) return false;
     if (f.priceMax !== "" && p.price > f.priceMax) return false;
@@ -363,10 +371,13 @@ function buildActiveChips(f) {
   for (const v of f.litres) chips.push({ key: `litres:${v}`, type: "litres", value: v, label: v });
   for (const v of f.doors) chips.push({ key: `doors:${v}`, type: "doors", value: v, label: `${v} Door${v === 1 ? "" : "s"}` });
   for (const v of f.availability) chips.push({ key: `availability:${v}`, type: "availability", value: v, label: v });
+  if (f.rating) {
+    chips.push({ key: "rating", type: "rating", value: null, label: `${f.rating}\u2605 & up` });
+  }
   if (f.priceMin !== "" || f.priceMax !== "") {
-    const a = f.priceMin !== "" ? `₦${f.priceMin.toLocaleString()}` : "Any";
-    const b = f.priceMax !== "" ? `₦${f.priceMax.toLocaleString()}` : "Any";
-    chips.push({ key: "price", type: "price", value: null, label: `Price: ${a} – ${b}` });
+    const a = f.priceMin !== "" ? `\u20A6${f.priceMin.toLocaleString()}` : "Any";
+    const b = f.priceMax !== "" ? `\u20A6${f.priceMax.toLocaleString()}` : "Any";
+    chips.push({ key: "price", type: "price", value: null, label: `Price: ${a} \u2013 ${b}` });
   }
   return chips;
 }
@@ -376,6 +387,8 @@ function clearOne(searchParams, setSearchParams, chip) {
   if (chip.type === "price") {
     sp.delete("priceMin");
     sp.delete("priceMax");
+  } else if (chip.type === "rating") {
+    sp.delete("rating");
   } else {
     const list = (sp.get(chip.type) || "").split(",").filter(Boolean);
     const remaining = list.filter((v) => v !== String(chip.value));

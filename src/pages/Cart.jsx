@@ -1,7 +1,7 @@
 import { Link, useNavigate } from "react-router-dom";
 import { useState } from "react";
 import {
-  ChevronRight, Home as HomeIcon, Minus, Plus, ShoppingBag, Tag,
+  ChevronRight, Home as HomeIcon, MessageCircle, Minus, Plus, ShoppingBag, Tag,
   Trash2, Truck, X,
 } from "lucide-react";
 import { useStore } from "../context/StoreContext.jsx";
@@ -9,10 +9,12 @@ import { useCatalog } from "../context/CatalogContext.jsx";
 import { naira } from "../utils/format.js";
 import { SITE } from "../config/site.js";
 import ProductCard from "../components/product/ProductCard.jsx";
+import SendToWhatsappModal from "../components/cart/SendToWhatsappModal.jsx";
 
 export default function Cart() {
   const { cart, setQty, removeFromCart, totals, coupon, setCoupon, count } = useStore();
   const { products, bySku } = useCatalog();
+  const [waModalOpen, setWaModalOpen] = useState(false);
   const navigate = useNavigate();
 
   if (cart.length === 0) return <EmptyCart />;
@@ -139,11 +141,25 @@ export default function Cart() {
             Proceed to Checkout <ChevronRight size={16} />
           </button>
 
+          <div className="cart-orsep"><span>or</span></div>
+
+          <button
+            type="button"
+            className="cart-wa"
+            onClick={() => setWaModalOpen(true)}
+          >
+            <MessageCircle size={15} /> Send Cart to WhatsApp
+          </button>
+
           <p className="cart-secure">
-            🔒 Secure checkout · Pay on delivery available
+            🔒 Secure checkout \u00B7 Pay on delivery available
           </p>
         </aside>
       </div>
+
+      {waModalOpen && (
+        <SendToWhatsappModal onClose={() => setWaModalOpen(false)} />
+      )}
 
       {/* Cross-sell rail */}
       <div className="section-head" style={{ marginTop: 40 }}>

@@ -7,13 +7,14 @@ import { supabase } from "../lib/supabaseClient.js";
  * failure so a network hiccup doesn't clear the badges.
  *
  * Returns:
- *   { pendingOrders, openWarranty, notifications }
+ *   { pendingOrders, openWarranty, pendingReviews, notifications }
  */
 export function useAdminCounters() {
   const [counts, setCounts] = useState({
-    pendingOrders: null,
-    openWarranty: null,
-    notifications: null,
+    pendingOrders:  null,
+    openWarranty:   null,
+    pendingReviews: null,
+    notifications:  null,
   });
 
   useEffect(() => {
@@ -24,17 +25,20 @@ export function useAdminCounters() {
       try {
         const { data } = await supabase
           .from("dashboard_kpis")
-          .select("pending_orders, open_warranty_claims, low_stock_count")
+          .select("pending_orders, open_warranty_claims, low_stock_count, pending_reviews")
           .maybeSingle();
         if (stopped || !data) return;
-        // Notifications badge = the pieces the admin needs to look at
+        // Notifications badge = every actionable item the admin
+        // needs to look at, summed.
         const notifications =
           Number(data.pending_orders || 0) +
           Number(data.open_warranty_claims || 0) +
-          Number(data.low_stock_count || 0);
+          Number(data.low_stock_count || 0) +
+          Number(data.pending_reviews || 0);
         setCounts({
-          pendingOrders: Number(data.pending_orders || 0),
-          openWarranty:  Number(data.open_warranty_claims || 0),
+          pendingOrders:  Number(data.pending_orders || 0),
+          openWarranty:   Number(data.open_warranty_claims || 0),
+          pendingReviews: Number(data.pending_reviews || 0),
           notifications,
         });
       } catch { /* keep the previous values */ }
