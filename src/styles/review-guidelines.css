@@ -1,0 +1,98 @@
+/* ============================================================
+   REVIEW GUIDELINES PAGE  /reviews-guidelines
+   Prefix: .rg
+   ============================================================ */
+
+.rg-page {
+  padding-top: 20px;
+  padding-bottom: 60px;
+  max-width: 780px;
+}
+
+.rg-hero {
+  padding: 40px 24px;
+  text-align: center;
+  background: linear-gradient(135deg, var(--p-soft), rgba(255, 255, 255, 0));
+  border-radius: 16px;
+  margin: 20px 0 32px;
+  border: 1px solid var(--line);
+}
+.rg-hero__icon {
+  color: var(--p);
+  margin-bottom: 12px;
+}
+.rg-hero h1 {
+  margin: 0 0 10px;
+  font-size: 28px;
+  font-weight: 800;
+  color: var(--ink);
+}
+.rg-hero p {
+  max-width: 520px;
+  margin: 0 auto;
+  font-size: 15px;
+  color: var(--ink-2, #334155);
+  line-height: 1.55;
+}
+
+.rg-sec {
+  margin-bottom: 28px;
+  padding: 22px 24px;
+  background: #fff;
+  border: 1.5px solid var(--line);
+  border-radius: 12px;
+}
+.rg-sec h2 {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0 0 14px;
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--ink);
+}
+.rg-sec h2 svg { color: var(--p); flex-shrink: 0; }
+
+.rg-sec ul {
+  margin: 0;
+  padding: 0 0 0 20px;
+  color: var(--ink-2, #334155);
+  font-size: 14.5px;
+  line-height: 1.65;
+}
+.rg-sec ul li { margin-bottom: 8px; }
+.rg-sec ul li:last-child { margin-bottom: 0; }
+.rg-sec a { color: var(--p); text-decoration: none; font-weight: 600; }
+.rg-sec a:hover { text-decoration: underline; }
+
+.rg-sec--allow h2 svg { color: #059669; }
+.rg-sec--allow { border-left: 4px solid #10b981; }
+
+.rg-sec--deny  h2 svg { color: #dc2626; }
+.rg-sec--deny  { border-left: 4px solid #dc2626; }
+
+.rg-sec--foot { background: var(--p-soft); border-color: var(--p); }
+
+.rg-note {
+  margin-top: 14px;
+  padding: 12px 14px;
+  background: var(--bg, #f8fafc);
+  border-radius: 8px;
+  font-size: 13.5px;
+  color: var(--ink-2);
+}
+
+.rg-updated {
+  text-align: center;
+  color: var(--mut);
+  font-size: 12px;
+  margin-top: 32px;
+}
+.rg-updated a { color: var(--p); }
+
+@media (max-width: 640px) {
+  .rg-hero h1 { font-size: 22px; }
+  .rg-hero p { font-size: 14px; }
+  .rg-sec { padding: 18px 20px; }
+  .rg-sec h2 { font-size: 16px; }
+}

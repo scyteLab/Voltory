@@ -28,6 +28,7 @@ const LINK_MAP = {
   "Track Your Order": "/track-order",
   "Returns & Refunds": "/help#returns",
   "Warranty Information": "/help#warranty",
+  "Review Guidelines": "/reviews-guidelines",
   "Contact Us": "/contact",
   "FAQs": "/help#faqs",
   "About Us": "/about",

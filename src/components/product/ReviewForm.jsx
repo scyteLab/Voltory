@@ -107,8 +107,8 @@ export default function ReviewForm({ existingReview, onSubmit, onCancel }) {
 
       <div className="rev-form__note">
         {isEdit
-          ? "Your edited review will be reviewed by our team before it appears publicly again."
-          : "Reviews are reviewed by our team before appearing publicly. Usually within 1 business day."}
+          ? "Your update goes live immediately. Our team may still review it."
+          : "As a verified buyer, your review goes live immediately. Please follow our review guidelines."}
       </div>
 
       <div className="rev-form__actions">

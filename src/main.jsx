@@ -30,6 +30,8 @@ import "./styles/admin-homepage.css";
 import "./styles/admin-categories.css";
 import "./styles/account-addresses.css";
 import "./styles/reviews.css";
+import "./styles/admin-reviews.css";
+import "./styles/review-guidelines.css";
 import "./styles/admin.css";
 
 ReactDOM.createRoot(document.getElementById("root")).render(

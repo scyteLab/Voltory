@@ -152,6 +152,38 @@ export async function upsertReview({ customerId, productSku, orderId, rating, ti
   if (!customerId || !productSku) return { ok: false, error: "Not signed in" };
 
   try {
+    // Hybrid moderation:
+    //   \u2022 Verified buyer (order_id present) \u2192 auto-approved on first
+    //     submission. They earned the right by actually buying.
+    //   \u2022 Non-verified (order_id null) \u2192 held pending for review.
+    //     In practice this branch is rarely hit since our UI only
+    //     shows the write-review form to verified buyers, but the
+    //     safety net is here for anything that slips through.
+    //   \u2022 Editing an already-approved review \u2192 stays approved.
+    //     Holding every typo-fix would feel punitive.
+    //   \u2022 Editing a pending/rejected review \u2192 stays in its bucket
+    //     until the admin takes action, matching prior behaviour.
+    const isVerifiedBuyer = !!orderId;
+
+    // Look for existing to decide status behaviour on edit
+    const existRes = await supabase
+      .from("reviews")
+      .select("id, status")
+      .eq("customer_id", customerId)
+      .eq("product_sku", productSku)
+      .maybeSingle();
+
+    let nextStatus;
+    if (existRes.data) {
+      // Edit path
+      if (existRes.data.status === "approved") nextStatus = "approved";
+      else if (existRes.data.status === "rejected") nextStatus = "pending"; // give them another chance on re-submit
+      else nextStatus = "pending";
+    } else {
+      // First submission
+      nextStatus = isVerifiedBuyer ? "approved" : "pending";
+    }
+
     const row = {
       customer_id: customerId,
       product_sku: productSku,
@@ -159,16 +191,8 @@ export async function upsertReview({ customerId, productSku, orderId, rating, ti
       rating: Number(rating),
       title: title?.trim() || null,
       body: body.trim(),
-      status: "pending", // reset to pending on every write
+      status: nextStatus,
     };
-
-    // See if there's an existing row (upsert semantics)
-    const existRes = await supabase
-      .from("reviews")
-      .select("id")
-      .eq("customer_id", customerId)
-      .eq("product_sku", productSku)
-      .maybeSingle();
 
     let res;
     if (existRes.data?.id) {

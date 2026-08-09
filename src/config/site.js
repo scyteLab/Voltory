@@ -89,7 +89,7 @@ export const SITE = {
   // ---- Footer link columns ----
   footerColumns: [
     { title: "Shop", links: ["All Categories", "Bestsellers", "New Arrivals", "Deals & Offers", "Clearance Sale", "Installation Services"] },
-    { title: "Customer Care", links: ["Help Center", "Track Your Order", "Returns & Refunds", "Warranty Information", "Contact Us", "FAQs"] },
+    { title: "Customer Care", links: ["Help Center", "Track Your Order", "Returns & Refunds", "Warranty Information", "Review Guidelines", "Contact Us", "FAQs"] },
     { title: "About", links: ["About Us", "Our Brands", "Blog", "Careers", "Terms & Conditions", "Privacy Policy"] },
   ],
 

@@ -20,6 +20,7 @@ import AdminWarrantyDetail from "./pages/admin/AdminWarrantyDetail.jsx";
 import AdminReports from "./pages/admin/AdminReports.jsx";
 import AdminSettings from "./pages/admin/AdminSettings.jsx";
 import AdminHomepage from "./pages/admin/AdminHomepage.jsx";
+import AdminReviews from "./pages/admin/AdminReviews.jsx";
 import TopBar from "./components/layout/TopBar.jsx";
 import Header from "./components/layout/Header.jsx";
 import MainNav from "./components/layout/MainNav.jsx";
@@ -54,6 +55,7 @@ import InstallationServices from "./pages/InstallationServices.jsx";
 import Blog from "./pages/Blog.jsx";
 import About from "./pages/About.jsx";
 import Careers from "./pages/Careers.jsx";
+import ReviewGuidelines from "./pages/ReviewGuidelines.jsx";
 import Affiliate from "./pages/Affiliate.jsx";
 import Compare from "./pages/Compare.jsx";
 import Terms from "./pages/Terms.jsx";
@@ -155,6 +157,7 @@ export default function App() {
               <Route path="/blog" element={<Blog />} />
               <Route path="/about" element={<About />} />
               <Route path="/careers" element={<Careers />} />
+              <Route path="/reviews-guidelines" element={<ReviewGuidelines />} />
               <Route path="/affiliate" element={<Affiliate />} />
               <Route path="/terms" element={<Terms />} />
               <Route path="/privacy" element={<Privacy />} />
@@ -191,6 +194,7 @@ export default function App() {
               <Route path="/admin/warranty/:id" element={<AdminWarrantyDetail />} />
               <Route path="/admin/reports" element={<AdminReports />} />
               <Route path="/admin/homepage" element={<AdminHomepage />} />
+              <Route path="/admin/reviews" element={<AdminReviews />} />
               <Route path="/admin/settings" element={<AdminSettings />} />
             </Route>
           </Routes>

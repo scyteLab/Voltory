@@ -32,7 +32,7 @@ const TOP_LINKS = [
   { label: "Marketing",  icon: Megaphone,    live: false },
   { label: "Reports",    icon: Tags,         live: true,  to: "/admin/reports" },
   { label: "Warranty",   icon: ShieldCheck,  live: true,  to: "/admin/warranty",  badgeKey: "openWarranty" },
-  { label: "Reviews",    icon: Star,         live: false },
+  { label: "Reviews",    icon: Star,         live: true,  to: "/admin/reviews" },
 ];
 
 const CHANNELS = ["Website", "Mobile App", "POS"];
