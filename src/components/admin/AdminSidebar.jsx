@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Link, NavLink } from "react-router-dom";
 import {
   Boxes, ChevronDown, LayoutDashboard, LayoutGrid, LifeBuoy, Megaphone,
-  Package, Settings as SettingsIcon, ShieldCheck, ShoppingCart,
+  MessageCircle, Package, Settings as SettingsIcon, ShieldCheck, ShoppingCart,
   Star, Tags, Users,
 } from "lucide-react";
 import Logo from "../layout/Logo.jsx";
@@ -26,6 +26,7 @@ const CATALOG_ITEMS = [
 
 const TOP_LINKS = [
   { label: "Orders",     icon: ShoppingCart, live: true,  to: "/admin/orders",    badgeKey: "pendingOrders" },
+  { label: "WA Quotes",  icon: MessageCircle,live: true,  to: "/admin/whatsapp-quotes", badgeKey: "newQuotes" },
   { label: "Homepage",   icon: LayoutGrid,   live: true,  to: "/admin/homepage" },
   { label: "Customers",  icon: Users,        live: true,  to: "/admin/customers" },
   { label: "Inventory",  icon: Boxes,        live: false },

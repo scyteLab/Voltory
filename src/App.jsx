@@ -21,6 +21,8 @@ import AdminReports from "./pages/admin/AdminReports.jsx";
 import AdminSettings from "./pages/admin/AdminSettings.jsx";
 import AdminHomepage from "./pages/admin/AdminHomepage.jsx";
 import AdminReviews from "./pages/admin/AdminReviews.jsx";
+import AdminWhatsappQuotes from "./pages/admin/AdminWhatsappQuotes.jsx";
+import AdminWhatsappQuoteDetail from "./pages/admin/AdminWhatsappQuoteDetail.jsx";
 import TopBar from "./components/layout/TopBar.jsx";
 import Header from "./components/layout/Header.jsx";
 import MainNav from "./components/layout/MainNav.jsx";
@@ -195,6 +197,8 @@ export default function App() {
               <Route path="/admin/reports" element={<AdminReports />} />
               <Route path="/admin/homepage" element={<AdminHomepage />} />
               <Route path="/admin/reviews" element={<AdminReviews />} />
+              <Route path="/admin/whatsapp-quotes" element={<AdminWhatsappQuotes />} />
+              <Route path="/admin/whatsapp-quotes/:id" element={<AdminWhatsappQuoteDetail />} />
               <Route path="/admin/settings" element={<AdminSettings />} />
             </Route>
           </Routes>

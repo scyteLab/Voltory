@@ -14,6 +14,7 @@ export function useAdminCounters() {
     pendingOrders:  null,
     openWarranty:   null,
     pendingReviews: null,
+    newQuotes:      null,
     notifications:  null,
   });
 
@@ -25,7 +26,7 @@ export function useAdminCounters() {
       try {
         const { data } = await supabase
           .from("dashboard_kpis")
-          .select("pending_orders, open_warranty_claims, low_stock_count, pending_reviews")
+          .select("pending_orders, open_warranty_claims, low_stock_count, pending_reviews, new_whatsapp_quotes")
           .maybeSingle();
         if (stopped || !data) return;
         // Notifications badge = every actionable item the admin
@@ -34,11 +35,13 @@ export function useAdminCounters() {
           Number(data.pending_orders || 0) +
           Number(data.open_warranty_claims || 0) +
           Number(data.low_stock_count || 0) +
-          Number(data.pending_reviews || 0);
+          Number(data.pending_reviews || 0) +
+          Number(data.new_whatsapp_quotes || 0);
         setCounts({
           pendingOrders:  Number(data.pending_orders || 0),
           openWarranty:   Number(data.open_warranty_claims || 0),
           pendingReviews: Number(data.pending_reviews || 0),
+          newQuotes:      Number(data.new_whatsapp_quotes || 0),
           notifications,
         });
       } catch { /* keep the previous values */ }
