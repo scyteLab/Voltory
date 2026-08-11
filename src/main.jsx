@@ -34,6 +34,7 @@ import "./styles/admin-reviews.css";
 import "./styles/review-guidelines.css";
 import "./styles/whatsapp-quotes.css";
 import "./styles/admin-whatsapp.css";
+import "./styles/admin-import.css";
 import "./styles/admin.css";
 
 ReactDOM.createRoot(document.getElementById("root")).render(

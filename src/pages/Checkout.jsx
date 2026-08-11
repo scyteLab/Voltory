@@ -9,6 +9,7 @@ import { useCatalog } from "../context/CatalogContext.jsx";
 import { useCustomerAuth } from "../context/AuthContext.jsx";
 import { useCustomerAddresses } from "../hooks/useCustomerAddresses.js";
 import AddressPicker from "../components/checkout/AddressPicker.jsx";
+import { openPaystack, paystackChannelFor, isPaystackConfigured } from "../lib/paystackClient.js";
 import { naira } from "../utils/format.js";
 import { SITE } from "../config/site.js";
 
@@ -122,7 +123,7 @@ export default function Checkout() {
     return Object.keys(e).length === 0;
   }
 
-  function onSubmit(ev) {
+  async function onSubmit(ev) {
     ev.preventDefault();
     if (!validate()) {
       // Scroll to first error field
@@ -152,11 +153,67 @@ export default function Checkout() {
       }).catch(() => { /* silent; not order-blocking */ });
     }
 
-    // Simulate payment processing \u2014 replace with Paystack when backend lands
+    // Compute the amount to charge (includes installation fee)
+    const chargeAmount = grand;
+
+    // Route based on payment method:
+    //   \u00B7 pod           \u2192 no Paystack, order goes through as unpaid
+    //   \u00B7 card/transfer/ussd \u2192 Paystack Inline modal, wait for callback
+    //
+    // If Paystack isn't configured (no VITE_PAYSTACK_PUBLIC_KEY),
+    // we fall back to the pre-Paystack behaviour: order goes through
+    // as unpaid so we don't block launches when payment infra isn't
+    // wired yet.
+
+    const needsPaystack = payment !== "pod" && isPaystackConfigured();
+
+    if (needsPaystack) {
+      const orderIdForRef = "PAY-" + Date.now().toString(36).toUpperCase();
+      const channel = paystackChannelFor(payment);
+      try {
+        const result = await openPaystack({
+          amount: chargeAmount,
+          email: contact.email || `${contact.phone.replace(/\D/g, "")}@voltory.ng`,
+          reference: orderIdForRef,
+          channels: channel ? [channel] : [],
+          metadata: {
+            customerName: contact.name,
+            customerPhone: contact.phone,
+            method: payment,
+          },
+        });
+        if (!result.ok) {
+          // Cancelled or failed \u2014 stay on checkout
+          setSubmitting(false);
+          if (!result.cancelled) {
+            setErrors({ payment: "Payment could not be completed. Please try again." });
+          }
+          return;
+        }
+        // Payment succeeded \u2014 create the order with paid status
+        const id = placeOrder({
+          contact, address, payment, installation,
+          paystackRef: result.ref,
+          paymentStatus: "paid",
+        });
+        navigate(`/order/${id}`);
+      } catch (err) {
+        setSubmitting(false);
+        // eslint-disable-next-line no-console
+        console.error("[checkout] paystack error:", err);
+        setErrors({ payment: err.message || "Payment failed. Please try again or choose Pay on Delivery." });
+      }
+      return;
+    }
+
+    // Non-Paystack path (pay on delivery, or Paystack not configured)
     setTimeout(() => {
-      const id = placeOrder({ contact, address, payment, installation });
+      const id = placeOrder({
+        contact, address, payment, installation,
+        paymentStatus: "unpaid",
+      });
       navigate(`/order/${id}`);
-    }, 600);
+    }, 400);
   }
 
   return (
@@ -380,7 +437,11 @@ export default function Checkout() {
             </dl>
 
             <button type="submit" className="ck-place" disabled={submitting}>
-              {submitting ? "Placing Order..." : <>Place Order · {naira(grand)}</>}
+              {submitting
+                ? (payment !== "pod" && isPaystackConfigured() ? "Opening secure payment\u2026" : "Placing Order\u2026")
+                : (payment !== "pod" && isPaystackConfigured()
+                    ? <>Pay {naira(grand)}</>
+                    : <>Place Order \u00B7 {naira(grand)}</>)}
             </button>
 
             <p className="ck-summary__secure">

@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { useSearchParams } from "react-router-dom";
-import { PackagePlus, RefreshCw } from "lucide-react";
+import { Link, useSearchParams } from "react-router-dom";
+import { PackagePlus, RefreshCw, Upload } from "lucide-react";
 import { useCatalog, fetchProductBySku } from "../../hooks/useCatalog.js";
 import CatalogFilters from "../../components/admin/CatalogFilters.jsx";
 import ProductTable from "../../components/admin/ProductTable.jsx";
@@ -154,6 +154,9 @@ export default function CatalogProducts() {
           <button className="adm-btn adm-btn--secondary" onClick={refresh}>
             <RefreshCw size={13} /> Refresh
           </button>
+          <Link to="/admin/products/import" className="adm-btn adm-btn--secondary">
+            <Upload size={13} /> Bulk import
+          </Link>
           <button className="adm-btn adm-btn--primary" onClick={openNewProduct}>
             <PackagePlus size={14} /> Add Product
           </button>

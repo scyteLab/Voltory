@@ -7,6 +7,7 @@ import {
   markOrderSynced, getUnsyncedOrders,
 } from "../utils/orders.js";
 import { insertOrderToSupabase } from "../lib/ordersClient.js";
+import { sendOrderEmails } from "../lib/emailClient.js";
 import { upsertFromCheckout } from "../lib/customerAuth.js";
 import { getStoredWishlist, saveWishlist } from "../utils/wishlist.js";
 import {
@@ -207,7 +208,7 @@ export function StoreProvider({ children }) {
   };
 
   /* ---------- checkout / invisible-signup ---------- */
-  const placeOrder = ({ contact, address, payment, installation }) => {
+  const placeOrder = ({ contact, address, payment, installation, paystackRef = null, paymentStatus = null }) => {
     const id = generateOrderId();
     const items = cart.map((i) => {
       const p = snapshotBySku(i.sku);
@@ -235,6 +236,12 @@ export function StoreProvider({ children }) {
     persistAccount(next);
     setAccount(next);
 
+    // If Paystack succeeded, payment_status was passed in. Otherwise
+    // infer from method: pod = unpaid until delivery; all others =
+    // unpaid unless the caller passes paid. This lets non-Paystack
+    // flows (e.g. bank transfer confirmations from admin) keep working.
+    const finalPaymentStatus = paymentStatus || "unpaid";
+
     const order = {
       id,
       createdAt: new Date().toISOString(),
@@ -248,6 +255,8 @@ export function StoreProvider({ children }) {
       account: { phone: next.phone, name: next.name },
       accountCreated,
       customer_id: null, // filled by the silent upsert below; may stay null if Supabase is unreachable
+      paystackRef,
+      paymentStatus: finalPaymentStatus,
       // syncedAt gets stamped when the background insert lands
     };
 
@@ -255,6 +264,15 @@ export function StoreProvider({ children }) {
     // The customer never waits on the network for their confirmation.
     saveOrder(order);
     clearCart();
+
+    // Fire order emails (customer confirmation + admin notification)
+    // in the background. Non-blocking, silent failure. If Resend
+    // isn't configured on the server, the function returns
+    // { skipped: true } and we log-info once.
+    sendOrderEmails(order).catch((err) => {
+      // eslint-disable-next-line no-console
+      console.warn("[placeOrder] email dispatch error:", err);
+    });
 
     // Silently create-or-find the customer record and link this order
     // to it. Fire in the background \u2014 if it fails, the order still

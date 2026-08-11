@@ -9,6 +9,7 @@ import AdminShell from "./components/admin/AdminShell.jsx";
 import AdminLogin from "./pages/admin/AdminLogin.jsx";
 import AdminDashboard from "./pages/admin/AdminDashboard.jsx";
 import CatalogProducts from "./pages/admin/CatalogProducts.jsx";
+import CatalogProductsImport from "./pages/admin/CatalogProductsImport.jsx";
 import AdminCategories from "./pages/admin/AdminCategories.jsx";
 import AdminBrands from "./pages/admin/AdminBrands.jsx";
 import AdminOrders from "./pages/admin/AdminOrders.jsx";
@@ -185,6 +186,7 @@ export default function App() {
             <Route path="/admin/login" element={<AdminLogin />} />
             <Route element={<AdminGuard><AdminShell /></AdminGuard>}>
               <Route path="/admin" element={<AdminDashboard />} />
+              <Route path="/admin/products/import" element={<CatalogProductsImport />} />
               <Route path="/admin/products" element={<CatalogProducts />} />
               <Route path="/admin/catalog/categories" element={<AdminCategories />} />
               <Route path="/admin/catalog/brands" element={<AdminBrands />} />

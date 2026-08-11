@@ -57,6 +57,8 @@ function toSupabaseShape(order) {
     installation_fee: Math.round(order.totals?.installationFee ?? 0),
     total:            Math.round(order.totals?.grand         ?? 0),
     notes: order.notes || null,
+    paystack_ref:   order.paystackRef   || null,
+    payment_status: order.paymentStatus || "unpaid",
   };
   const itemRows = (order.items || []).map((i) => ({
     order_id: order.id,
