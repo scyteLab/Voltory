@@ -4,6 +4,9 @@ import {
   Trash2, X,
 } from "lucide-react";
 import ImageUploader from "./ImageUploader.jsx";
+import {
+  specSuggestionsFor, ENERGY_CLASSES,
+} from "../../config/categorySpecSuggestions.js";
 
 /**
  * Product edit panel \u2014 right column of the catalog page.
@@ -13,12 +16,22 @@ import ImageUploader from "./ImageUploader.jsx";
  *   \u00B7 "edit"   \u2014 pre-filled with the selected product's data
  *   \u00B7 "closed" \u2014 empty state, prompts user to select or add
  *
- * Owns local form state so keystrokes don't hit Supabase. Save
- * dispatches upsertProduct via props. Cancel discards local edits.
- * Delete confirms first, then removes.
+ * Session-1a additions:
+ *   \u00B7 New Specifications section: Warranty (months), Energy
+ *     Class (dropdown), and a dynamic Specs repeater
+ *     ({label, value}[] shape, matching the existing DB
+ *     convention where specs is a JSONB array).
+ *   \u00B7 Category-aware label suggestions via categorySpec-
+ *     Suggestions \u2014 admin sees hints appropriate to whatever
+ *     category is currently picked in the Brand/Category row.
  *
- * Highlights are a dynamic string[] \u2014 add / remove rows without
- * touching the underlying jsonb column.
+ * NOT changed:
+ *   \u00B7 The appliance-specific columns (hp, litres, doors,
+ *     inverter) are still in the DB but not surfaced in this
+ *     form. Preserved verbatim on save. Future session adds a
+ *     category-conditional UI for them.
+ *   \u00B7 Highlights repeater, image uploader, delete flow, all
+ *     other fields \u2014 unchanged.
  */
 
 function emptyProduct() {
@@ -28,6 +41,9 @@ function emptyProduct() {
     status: "active", rating: null, reviews: 0, questions: 0,
     hp: null, inverter: null, litres: null, doors: null,
     tags: [], highlights: [], specs: [], description: "",
+    // Session-1a additions
+    warranty_months: null,
+    energy_class:    null,
   };
 }
 
@@ -37,13 +53,12 @@ function toEditable(p) {
     ...emptyProduct(),
     ...p,
     highlights: Array.isArray(p.highlights) ? p.highlights : [],
-    tags: Array.isArray(p.tags) ? p.tags : [],
-    specs: Array.isArray(p.specs) ? p.specs : [],
-    gallery: Array.isArray(p.gallery) ? p.gallery : [],
+    tags:       Array.isArray(p.tags)       ? p.tags       : [],
+    specs:      Array.isArray(p.specs)      ? p.specs      : [],
+    gallery:    Array.isArray(p.gallery)    ? p.gallery    : [],
   };
 }
 
-// Auto-slug from the product name if the slug is blank / new product
 function autoSlug(name) {
   return (name || "").toLowerCase()
     .replace(/[^a-z0-9]+/g, "-")
@@ -61,7 +76,6 @@ export default function ProductEditPanel({
   const [saveError, setSaveError] = useState(null);
   const [savedFlash, setSavedFlash] = useState(false);
 
-  // Reload when the selected product changes
   useEffect(() => {
     setForm(toEditable(product));
     setErrors({});
@@ -84,7 +98,6 @@ export default function ProductEditPanel({
   function field(k, v) {
     setForm((f) => {
       const next = { ...f, [k]: v };
-      // Auto-fill slug when creating a new product and name changes
       if (mode === "new" && k === "name" && !f.slug) {
         next.slug = autoSlug(v);
       }
@@ -92,6 +105,8 @@ export default function ProductEditPanel({
     });
     setErrors((er) => ({ ...er, [k]: undefined }));
   }
+
+  /* ---- Highlights repeater (existing, unchanged) ---- */
 
   function addHighlight() {
     setForm((f) => ({ ...f, highlights: [...(f.highlights || []), ""] }));
@@ -109,6 +124,31 @@ export default function ProductEditPanel({
     }));
   }
 
+  /* ---- Specs repeater (new this session) ---- */
+
+  function addSpec() {
+    setForm((f) => ({
+      ...f,
+      specs: [...(f.specs || []), { label: "", value: "" }],
+    }));
+  }
+  function setSpec(i, key, val) {
+    setForm((f) => ({
+      ...f,
+      specs: (f.specs || []).map((s, idx) =>
+        idx === i ? { ...s, [key]: val } : s
+      ),
+    }));
+  }
+  function removeSpec(i) {
+    setForm((f) => ({
+      ...f,
+      specs: (f.specs || []).filter((_, idx) => idx !== i),
+    }));
+  }
+
+  /* ---- Validation ---- */
+
   function validate() {
     const errs = {};
     if (!form.name?.trim())      errs.name = "Product name is required";
@@ -121,6 +161,16 @@ export default function ProductEditPanel({
     const stock = Number(form.stock);
     if (!Number.isFinite(stock) || stock < 0)  errs.stock = "Stock must be zero or higher";
     if (form.was && Number(form.was) <= price) errs.was = "Compare-at price must be higher than the selling price";
+
+    // Session-1a: warranty is optional but if provided must be a
+    // positive integer number of months (0 = "no warranty" is
+    // also valid, but nulling it is cleaner \u2014 discourage 0)
+    if (form.warranty_months !== "" && form.warranty_months != null) {
+      const w = Number(form.warranty_months);
+      if (!Number.isInteger(w) || w < 0) {
+        errs.warranty_months = "Warranty must be a whole number of months";
+      }
+    }
     return errs;
   }
 
@@ -131,7 +181,16 @@ export default function ProductEditPanel({
     setErrors(errs);
     if (Object.keys(errs).length) return;
 
-    // Coerce numeric fields; strip empty strings so Supabase gets null not ""
+    /* Strip empty specs (both label and value blank). Trim
+       label/value so accidental whitespace doesn't render as
+       phantom rows on the product page. */
+    const cleanedSpecs = (form.specs || [])
+      .map((s) => ({
+        label: (s.label || "").trim(),
+        value: (s.value || "").trim(),
+      }))
+      .filter((s) => s.label || s.value);
+
     const payload = {
       ...form,
       price: Number(form.price),
@@ -140,9 +199,16 @@ export default function ProductEditPanel({
       hp:      form.hp === "" || form.hp == null ? null : Number(form.hp),
       litres:  form.litres === "" || form.litres == null ? null : Number(form.litres),
       doors:   form.doors === "" || form.doors == null ? null : Number(form.doors),
-      inverter: form.inverter === "" || form.inverter == null ? null : form.inverter === true || form.inverter === "true",
+      inverter: form.inverter === "" || form.inverter == null
+        ? null
+        : form.inverter === true || form.inverter === "true",
       highlights: (form.highlights || []).filter((h) => h && h.trim()),
-      gallery: (form.gallery || []).filter((u) => u && u.trim()),
+      gallery:    (form.gallery || []).filter((u) => u && u.trim()),
+      specs:      cleanedSpecs,
+      warranty_months: form.warranty_months === "" || form.warranty_months == null
+        ? null
+        : Number(form.warranty_months),
+      energy_class:    form.energy_class || null,
     };
 
     try {
@@ -162,6 +228,12 @@ export default function ProductEditPanel({
     }
   }
 
+  /* Suggestions for the specs label datalist, based on the
+     currently-selected category. Datalist gives autocomplete
+     without forcing a value \u2014 admin can pick a suggestion or
+     type their own. */
+  const specLabelSuggestions = specSuggestionsFor(form.category);
+
   return (
     <aside className="adm-editpanel">
       <header className="adm-editpanel__head">
@@ -175,9 +247,6 @@ export default function ProductEditPanel({
       </header>
 
       <form onSubmit={onSubmit} className="adm-editpanel__body">
-        {/* real image upload \u2014 stores public URLs in form.image (main)
-            and form.gallery (extra slots). Requires the product-images
-            bucket to exist in Supabase Storage. */}
         <ImageUploader
           mainImage={form.image}
           gallery={Array.isArray(form.gallery) ? form.gallery : []}
@@ -209,20 +278,20 @@ export default function ProductEditPanel({
         <FormRow cols={2}>
           <Field label="Brand" error={errors.brand} required>
             <select value={form.brand || ""} onChange={(e) => field("brand", e.target.value)}>
-              <option value="">Choose brand…</option>
+              <option value="">Choose brand\u2026</option>
               {brands.map((b) => <option key={b.id} value={b.id}>{b.name}</option>)}
             </select>
           </Field>
           <Field label="Category" error={errors.category} required>
             <select value={form.category || ""} onChange={(e) => field("category", e.target.value)}>
-              <option value="">Choose category…</option>
+              <option value="">Choose category\u2026</option>
               {categories.map((c) => <option key={c.id} value={c.id}>{c.label}</option>)}
             </select>
           </Field>
         </FormRow>
 
         <FormRow cols={2}>
-          <Field label="Selling Price (₦)" error={errors.price} required>
+          <Field label="Selling Price (\u20A6)" error={errors.price} required>
             <input
               type="number" inputMode="numeric" min="0"
               value={form.price ?? ""}
@@ -230,7 +299,7 @@ export default function ProductEditPanel({
               placeholder="520000"
             />
           </Field>
-          <Field label="Compare-at Price (₦)" error={errors.was}>
+          <Field label="Compare-at Price (\u20A6)" error={errors.was}>
             <input
               type="number" inputMode="numeric" min="0"
               value={form.was ?? ""}
@@ -322,6 +391,89 @@ export default function ProductEditPanel({
             </button>
           </Field>
         </FormRow>
+
+        {/* ============================================
+             SPECIFICATIONS  (session 1a)
+             ============================================ */}
+        <div className="adm-specs-section">
+          <h3 className="adm-specs-section__title">Specifications</h3>
+          <p className="adm-specs-section__hint">
+            Structured specs shown on the product page. Warranty and energy class are
+            highlighted; additional specs appear as a labeled table.
+          </p>
+
+          <FormRow cols={2}>
+            <Field label="Warranty (months)" error={errors.warranty_months}>
+              <input
+                type="number"
+                inputMode="numeric"
+                min="0"
+                step="1"
+                value={form.warranty_months ?? ""}
+                onChange={(e) => field("warranty_months", e.target.value)}
+                placeholder="e.g. 24"
+              />
+            </Field>
+            <Field label="Energy Class">
+              <select
+                value={form.energy_class || ""}
+                onChange={(e) => field("energy_class", e.target.value)}
+              >
+                {ENERGY_CLASSES.map((cls) => (
+                  <option key={cls || "none"} value={cls}>
+                    {cls || "Not rated"}
+                  </option>
+                ))}
+              </select>
+            </Field>
+          </FormRow>
+
+          <FormRow>
+            <Field label="Additional specs">
+              {/* datalist provides label autocomplete suggestions
+                  based on the selected category */}
+              <datalist id={`spec-labels-${form.category || "default"}`}>
+                {specLabelSuggestions.map((s) => (
+                  <option key={s} value={s} />
+                ))}
+              </datalist>
+
+              <ul className="adm-specs-list">
+                {(form.specs || []).map((s, i) => (
+                  <li key={i} className="adm-specs-list__row">
+                    <input
+                      type="text"
+                      value={s.label || ""}
+                      onChange={(e) => setSpec(i, "label", e.target.value)}
+                      placeholder="Label (e.g. Capacity)"
+                      list={`spec-labels-${form.category || "default"}`}
+                    />
+                    <input
+                      type="text"
+                      value={s.value || ""}
+                      onChange={(e) => setSpec(i, "value", e.target.value)}
+                      placeholder="Value (e.g. 350L)"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => removeSpec(i)}
+                      aria-label="Remove spec"
+                    >
+                      <X size={13} />
+                    </button>
+                  </li>
+                ))}
+              </ul>
+              <button
+                type="button"
+                className="adm-btn adm-btn--secondary adm-btn--sm"
+                onClick={addSpec}
+              >
+                <Plus size={13} /> Add spec
+              </button>
+            </Field>
+          </FormRow>
+        </div>
 
         {saveError && (
           <div className="adm-empty adm-empty--err" style={{ padding: "14px 16px" }}>

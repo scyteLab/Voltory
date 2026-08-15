@@ -1,5 +1,5 @@
 /**
- * Installation requests \u2014 saved to localStorage from the booking
+ * Installation requests — saved to localStorage from the booking
  * form so the customer gets a real confirmation ID and the admin
  * can later surface them in the back office. Same pattern as
  * supportTickets. Backend swap-out is one function.

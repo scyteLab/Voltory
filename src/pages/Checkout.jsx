@@ -8,6 +8,7 @@ import { useStore } from "../context/StoreContext.jsx";
 import { useCatalog } from "../context/CatalogContext.jsx";
 import { useCustomerAuth } from "../context/AuthContext.jsx";
 import { useCustomerAddresses } from "../hooks/useCustomerAddresses.js";
+import { useCheckoutSettings } from "../hooks/useCheckoutSettings.js";
 import AddressPicker from "../components/checkout/AddressPicker.jsx";
 import { openPaystack, paystackChannelFor, isPaystackConfigured } from "../lib/paystackClient.js";
 import { naira } from "../utils/format.js";
@@ -30,10 +31,8 @@ export default function Checkout() {
   const { cart, totals, placeOrder, requestCall } = useStore();
   const { customer } = useCustomerAuth();
   const { bySku } = useCatalog();
+  const { get: getCheckoutSetting } = useCheckoutSettings();
   const navigate = useNavigate();
-
-  // Empty cart → bounce back home
-  if (cart.length === 0) return <Navigate to="/cart" replace />;
 
   // Pre-fill from the signed-in customer if any. Phone in DB is
   // +2348..., but the checkout form shows/accepts 08... so we strip
@@ -70,7 +69,13 @@ export default function Checkout() {
   const [submitting, setSubmitting] = useState(false);
 
   const installFee = installation ? SITE.installationFee : 0;
-  const grand = totals.grand + installFee;
+  // Recomputed from the admin-configurable threshold (AdminMarketing)
+  // instead of trusting totals.grand, which is memoized in StoreContext
+  // off the static SITE.freeDeliveryOver. Passed through to placeOrder()
+  // below so the saved order matches what's actually charged.
+  const freeDeliveryThreshold = getCheckoutSetting("free_delivery_threshold_ngn");
+  const deliveryFee = totals.subtotal >= freeDeliveryThreshold || totals.subtotal === 0 ? 0 : 5500;
+  const grand = totals.subtotal - totals.discount + deliveryFee + installFee;
 
   // First time saved addresses arrive, auto-pick the default one
   // (or the first one if none is marked default). Only runs once
@@ -97,7 +102,7 @@ export default function Checkout() {
       landmark: picked.landmark || "",
     });
     // Also mirror name/phone into contact if the saved address has
-    // recipient info \u2014 useful for gift deliveries
+    // recipient info — useful for gift deliveries
     if (picked.name || picked.phone) {
       setContact((c) => ({
         ...c,
@@ -106,6 +111,13 @@ export default function Checkout() {
       }));
     }
   }, [pickedAddressId, savedAddresses]);
+
+  // Empty cart → bounce back home. Must come after every hook above
+  // (Rules of Hooks) — placeOrder() clears the cart and this can
+  // briefly re-render with an empty cart before navigate() away from
+  // /checkout takes effect, so an early return before the hooks would
+  // skip them on that render and crash.
+  if (cart.length === 0) return <Navigate to="/cart" replace />;
 
   function validate() {
     const e = {};
@@ -137,7 +149,7 @@ export default function Checkout() {
 
     // If the customer typed a new address AND ticked "save for next
     // time", fire an async save to customer_addresses. We don't wait
-    // for it \u2014 the order should proceed even if the save fails
+    // for it — the order should proceed even if the save fails
     // (they can always add it manually on /account/addresses later).
     if (customer && !pickedAddressId && saveForNextTime) {
       createSavedAddress({
@@ -157,8 +169,8 @@ export default function Checkout() {
     const chargeAmount = grand;
 
     // Route based on payment method:
-    //   \u00B7 pod           \u2192 no Paystack, order goes through as unpaid
-    //   \u00B7 card/transfer/ussd \u2192 Paystack Inline modal, wait for callback
+    //   · pod           → no Paystack, order goes through as unpaid
+    //   · card/transfer/ussd → Paystack Inline modal, wait for callback
     //
     // If Paystack isn't configured (no VITE_PAYSTACK_PUBLIC_KEY),
     // we fall back to the pre-Paystack behaviour: order goes through
@@ -173,7 +185,7 @@ export default function Checkout() {
       try {
         const result = await openPaystack({
           amount: chargeAmount,
-          email: contact.email || `${contact.phone.replace(/\D/g, "")}@voltory.ng`,
+          email: contact.email || `${contact.phone.replace(/\D/g, "")}@mynaven.com`,
           reference: orderIdForRef,
           channels: channel ? [channel] : [],
           metadata: {
@@ -183,18 +195,19 @@ export default function Checkout() {
           },
         });
         if (!result.ok) {
-          // Cancelled or failed \u2014 stay on checkout
+          // Cancelled or failed — stay on checkout
           setSubmitting(false);
           if (!result.cancelled) {
             setErrors({ payment: "Payment could not be completed. Please try again." });
           }
           return;
         }
-        // Payment succeeded \u2014 create the order with paid status
+        // Payment succeeded — create the order with paid status
         const id = placeOrder({
           contact, address, payment, installation,
           paystackRef: result.ref,
           paymentStatus: "paid",
+          deliveryFee,
         });
         navigate(`/order/${id}`);
       } catch (err) {
@@ -211,6 +224,7 @@ export default function Checkout() {
       const id = placeOrder({
         contact, address, payment, installation,
         paymentStatus: "unpaid",
+        deliveryFee,
       });
       navigate(`/order/${id}`);
     }, 400);
@@ -235,7 +249,7 @@ export default function Checkout() {
           <section className="ck-card">
             <h2><span className="ck-card__step">1</span><User size={18} /> Contact Information</h2>
             <p className="ck-card__hint">
-              <Info size={13} /> Your Voltory account is created automatically from these details — no signup form needed.
+              <Info size={13} /> Your NAVEN account is created automatically from these details — no signup form needed.
             </p>
 
             <div className="ck-grid">
@@ -274,7 +288,7 @@ export default function Checkout() {
           <section className="ck-card">
             <h2><span className="ck-card__step">2</span><MapPin size={18} /> Delivery Address</h2>
 
-            {/* Saved addresses picker \u2014 only shown for signed-in
+            {/* Saved addresses picker — only shown for signed-in
                 customers who have at least one saved address. */}
             {customer && savedAddresses.length > 0 && (
               <AddressPicker
@@ -289,7 +303,7 @@ export default function Checkout() {
               />
             )}
 
-            {/* Manual form \u2014 shown when no saved address is picked
+            {/* Manual form — shown when no saved address is picked
                 (guest checkout, no saved addresses, or "new" toggle) */}
             {!pickedAddressId && (
             <div className="ck-grid">
@@ -331,7 +345,7 @@ export default function Checkout() {
             </div>
             )}
 
-            {/* Save-for-next-time \u2014 only when signed in AND typing a
+            {/* Save-for-next-time — only when signed in AND typing a
                 new address. Guests don't have anywhere to save to. */}
             {customer && !pickedAddressId && (
               <label className="ck-savefornext">
@@ -422,7 +436,7 @@ export default function Checkout() {
               )}
               <div>
                 <dt>Delivery</dt>
-                <dd>{totals.deliveryFee === 0 ? "FREE" : naira(totals.deliveryFee)}</dd>
+                <dd>{deliveryFee === 0 ? "FREE" : naira(deliveryFee)}</dd>
               </div>
               {installation && (
                 <div>
@@ -438,10 +452,10 @@ export default function Checkout() {
 
             <button type="submit" className="ck-place" disabled={submitting}>
               {submitting
-                ? (payment !== "pod" && isPaystackConfigured() ? "Opening secure payment\u2026" : "Placing Order\u2026")
+                ? (payment !== "pod" && isPaystackConfigured() ? "Opening secure payment…" : "Placing Order…")
                 : (payment !== "pod" && isPaystackConfigured()
                     ? <>Pay {naira(grand)}</>
-                    : <>Place Order \u00B7 {naira(grand)}</>)}
+                    : <>Place Order · {naira(grand)}</>)}
             </button>
 
             <p className="ck-summary__secure">

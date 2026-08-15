@@ -155,7 +155,7 @@ export default function CategoryFormModal({ category, onClose, onSubmit }) {
               Cancel
             </button>
             <button type="submit" className="adm-btn adm-btn--primary" disabled={submitting}>
-              {submitting ? "Saving\u2026" : isEdit ? "Save changes" : "Create category"}
+              {submitting ? "Saving…" : isEdit ? "Save changes" : "Create category"}
             </button>
           </div>
         </form>

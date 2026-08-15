@@ -23,7 +23,7 @@ export default function OrderConfirmation() {
 
   // If we didn't find the order locally (customer opened this URL on a
   // different device from where they placed the order), fetch from
-  // Supabase. Only run once \u2014 the polling effect below handles the
+  // Supabase. Only run once — the polling effect below handles the
   // syncedAt refresh for the local-first case.
   useEffect(() => {
     if (order || remoteChecked) return;
@@ -37,7 +37,7 @@ export default function OrderConfirmation() {
     return () => { cancelled = true; };
   }, [id, order, remoteChecked]);
 
-  // Poll every 4 seconds until the order shows syncedAt \u2014 keeps the
+  // Poll every 4 seconds until the order shows syncedAt — keeps the
   // sync pill honest without hammering localStorage. Stops once synced.
   useEffect(() => {
     if (!order || order.syncedAt) return;
@@ -51,14 +51,14 @@ export default function OrderConfirmation() {
     return () => clearInterval(t);
   }, [id, order]);
 
-  // Wait for the remote check before deciding the order doesn't exist \u2014
+  // Wait for the remote check before deciding the order doesn't exist —
   // otherwise a customer opening this URL on a fresh device would flash
   // a redirect to home before Supabase has had a chance to respond.
   if (!order && !remoteChecked) {
     return (
       <main className="wrap">
         <div style={{ padding: "60px 20px", textAlign: "center", color: "var(--ink-3)" }}>
-          Loading your order\u2026
+          Loading your order…
         </div>
       </main>
     );
@@ -86,7 +86,7 @@ export default function OrderConfirmation() {
         <section className="acct-banner">
           <span className="acct-banner__icon"><BadgeCheck size={28} /></span>
           <div>
-            <h2>Your Voltory account is ready</h2>
+            <h2>Your NAVEN account is ready</h2>
             <p>
               We've created your account automatically using your phone number
               <b className="mono"> {order.contact.phone}</b>. Next time you shop,
@@ -211,7 +211,7 @@ export default function OrderConfirmation() {
  * A tiny pill next to the Order ID showing sync state.
  *
  * We deliberately soft-pedal the un-synced state:
- *   "Saved locally" \u2014 not "Failed" or "Error"
+ *   "Saved locally" — not "Failed" or "Error"
  *
  * The customer's order IS placed (localStorage source of truth) and
  * WILL sync once connectivity is available. Alarming language would
@@ -231,7 +231,7 @@ function SyncPill({ synced }) {
   return (
     <span
       className="conf-hero__syncpill conf-hero__syncpill--pending"
-      title="Order saved locally \u2014 finishing sync in the background"
+      title="Order saved locally — finishing sync in the background"
     >
       <CloudOff size={12} /> Saved locally
     </span>

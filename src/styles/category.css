@@ -656,16 +656,24 @@
   flex-direction: column;
   gap: 4px;
 }
+/* .cfilter__group li above sets a 2-col checkbox+label grid for the
+   other filter groups — the rating row is a single button, not a
+   checkbox pair, so it needs its own block-level li to lay out the
+   button's flex content normally instead of being squeezed into an
+   18px grid column. */
+.cfilter__list--rating li {
+  display: block;
+}
 
 .cfilter__rating {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
   width: 100%;
-  padding: 6px 8px;
+  padding: 8px 10px;
   background: none;
   border: 1px solid transparent;
-  border-radius: 6px;
+  border-radius: 8px;
   font: inherit;
   color: var(--ink);
   cursor: pointer;
@@ -682,11 +690,18 @@
 
 .cfilter__rating-stars {
   display: inline-flex;
+  align-items: center;
   gap: 1px;
   font-size: 15px;
   line-height: 1;
+  flex-shrink: 0;
 }
 .cfilter__star { color: #d8dee7; }
 .cfilter__star--on { color: var(--acc, #f59e0b); }
-.cfilter__rating-lbl { font-size: 13px; font-weight: 500; color: var(--ink); }
+.cfilter__rating-lbl {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--ink);
+  white-space: nowrap;
+}
 .cfilter__rating--on .cfilter__rating-lbl { color: var(--p); font-weight: 700; }

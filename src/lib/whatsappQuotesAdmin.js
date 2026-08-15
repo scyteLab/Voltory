@@ -4,15 +4,15 @@ import { supabase } from "./supabaseClient.js";
  * whatsappQuotesAdmin
  *
  * Everything the admin needs to work WhatsApp quotes:
- *   \u00B7 fetchQuotesForAdmin       \u2014 list, filtered by status
- *   \u00B7 fetchQuoteStatusCounts    \u2014 tab counters
- *   \u00B7 fetchQuoteDetail          \u2014 single quote + items + customer
- *   \u00B7 setQuoteStatus            \u2014 update status + optional notes
- *   \u00B7 updateQuoteNotes          \u2014 save rep notes
- *   \u00B7 updateQuoteItem           \u2014 change qty / price on one line
- *   \u00B7 addQuoteItem              \u2014 rep adds a line during negotiation
- *   \u00B7 removeQuoteItem           \u2014 rep removes a line
- *   \u00B7 convertQuoteToOrder       \u2014 the big one: copy quote to orders/order_items
+ *   · fetchQuotesForAdmin       — list, filtered by status
+ *   · fetchQuoteStatusCounts    — tab counters
+ *   · fetchQuoteDetail          — single quote + items + customer
+ *   · setQuoteStatus            — update status + optional notes
+ *   · updateQuoteNotes          — save rep notes
+ *   · updateQuoteItem           — change qty / price on one line
+ *   · addQuoteItem              — rep adds a line during negotiation
+ *   · removeQuoteItem           — rep removes a line
+ *   · convertQuoteToOrder       — the big one: copy quote to orders/order_items
  */
 
 /* ============================================================
@@ -110,7 +110,7 @@ export async function fetchQuoteDetail(quoteId) {
 
 /**
  * Set the quote's status. Recomputes the subtotal server-side is
- * done in a separate call \u2014 status changes shouldn't imply a
+ * done in a separate call — status changes shouldn't imply a
  * price change.
  */
 export async function setQuoteStatus(quoteId, status, notes = undefined) {
@@ -232,7 +232,7 @@ export async function removeQuoteItem(quoteId, itemId) {
 
 /**
  * Reads all remaining items and updates the parent quote's subtotal.
- * Called after every item mutation. Silent \u2014 if it fails, the item
+ * Called after every item mutation. Silent — if it fails, the item
  * change is still applied, subtotal will be off until next call.
  */
 async function recomputeQuoteSubtotal(quoteId) {
@@ -253,7 +253,7 @@ async function recomputeQuoteSubtotal(quoteId) {
 }
 
 /* ============================================================
-   Convert-to-order \u2014 the big one
+   Convert-to-order — the big one
    ============================================================ */
 
 /**
@@ -261,15 +261,15 @@ async function recomputeQuoteSubtotal(quoteId) {
  * Marks the quote as 'confirmed' and stamps linked_order_id.
  *
  * Behaviour:
- *   \u00B7 Generates a new order id in the standard VLT- format
- *   \u00B7 Uses current quote items and current customer info
- *   \u00B7 Sets order status = 'confirmed' (the rep already knows the
+ *   · Generates a new order id in the standard VLT- format
+ *   · Uses current quote items and current customer info
+ *   · Sets order status = 'confirmed' (the rep already knows the
  *     deal is closed by the time they click convert)
- *   \u00B7 Payment method defaults to 'pay_on_delivery' since WhatsApp
+ *   · Payment method defaults to 'pay_on_delivery' since WhatsApp
  *     sales are typically cash / bank-transfer on delivery
- *   \u00B7 Address is left empty {} \u2014 rep will fill via the admin
+ *   · Address is left empty {} — rep will fill via the admin
  *     orders page after conversion
- *   \u00B7 Won't convert if quote already has a linked_order_id (prevents
+ *   · Won't convert if quote already has a linked_order_id (prevents
  *     double-creating an order from an accidental double-click)
  */
 export async function convertQuoteToOrder(quoteId) {
@@ -285,12 +285,12 @@ export async function convertQuoteToOrder(quoteId) {
       return { ok: false, error: `Already converted (order ${q.linkedOrderId})` };
     }
     if (q.items.length === 0) {
-      return { ok: false, error: "Quote has no items \u2014 add items before converting" };
+      return { ok: false, error: "Quote has no items — add items before converting" };
     }
 
     const orderId = generateOrderIdVLT();
 
-    // Build order row \u2014 mirrors toSupabaseShape() in ordersClient.js
+    // Build order row — mirrors toSupabaseShape() in ordersClient.js
     const subtotal    = q.items.reduce((s, i) => s + Number(i.lineTotal || 0), 0);
     const orderRow = {
       id: orderId,

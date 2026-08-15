@@ -4,11 +4,11 @@ import { useAdminCounters } from "../../hooks/useAdminCounters.js";
 
 /**
  * The topbar. Owns:
- *   \u00B7 mobile burger toggle
- *   \u00B7 global search (opens \u2318K palette)
- *   \u00B7 notification bell with LIVE badge
- *   \u00B7 help icon
- *   \u00B7 user cluster with role, avatar, sign-out
+ *   · mobile burger toggle
+ *   · global search (opens ⌘K palette)
+ *   · notification bell with LIVE badge
+ *   · help icon
+ *   · user cluster with role, avatar, sign-out
  */
 export default function AdminTopbar({ drawerOpen, onToggleDrawer, onOpenPalette }) {
   const { admin, signOutAdmin } = useAdmin();

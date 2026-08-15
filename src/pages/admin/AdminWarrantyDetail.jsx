@@ -8,7 +8,7 @@ import { fetchWarrantyWithContext, setWarrantyStatus } from "../../hooks/useWarr
 import { WARRANTY_STATUSES, WARRANTY_TRANSITIONS } from "../../config/warrantyStatus.js";
 import { ORDER_STATUSES } from "../../config/orderStatus.js";
 
-function naira(n) { return "\u20A6" + Number(n || 0).toLocaleString("en-NG"); }
+function naira(n) { return "₦" + Number(n || 0).toLocaleString("en-NG"); }
 function fmtDateLong(iso) {
   if (!iso) return "";
   return new Date(iso).toLocaleString("en-NG", {
@@ -38,7 +38,7 @@ export default function AdminWarrantyDetail() {
   const [saving, setSaving] = useState(null);
   const [confirming, setConfirming] = useState(null);
 
-  // Resolution notes editor state \u2014 kept local so keystrokes don't hit DB
+  // Resolution notes editor state — kept local so keystrokes don't hit DB
   const [resolutionDraft, setResolutionDraft] = useState("");
   const [notesDirty, setNotesDirty] = useState(false);
   const [notesSaving, setNotesSaving] = useState(false);
@@ -225,7 +225,7 @@ export default function AdminWarrantyDetail() {
                   disabled={!notesDirty || notesSaving}
                   onClick={saveNotes}
                 >
-                  {notesSaving ? "Saving\u2026" : "Save notes"}
+                  {notesSaving ? "Saving…" : "Save notes"}
                 </button>
               </div>
             </div>
@@ -339,7 +339,7 @@ function TransitionButton({ target, label, isConfirming, isSaving, onFire, onCan
           Keep as is
         </button>
         <button className="adm-btn adm-btn--danger" onClick={onFire} disabled={isSaving}>
-          {isSaving ? "Working\u2026" : "Yes, reject"}
+          {isSaving ? "Working…" : "Yes, reject"}
         </button>
       </span>
     );
@@ -351,7 +351,7 @@ function TransitionButton({ target, label, isConfirming, isSaving, onFire, onCan
       onClick={onFire}
       disabled={isSaving}
     >
-      <Icon size={13} /> {isSaving ? `\u2192 ${label}\u2026` : `Mark as ${label}`}
+      <Icon size={13} /> {isSaving ? `→ ${label}…` : `Mark as ${label}`}
     </button>
   );
 }

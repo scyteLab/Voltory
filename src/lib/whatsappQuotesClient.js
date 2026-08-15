@@ -7,13 +7,13 @@ import { naira } from "../utils/format.js";
  *
  * Handles the "Send Cart to WhatsApp" flow:
  *
- *   1. generateQuoteId()      \u2014 unique reference: VQ-YYYYMMDDHHmm-XXXX
- *   2. saveQuote()            \u2014 writes quote header + items to Supabase
- *   3. buildWhatsappMessage() \u2014 formats the pre-filled WA message
- *   4. buildWhatsappUrl()     \u2014 assembles the wa.me URL
+ *   1. generateQuoteId()      — unique reference: VQ-YYYYMMDDHHmm-XXXX
+ *   2. saveQuote()            — writes quote header + items to Supabase
+ *   3. buildWhatsappMessage() — formats the pre-filled WA message
+ *   4. buildWhatsappUrl()     — assembles the wa.me URL
  *
  * We save FIRST, open WhatsApp SECOND. If the save fails, the button
- * shows an error and doesn't open WhatsApp \u2014 otherwise the customer
+ * shows an error and doesn't open WhatsApp — otherwise the customer
  * could message the rep with a quote ID the rep can't find in admin.
  */
 
@@ -60,7 +60,7 @@ export async function saveQuote({ cart, bySku, customer, contactName, contactPho
   const subtotal = items.reduce((s, i) => s + i.line_total, 0);
 
   if (!supabaseConfigured) {
-    // Dev fallback \u2014 return the ID without saving so WhatsApp still opens
+    // Dev fallback — return the ID without saving so WhatsApp still opens
     // eslint-disable-next-line no-console
     console.warn("[whatsappQuotes] Supabase not configured; quote not persisted:", quoteId);
     return { ok: true, quoteId, subtotal, items };
@@ -117,21 +117,21 @@ export async function saveQuote({ cart, bySku, customer, contactName, contactPho
  * inside that limit.
  *
  * Message shape:
- *   Hi Voltory! I'd like to enquire about:
+ *   Hi NAVEN! I'd like to enquire about:
  *
- *   \u2022 2\u00D7 Scanfrost 350L Refrigerator (SF350) \u2013 \u20A6250,000 each
- *   \u2022 1\u00D7 Midea 1.5HP Inverter AC (MID15I) \u2013 \u20A6180,000 each
+ *   • 2× Scanfrost 350L Refrigerator (SF350) – ₦250,000 each
+ *   • 1× Midea 1.5HP Inverter AC (MID15I) – ₦180,000 each
  *
- *   Subtotal: \u20A6680,000
+ *   Subtotal: ₦680,000
  *
  *   My name is Ilori Emmanuel. Quote ref: VQ-YYYYMMDDHHmm-XXXX
  */
 export function buildWhatsappMessage({ quoteId, subtotal, items, contactName }) {
   const nameLine = contactName ? `My name is ${contactName}. ` : "";
   const lines = [
-    "Hi Voltory! I'd like to enquire about:",
+    "Hi NAVEN! I'd like to enquire about:",
     "",
-    ...items.map((i) => `\u2022 ${i.qty}\u00D7 ${i.product_name} (${i.sku}) \u2013 ${naira(i.unit_price)} each`),
+    ...items.map((i) => `• ${i.qty}× ${i.product_name} (${i.sku}) – ${naira(i.unit_price)} each`),
     "",
     `Subtotal: ${naira(subtotal)}`,
     "",

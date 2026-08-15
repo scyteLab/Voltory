@@ -18,7 +18,7 @@ export default function About() {
 
   useEffect(() => {
     const prev = document.title;
-    document.title = `About \u2014 ${SITE.name}`;
+    document.title = `About — ${SITE.name}`;
     return () => { document.title = prev; };
   }, []);
 

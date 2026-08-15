@@ -3,7 +3,7 @@ import { fetchCustomerReviews, deleteReview } from "../lib/reviewsClient.js";
 import { useCustomerAuth } from "../context/AuthContext.jsx";
 
 /**
- * useCustomerReviews \u2014 the "My Reviews" page.
+ * useCustomerReviews — the "My Reviews" page.
  * Loads all reviews written by the current customer (all statuses)
  * so they can see pending / approved / rejected states.
  */

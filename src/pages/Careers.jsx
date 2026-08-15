@@ -17,7 +17,7 @@ import {
 } from "../utils/careerApplications.js";
 import Icon from "../components/ui/Icon.jsx";
 
-const OPEN_APPLICATION = { id: "open", title: "Open Application \u2014 no specific role" };
+const OPEN_APPLICATION = { id: "open", title: "Open Application — no specific role" };
 
 export default function Careers() {
   const { customer } = useCustomerAuth();
@@ -39,7 +39,7 @@ export default function Careers() {
 
   useEffect(() => {
     const prev = document.title;
-    document.title = `Careers \u2014 ${SITE.name}`;
+    document.title = `Careers — ${SITE.name}`;
     return () => { document.title = prev; };
   }, []);
 
@@ -74,7 +74,7 @@ export default function Careers() {
       const cleaned = form.phone.replace(/\s/g, "");
       if (!/^0[789][01]\d{8}$/.test(cleaned)) errs.phone = "Phone format: 0803 123 4567";
     }
-    if (!form.coverNote.trim()) errs.coverNote = "Tell us a bit about yourself \u2014 even one paragraph";
+    if (!form.coverNote.trim()) errs.coverNote = "Tell us a bit about yourself — even one paragraph";
     else if (form.coverNote.trim().length < 30) errs.coverNote = "Please add a bit more (at least 30 characters)";
 
     if (Object.keys(errs).length) {
@@ -115,7 +115,7 @@ export default function Careers() {
       <section className="mkt-hero mkt-hero--careers">
         <div className="mkt-hero__copy">
           <span className="mkt-hero__pill">
-            <Briefcase size={13} /> JOIN VOLTORY
+            <Briefcase size={13} /> JOIN NAVEN
           </span>
           <h1>{CAREERS_HERO.headline}</h1>
           <p>{CAREERS_HERO.body}</p>
@@ -132,7 +132,7 @@ export default function Careers() {
 
       {/* WHY JOIN */}
       <div className="section-head" style={{ marginTop: 32 }}>
-        <h2>Why join Voltory right now</h2>
+        <h2>Why join NAVEN right now</h2>
         <p style={{ fontSize: 12.5, color: "var(--mut)", margin: 0 }}>
           The work is real, the ownership is real, the impact is real
         </p>
@@ -362,13 +362,13 @@ export default function Careers() {
               </label>
 
               <label className={"field field--full" + (errors.coverNote ? " has-error" : "")}>
-                <span className="field__label">Why Voltory?</span>
+                <span className="field__label">Why NAVEN?</span>
                 <textarea
                   className="contact-textarea"
                   rows="5"
                   value={form.coverNote}
                   onChange={(e) => field("coverNote", e.target.value)}
-                  placeholder="Tell us briefly: what you do well, what you’d want to own at Voltory, and anything relevant about your background. One paragraph is fine."
+                  placeholder="Tell us briefly: what you do well, what you’d want to own at NAVEN, and anything relevant about your background. One paragraph is fine."
                 />
                 {errors.coverNote && <span className="field__error">{errors.coverNote}</span>}
               </label>
@@ -377,7 +377,7 @@ export default function Careers() {
 
           <div className="cr-form__foot">
             <small>
-              By submitting, you consent to Voltory storing your application details
+              By submitting, you consent to NAVEN storing your application details
               for review and future role-matching. We never share applicant information
               with third parties.
             </small>

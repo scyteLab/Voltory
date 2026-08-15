@@ -68,7 +68,7 @@ function SpecsPanel({ product }) {
 function DescPanel({ product }) {
   return (
     <div className="rich">
-      <p>{product.description || `The ${product.name} is part of Voltory's curated catalogue of original electronics, backed by official warranty and after-sales support across Nigeria.`}</p>
+      <p>{product.description || `The ${product.name} is part of NAVEN's curated catalogue of original electronics, backed by official warranty and after-sales support across Nigeria.`}</p>
       {product.highlights?.length > 0 && (
         <>
           <h4>Key Highlights</h4>
@@ -141,8 +141,8 @@ const REVIEW_TEMPLATES = [
     rating: 5,
     texts: [
       "Excellent product! Delivery was fast and the item arrived in perfect condition. Very happy with this purchase.",
-      "Top quality, exactly as described on the website. Voltory's packaging was superb. Would definitely recommend to friends and family.",
-      "This is my second purchase from Voltory and I'm not disappointed. The product works perfectly and customer service was very responsive.",
+      "Top quality, exactly as described on the website. NAVEN's packaging was superb. Would definitely recommend to friends and family.",
+      "This is my second purchase from NAVEN and I'm not disappointed. The product works perfectly and customer service was very responsive.",
     ],
   },
   {
@@ -174,7 +174,7 @@ const REVIEW_TEMPLATES = [
   },
 ];
 
-/** Simple seeded hash from a string \u2014 keeps reviews stable per product. */
+/** Simple seeded hash from a string — keeps reviews stable per product. */
 function hashSku(sku) {
   let h = 0;
   for (let i = 0; i < (sku || "PROD").length; i++) {

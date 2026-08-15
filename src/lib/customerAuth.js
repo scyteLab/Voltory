@@ -1,17 +1,17 @@
 import { supabase, supabaseConfigured } from "./supabaseClient.js";
 
 /**
- * customerAuth \u2014 Session 30 (own-auth interim; Session 32 migrates to Supabase Auth).
+ * customerAuth — Session 30 (own-auth interim; Session 32 migrates to Supabase Auth).
  *
  * Two entry points that create customer rows:
- *   \u2022 verifyOtp()          \u2014 explicit signup / login. Creates a session.
- *   \u2022 upsertFromCheckout() \u2014 silent, from guest checkout. No session.
+ *   • verifyOtp()          — explicit signup / login. Creates a session.
+ *   • upsertFromCheckout() — silent, from guest checkout. No session.
  *
  * Both flows share the same underlying "find-or-create customer by phone"
  * logic (findOrCreateCustomer) so a customer who checked out as a guest
  * and later signs up ends up merging into the same row cleanly.
  *
- * OTP is FAKE in this session \u2014 always "1234". The signup / login UIs
+ * OTP is FAKE in this session — always "1234". The signup / login UIs
  * show a visible "Development Mode: OTP is 1234" banner. Session 32
  * replaces this with Termii + real codes.
  */
@@ -77,7 +77,7 @@ async function hashCode(code) {
  * fields without overwriting existing values.
  *
  * `source` is only applied on creation. A guest who later signs up
- * keeps source='guest' \u2014 which is honest and useful for analytics.
+ * keeps source='guest' — which is honest and useful for analytics.
  * Session 32 can add a `has_signed_up` flag if we want to distinguish.
  */
 async function findOrCreateCustomer({ phone, profile = {}, source = "guest" }) {
@@ -141,7 +141,7 @@ export async function requestOtp({ phone, purpose = "login" }) {
 
   const codeHash = await hashCode(DEV_OTP_CODE);
 
-  // Always start fresh \u2014 clear any active challenges for this phone.
+  // Always start fresh — clear any active challenges for this phone.
   await supabase.from("customer_otp_challenges").delete().eq("phone", p);
 
   const { error } = await supabase.from("customer_otp_challenges").insert({
@@ -194,7 +194,7 @@ export async function verifyOtp({ phone, code, purpose = "login", profile = {} }
 
   // For login, require existing customer.
   // For signup, create or merge. If a guest row exists, this signup
-  // silently upgrades it \u2014 no "welcome back" popup, per product decision.
+  // silently upgrades it — no "welcome back" popup, per product decision.
   const existing = await supabase.from("customers").select("*").eq("phone", p).maybeSingle();
   if (existing.error) return { ok: false, error: existing.error.message };
 
@@ -235,7 +235,7 @@ export async function verifyOtp({ phone, code, purpose = "login", profile = {} }
 }
 
 /* ============================================================
-   Guest checkout path (silent \u2014 NO session)
+   Guest checkout path (silent — NO session)
    ============================================================ */
 
 /**
@@ -244,12 +244,12 @@ export async function verifyOtp({ phone, code, purpose = "login", profile = {} }
  * the caller can persist it on the order.
  *
  * IMPORTANT: does NOT mint a session token. The customer stays a
- * guest from the browser's perspective \u2014 no /account access, no
+ * guest from the browser's perspective — no /account access, no
  * "signed in" state. The only effect is a real DB record the admin
  * can see, and future orders will link cleanly.
  *
  * If the customer was previously signed in (either now or in the
- * past) and happens to use the same phone at checkout, no problem \u2014
+ * past) and happens to use the same phone at checkout, no problem —
  * we find the existing row and reuse it. Their session (if any) is
  * unaffected.
  */
@@ -302,7 +302,7 @@ export async function getCurrentCustomer() {
     .from("customers").select("*").eq("id", session.customer_id).maybeSingle();
   if (cErr || !customer) { setStoredToken(null); return null; }
 
-  // Fire-and-forget renewals \u2014 errors ignored
+  // Fire-and-forget renewals — errors ignored
   supabase.from("customer_sessions")
     .update({ last_seen_at: now })
     .eq("token", token).then(() => {}, () => {});

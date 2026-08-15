@@ -1,5 +1,5 @@
 /**
- * Support tickets \u2014 saved from the Contact form to localStorage
+ * Support tickets — saved from the Contact form to localStorage
  * so the customer gets real confirmation and the admin can later
  * surface them in the back office. Replaced by an API endpoint
  * when the backend lands; the shape stays.

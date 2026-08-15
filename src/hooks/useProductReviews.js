@@ -3,20 +3,20 @@ import { fetchProductReviews, checkReviewEligibility, upsertReview, deleteReview
 import { useCustomerAuth } from "../context/AuthContext.jsx";
 
 /**
- * useProductReviews \u2014 loads approved reviews + aggregate for a
+ * useProductReviews — loads approved reviews + aggregate for a
  * product, plus checks whether the current signed-in customer is
  * eligible to write one (they've ordered it or already have a
  * review).
  *
  * Exposes:
- *   \u00B7 reviews         approved list
- *   \u00B7 aggregate       { average, count }
- *   \u00B7 loading, error
- *   \u00B7 canReview       signed-in customer eligibility
- *   \u00B7 eligibleOrderId order to tag the review with
- *   \u00B7 existingReview  current customer's review row (if any)
- *   \u00B7 submitReview()  create/update
- *   \u00B7 removeReview()  delete
+ *   · reviews         approved list
+ *   · aggregate       { average, count }
+ *   · loading, error
+ *   · canReview       signed-in customer eligibility
+ *   · eligibleOrderId order to tag the review with
+ *   · existingReview  current customer's review row (if any)
+ *   · submitReview()  create/update
+ *   · removeReview()  delete
  */
 export function useProductReviews(productSku) {
   const { customer } = useCustomerAuth();

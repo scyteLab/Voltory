@@ -15,6 +15,7 @@ export function useAdminCounters() {
     openWarranty:   null,
     pendingReviews: null,
     newQuotes:      null,
+    lowStock:       null,
     notifications:  null,
   });
 
@@ -42,6 +43,7 @@ export function useAdminCounters() {
           openWarranty:   Number(data.open_warranty_claims || 0),
           pendingReviews: Number(data.pending_reviews || 0),
           newQuotes:      Number(data.new_whatsapp_quotes || 0),
+          lowStock:       Number(data.low_stock_count || 0),
           notifications,
         });
       } catch { /* keep the previous values */ }

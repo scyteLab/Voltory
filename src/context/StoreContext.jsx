@@ -21,7 +21,7 @@ import { DEFAULT_SITE_SETTINGS, fetchSiteSettings, updateSiteSettings } from "..
  * page refreshes via localStorage.
  *
  * Account is keyed by phone number. Both signup paths (invisible
- * at checkout, explicit at /signup) hit the same record \u2014 the
+ * at checkout, explicit at /signup) hit the same record — the
  * second path simply merges its fields onto whatever exists.
  */
 const Ctx = createContext(null);
@@ -153,9 +153,9 @@ export function StoreProvider({ children }) {
   /* ---------- comparison ---------- */
   /**
    * Toggle a SKU in the comparison set. Returns:
-   *   { added: true, removed: false }            \u2014 SKU added
-   *   { added: false, removed: true }            \u2014 SKU removed
-   *   { added: false, removed: false, full: true } \u2014 cap of 4 hit
+   *   { added: true, removed: false }            — SKU added
+   *   { added: false, removed: true }            — SKU removed
+   *   { added: false, removed: false, full: true } — cap of 4 hit
    */
   const toggleCompare = (sku) => {
     const present = compare.includes(sku);
@@ -204,11 +204,14 @@ export function StoreProvider({ children }) {
   const signOut = () => {
     persistAccount(null);
     setAccount(null);
-    // Cart, wishlist and comparison stay \u2014 a guest can keep all three after sign-out.
+    // Cart, wishlist and comparison stay — a guest can keep all three after sign-out.
   };
 
   /* ---------- checkout / invisible-signup ---------- */
-  const placeOrder = ({ contact, address, payment, installation, paystackRef = null, paymentStatus = null }) => {
+  const placeOrder = ({
+    contact, address, payment, installation, paystackRef = null, paymentStatus = null,
+    deliveryFee: deliveryFeeOverride = null,
+  }) => {
     const id = generateOrderId();
     const items = cart.map((i) => {
       const p = snapshotBySku(i.sku);
@@ -224,7 +227,11 @@ export function StoreProvider({ children }) {
     const installFee = installation ? SITE.installationFee : 0;
     const subtotal = totals.subtotal;
     const discount = totals.discount;
-    const deliveryFee = totals.deliveryFee;
+    // Checkout.jsx computes its own deliveryFee from the admin-configurable
+    // threshold (useCheckoutSettings) and passes it through here so the
+    // saved order total matches what was actually charged at checkout.
+    // Every other caller omits it and gets the static SITE-based totals.
+    const deliveryFee = deliveryFeeOverride ?? totals.deliveryFee;
     const grand = subtotal - discount + deliveryFee + installFee;
 
     const existing = loadAccount();
@@ -275,7 +282,7 @@ export function StoreProvider({ children }) {
     });
 
     // Silently create-or-find the customer record and link this order
-    // to it. Fire in the background \u2014 if it fails, the order still
+    // to it. Fire in the background — if it fails, the order still
     // exists (just without a customer_id), and next boot will retry
     // the order sync but not the customer link. Acceptable at this
     // scale; Session 32 formalises with real auth.
@@ -289,7 +296,7 @@ export function StoreProvider({ children }) {
             if (r.ok) markOrderSynced(id);
           });
         } else {
-          // Couldn't create the customer \u2014 still sync the order without a link
+          // Couldn't create the customer — still sync the order without a link
           insertOrderToSupabase(order).then((r) => {
             if (r.ok) markOrderSynced(id);
           });

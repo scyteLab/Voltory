@@ -7,10 +7,10 @@ import { useCatalog } from "../../../context/CatalogContext.jsx";
  *
  * Editor for the `source` field on a ProductRowSection config.
  * Four modes:
- *   \u00B7 auto       \u2014 use the section's default (deals or featured)
- *   \u00B7 tag        \u2014 filter products by tag
- *   \u00B7 category   \u2014 all products in a category
- *   \u00B7 skus       \u2014 hand-picked SKUs, in order
+ *   · auto       — use the section's default (deals or featured)
+ *   · tag        — filter products by tag
+ *   · category   — all products in a category
+ *   · skus       — hand-picked SKUs, in order
  *
  * Also handles the `limit` field (max items to show).
  */
@@ -87,7 +87,7 @@ export default function ProductSourcePicker({ config = {}, onChange }) {
         <div className="hb-source__row">
           <label className="hb-lbl">Tag</label>
           {allTags.length === 0 ? (
-            <p className="hb-hint">No products have tags yet. Add tags in Products \u2192 Edit.</p>
+            <p className="hb-hint">No products have tags yet. Add tags in Products → Edit.</p>
           ) : (
             <select
               className="hb-input"
@@ -188,8 +188,8 @@ function SkuPicker({ skus, products, onChange }) {
                 <small className="mono">{p.sku}</small>
               </div>
               <div className="hb-skus__actions">
-                <button type="button" onClick={() => moveUp(i)}    disabled={i === 0} title="Move up">\u2191</button>
-                <button type="button" onClick={() => moveDown(i)}  disabled={i === picked.length - 1} title="Move down">\u2193</button>
+                <button type="button" onClick={() => moveUp(i)}    disabled={i === 0} title="Move up">↑</button>
+                <button type="button" onClick={() => moveDown(i)}  disabled={i === picked.length - 1} title="Move down">↓</button>
                 <button type="button" onClick={() => remove(p.sku)} title="Remove"><X size={13} /></button>
               </div>
             </li>
@@ -200,7 +200,7 @@ function SkuPicker({ skus, products, onChange }) {
       <div className="hb-skus__search">
         <input
           type="text"
-          placeholder="Search products by name, SKU, or brand\u2026"
+          placeholder="Search products by name, SKU, or brand…"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           className="hb-input"
@@ -211,7 +211,7 @@ function SkuPicker({ skus, products, onChange }) {
               <li key={p.sku}>
                 <button type="button" onClick={() => add(p.sku)}>
                   <b>{p.name}</b>
-                  <small className="mono">{p.sku} \u00B7 {p.brand}</small>
+                  <small className="mono">{p.sku} · {p.brand}</small>
                 </button>
               </li>
             ))}

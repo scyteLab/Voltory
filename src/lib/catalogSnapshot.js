@@ -13,7 +13,7 @@ import {
  *
  * Kept in sync by CatalogContext, which calls setSnapshot() every
  * time its state changes. Before the first successful load, the
- * hardcoded arrays serve as the snapshot \u2014 so searchEngine and
+ * hardcoded arrays serve as the snapshot — so searchEngine and
  * pricing math still work on cold render.
  *
  * This is a small, deliberate escape hatch. Components should

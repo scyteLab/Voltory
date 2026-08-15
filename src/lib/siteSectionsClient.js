@@ -10,7 +10,7 @@ import { supabase, supabaseConfigured } from "./supabaseClient.js";
  */
 
 /**
- * Fallback layout \u2014 matches the original hardcoded Home.jsx order.
+ * Fallback layout — matches the original hardcoded Home.jsx order.
  * Used when Supabase is unreachable OR the site_sections table is
  * empty. Same shape as a real DB row so consumers stay ignorant of
  * the source.
@@ -81,7 +81,7 @@ export async function loadSiteSections() {
     if (!data || data.length === 0) {
       return { sections: FALLBACK_SECTIONS, source: "fallback", error: null };
     }
-    // Filter to visible only \u2014 admin can still see hidden sections
+    // Filter to visible only — admin can still see hidden sections
     // via the admin page (Session 31b) using a separate fetcher.
     const visible = data.filter((s) => s.is_visible);
     return { sections: visible, source: "supabase", error: null };

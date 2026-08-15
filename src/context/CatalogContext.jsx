@@ -18,9 +18,9 @@ import { setSnapshot } from "../lib/catalogSnapshot.js";
  * within ~500ms without a manual reload.
  *
  * Deliberately NOT here (yet):
- *   \u00B7 Real-time subscriptions (Supabase channel) \u2014 more moving parts,
+ *   · Real-time subscriptions (Supabase channel) — more moving parts,
  *     not needed for a single-operator shop yet.
- *   \u00B7 Per-page fetches or pagination \u2014 catalog is small enough to
+ *   · Per-page fetches or pagination — catalog is small enough to
  *     ship in one payload.
  */
 
@@ -77,7 +77,7 @@ export function CatalogProvider({ children }) {
 
   // Memoized helpers that mirror the old src/data/products.js API.
   // Because we depend on state.products/categories/brands, every helper
-  // reference is stable across the SAME data snapshot \u2014 which is what
+  // reference is stable across the SAME data snapshot — which is what
   // components memoizing on these expect.
   const helpers = useMemo(() => {
     const { products, categories, brands } = state;

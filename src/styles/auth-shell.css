@@ -1,0 +1,449 @@
+/* ============================================================
+   AUTH SHELL  \u2014  fresh Termii-inspired design
+   Prefix: .ashell
+
+   Motion signature: thin bright streaks TRAVEL left-to-right
+   across the panel like slow-motion laser beams. Combined with
+   a slowly drifting navy gradient and a soft gold ambient glow,
+   this reads as "premium, alive, but calm."
+
+   All motion respects prefers-reduced-motion \u2014 users with
+   vestibular sensitivity see the same design, held still.
+   ============================================================ */
+
+/* -----------------------------------------------------------
+   Page container
+   ----------------------------------------------------------- */
+
+.ashell-page {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  min-height: 100vh;
+  background: #ffffff;
+  color: var(--ink);
+  position: relative;
+  z-index: 2; /* above the site background texture */
+}
+
+/* -----------------------------------------------------------
+   Left panel: showcase
+   ----------------------------------------------------------- */
+
+.ashell-showcase {
+  position: relative;
+  padding: 40px 48px;
+  overflow: hidden;
+  color: #f8fafc;
+  display: flex;
+  flex-direction: column;
+  isolation: isolate;
+}
+
+/* Base gradient layer.
+
+   Deliberately larger than the visible panel; animating
+   background-position slides the gradient across, giving a
+   subtle living-color feel without any repaint cost. */
+
+.ashell-showcase__gradient {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  background:
+    linear-gradient(
+      135deg,
+      #0a1128 0%,
+      #101a34 25%,
+      #16223f 50%,
+      #101a34 75%,
+      #0a1128 100%
+    );
+  background-size: 200% 200%;
+  animation: ashell-gradient-drift 22s ease-in-out infinite;
+}
+
+/* Warm gold glow blob.
+
+   Pulled back from previous version \u2014 lower opacity so the
+   gold ACCENT TEXT can be the hero. The glow is now truly
+   ambient warmth, not a competing spotlight. */
+
+.ashell-showcase__glow {
+  position: absolute;
+  top: -20%;
+  right: -10%;
+  width: 80%;
+  height: 80%;
+  z-index: 1;
+  background: radial-gradient(
+    circle at center,
+    rgba(217, 164, 65, 0.14) 0%,
+    rgba(217, 164, 65, 0.07) 30%,
+    rgba(217, 164, 65, 0.00) 65%
+  );
+  animation: ashell-glow-drift 18s ease-in-out infinite;
+  pointer-events: none;
+}
+
+/* Streak container.
+
+   A plain positioned container that holds the streak divs.
+   Streaks are absolute-positioned within it via their inline
+   `top` styles. */
+
+.ashell-showcase__lines {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+/* Individual streak.
+
+   A thin horizontal element with a linear gradient going
+   transparent \u2192 gold \u2192 transparent. When translated across
+   the panel, the visible "bright spot" moves like a shooting
+   star. The gradient covers most of the div's width, so the
+   bright peak is at the leading edge.
+
+   Positioned by inline `top`, `width`, `animation-duration`,
+   `animation-delay` (all set in the JSX). Starts at left: -10%
+   so the streak enters from off-panel. */
+
+.ashell-showcase__line {
+  position: absolute;
+  left: -10%;
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    rgba(240, 185, 87, 0) 0%,
+    rgba(240, 185, 87, 0.55) 60%,
+    rgba(240, 185, 87, 0) 100%
+  );
+  animation-name: ashell-streak;
+  animation-iteration-count: infinite;
+  animation-timing-function: cubic-bezier(0.4, 0, 0.6, 1);
+  will-change: transform, opacity;
+}
+
+/* Keyframes for one streak pass:
+     \u00B7 Streak begins off the left edge, fully transparent
+     \u00B7 Fades in as it enters
+     \u00B7 Sails across the visible width
+     \u00B7 Fades out as it exits to the right
+   The translateX distances are generous (200%) so streaks with
+   different widths still cover the same visual span. */
+
+@keyframes ashell-streak {
+  0%   { transform: translateX(0);    opacity: 0; }
+  10%  { opacity: 1; }
+  90%  { opacity: 1; }
+  100% { transform: translateX(200%); opacity: 0; }
+}
+
+/* Text stack \u2014 above all background layers */
+
+.ashell-showcase__logo,
+.ashell-showcase__center,
+.ashell-showcase__back {
+  position: relative;
+  z-index: 3;
+}
+
+.ashell-showcase__logo {
+  display: inline-block;
+  text-decoration: none;
+  align-self: flex-start;
+  filter: brightness(0) invert(1);
+}
+
+.ashell-showcase__center {
+  margin: auto 0;
+  max-width: 460px;
+}
+
+.ashell-showcase__title {
+  margin: 0 0 20px;
+  font-size: 40px;
+  font-weight: 800;
+  line-height: 1.12;
+  letter-spacing: -0.02em;
+  color: #ffffff;
+}
+
+/* Gold accent line.
+
+   Pulled the text-shadow glow way back (previously very heavy).
+   The gold text should be confident on its own \u2014 a strong
+   color choice, not a glow effect. A subtle shadow remains
+   for seating against darker regions of the animated gradient,
+   but it's now atmospheric rather than showy. */
+
+.ashell-showcase__title--accent {
+  color: #f0b957;
+  text-shadow: 0 0 12px rgba(240, 185, 87, 0.15);
+}
+
+.ashell-showcase__lede {
+  margin: 0 0 40px;
+  font-size: 15.5px;
+  color: rgba(248, 250, 252, 0.75);
+  line-height: 1.6;
+  max-width: 420px;
+}
+
+.ashell-showcase__stats {
+  display: flex;
+  gap: 40px;
+}
+.ashell-showcase__stats > div {
+  display: flex;
+  flex-direction: column;
+}
+.ashell-showcase__stats b {
+  font-size: 30px;
+  font-weight: 800;
+  color: #f0b957;
+  line-height: 1;
+  margin-bottom: 6px;
+  letter-spacing: -0.01em;
+}
+.ashell-showcase__stats span {
+  font-size: 11.5px;
+  font-weight: 600;
+  color: rgba(248, 250, 252, 0.55);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.ashell-showcase__back {
+  align-self: flex-start;
+  color: rgba(248, 250, 252, 0.55);
+  text-decoration: none;
+  font-size: 13px;
+  font-weight: 500;
+  margin-top: auto;
+  transition: color 160ms;
+}
+.ashell-showcase__back:hover { color: #ffffff; }
+
+/* Keyframes -------------------------------------------------- */
+
+@keyframes ashell-gradient-drift {
+  0%   { background-position:   0%   0%; }
+  50%  { background-position: 100% 100%; }
+  100% { background-position:   0%   0%; }
+}
+
+@keyframes ashell-glow-drift {
+  0%   { transform: translate(  0%,   0%); }
+  25%  { transform: translate(-12%,   8%); }
+  50%  { transform: translate(  4%,  14%); }
+  75%  { transform: translate( 10%,  -6%); }
+  100% { transform: translate(  0%,   0%); }
+}
+
+/* -----------------------------------------------------------
+   Right panel: form area
+   ----------------------------------------------------------- */
+
+.ashell-form {
+  display: grid;
+  place-items: center;
+  padding: 48px 32px;
+  background: #ffffff;
+}
+.ashell-form__inner {
+  width: 100%;
+  max-width: 400px;
+}
+
+.ashell-form__tabs {
+  display: inline-flex;
+  padding: 4px;
+  border-radius: 10px;
+  background: #f1f5f9;
+  margin-bottom: 32px;
+}
+.ashell-form__tab {
+  padding: 8px 20px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--mut);
+  text-decoration: none;
+  transition: background 140ms, color 140ms;
+}
+.ashell-form__tab:hover { color: var(--ink); }
+.ashell-form__tab--active {
+  background: #ffffff;
+  color: var(--ink);
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.08);
+}
+
+.ashell-form__title {
+  margin: 0 0 8px;
+  font-size: 30px;
+  font-weight: 800;
+  color: var(--ink);
+  letter-spacing: -0.015em;
+}
+.ashell-form__sub {
+  margin: 0 0 28px;
+  color: var(--mut);
+  font-size: 14.5px;
+  line-height: 1.55;
+}
+
+.ashell-field { display: block; margin-bottom: 18px; }
+.ashell-field > label {
+  display: block;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--mut);
+  margin-bottom: 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+.ashell-field__input {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 16px;
+  border: 1.5px solid var(--line);
+  border-radius: 10px;
+  background: #ffffff;
+  transition: border-color 140ms, box-shadow 140ms;
+}
+.ashell-field__input:focus-within {
+  border-color: #0f172a;
+  box-shadow: 0 0 0 3px rgba(15, 23, 42, 0.08);
+}
+.ashell-field__input svg { color: var(--mut); flex-shrink: 0; }
+.ashell-field__input input {
+  flex: 1;
+  border: none;
+  outline: none;
+  font: inherit;
+  font-size: 15px;
+  color: var(--ink);
+  background: transparent;
+}
+.ashell-field__input input::placeholder { color: #94a3b8; }
+
+.ashell-error {
+  padding: 10px 14px;
+  border-radius: 8px;
+  background: #fef2f2;
+  color: #b91c1c;
+  font-size: 13px;
+  margin-bottom: 14px;
+  border-left: 3px solid #dc2626;
+}
+
+.ashell-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  width: 100%;
+  padding: 16px 22px;
+  border-radius: 10px;
+  font: inherit;
+  font-size: 14.5px;
+  font-weight: 700;
+  cursor: pointer;
+  border: 1.5px solid transparent;
+  transition: transform 60ms, background 140ms, border-color 140ms;
+}
+.ashell-btn:disabled { opacity: 0.55; cursor: not-allowed; }
+.ashell-btn:not(:disabled):active { transform: translateY(1px); }
+.ashell-btn--primary {
+  background: #0a1128;
+  color: #ffffff;
+  border-color: #0a1128;
+}
+.ashell-btn--primary:not(:disabled):hover {
+  background: #16223f;
+  border-color: #16223f;
+}
+
+.ashell-form__legal {
+  margin-top: 16px;
+  font-size: 12px;
+  color: var(--mut);
+  text-align: center;
+  line-height: 1.55;
+}
+.ashell-form__legal a {
+  color: var(--ink);
+  text-decoration: none;
+  border-bottom: 1px solid #cbd5e1;
+}
+.ashell-form__legal a:hover { color: var(--p); border-color: var(--p); }
+
+.ashell-form__note {
+  margin-top: 24px;
+  padding: 14px 16px;
+  background: #f8fafc;
+  border-left: 3px solid #cbd5e1;
+  border-radius: 6px;
+}
+.ashell-form__note b {
+  display: block;
+  font-size: 13px;
+  color: var(--ink);
+  margin-bottom: 4px;
+}
+.ashell-form__note p {
+  margin: 0;
+  font-size: 12.5px;
+  color: var(--mut);
+  line-height: 1.55;
+}
+
+/* -----------------------------------------------------------
+   Reduced motion \u2014 hold every animation still
+   ----------------------------------------------------------- */
+
+@media (prefers-reduced-motion: reduce) {
+  .ashell-showcase__gradient,
+  .ashell-showcase__glow,
+  .ashell-showcase__line {
+    animation: none !important;
+  }
+  .ashell-showcase__line {
+    opacity: 0.3;
+  }
+}
+
+/* -----------------------------------------------------------
+   Responsive
+   ----------------------------------------------------------- */
+
+@media (max-width: 980px) {
+  .ashell-page {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto 1fr;
+  }
+  .ashell-showcase {
+    padding: 28px 24px 32px;
+    min-height: 300px;
+  }
+  .ashell-showcase__center { margin: 20px 0 24px; }
+  .ashell-showcase__title { font-size: 26px; }
+  .ashell-showcase__lede { font-size: 14px; margin-bottom: 24px; }
+  .ashell-showcase__stats { gap: 32px; }
+  .ashell-showcase__stats b { font-size: 24px; }
+  .ashell-showcase__back { display: none; }
+  .ashell-form { padding: 32px 20px; }
+  .ashell-form__title { font-size: 24px; }
+}
+
+@media (max-width: 560px) {
+  .ashell-showcase { padding: 24px 20px; }
+  .ashell-showcase__title { font-size: 22px; }
+  .ashell-showcase__stats { gap: 24px; }
+  .ashell-showcase__stats b { font-size: 20px; }
+}

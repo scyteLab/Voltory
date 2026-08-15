@@ -8,7 +8,7 @@ import { SITE } from "../config/site.js";
 import { addSubscriber } from "../utils/newsletterSubscribers.js";
 
 /**
- * Blog \u2014 Coming Soon page with newsletter capture and topic
+ * Blog — Coming Soon page with newsletter capture and topic
  * preferences. Subscribers are saved to localStorage; the admin
  * will surface them later. When real blog posts ship, this page
  * becomes the blog landing.
@@ -30,7 +30,7 @@ export default function Blog() {
 
   useEffect(() => {
     const prev = document.title;
-    document.title = `Blog \u2014 ${SITE.name}`;
+    document.title = `Blog — ${SITE.name}`;
     return () => { document.title = prev; };
   }, []);
 
@@ -52,7 +52,7 @@ export default function Blog() {
     });
     if (!result.added) {
       if (result.reason === "duplicate") {
-        setError("You\u2019re already on the list \u2014 we\u2019ll be in touch.");
+        setError("You’re already on the list — we’ll be in touch.");
       } else {
         setError("Please enter a valid email address.");
       }

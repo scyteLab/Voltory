@@ -1,5 +1,5 @@
 /**
- * Comparison list \u2014 stores up to 4 SKUs in localStorage so the
+ * Comparison list — stores up to 4 SKUs in localStorage so the
  * customer can pull together a side-by-side comparison from
  * anywhere on the site. Same shape as the wishlist (a list of
  * SKUs) but capped, because a comparison table beyond 4 columns

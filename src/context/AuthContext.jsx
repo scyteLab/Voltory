@@ -11,7 +11,7 @@ import {
  * AuthProvider
  *
  * Provides the storefront with a customer context. A customer here
- * is a SIGNED-IN customer \u2014 one who went through the explicit signup
+ * is a SIGNED-IN customer — one who went through the explicit signup
  * or login flow and has a session token.
  *
  * Guest checkouts do NOT populate this context. They create a
@@ -19,14 +19,14 @@ import {
  * but no session is minted, so `customer` stays null.
  *
  * API:
- *   customer           \u2014 signed-in customer or null
- *   isAuthenticated    \u2014 !!customer
- *   loading            \u2014 true during initial session resolve
+ *   customer           — signed-in customer or null
+ *   isAuthenticated    — !!customer
+ *   loading            — true during initial session resolve
  *   requestOtp({phone, purpose})
  *   verifyOtp({phone, code, purpose, profile})
  *   signOut()
  *   updateProfile(patch)
- *   refresh()          \u2014 re-fetch current customer
+ *   refresh()          — re-fetch current customer
  */
 
 const Ctx = createContext(null);

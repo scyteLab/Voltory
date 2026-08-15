@@ -4,7 +4,9 @@
       "Bash(python -c ' *)",
       "Bash(npx vite *)",
       "WebFetch(domain:www.jumia.com.ng)",
-      "Bash(timeout 10 bash -c 'cat \"C:\\\\Users\\\\EMMANU~1\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\c--Users-Emmanuel-Ilori-OneDrive---NEW-HOME-DISTRIBUTION--AFRICA--LIMITED-Pictures-voltory\\\\8892720e-d499-4fd5-9242-379b1dc86ec9\\\\tasks\\\\bngkysvej.output\"')"
+      "Bash(timeout 10 bash -c 'cat \"C:\\\\Users\\\\EMMANU~1\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\c--Users-Emmanuel-Ilori-OneDrive---NEW-HOME-DISTRIBUTION--AFRICA--LIMITED-Pictures-voltory\\\\8892720e-d499-4fd5-9242-379b1dc86ec9\\\\tasks\\\\bngkysvej.output\"')",
+      "Read(//c/Users/EMMANU~1/AppData/Local/Temp/claude/c--Users-Emmanuel-Ilori-OneDrive---NEW-HOME-DISTRIBUTION--AFRICA--LIMITED-Pictures-voltory/a136182d-6412-42ab-9c8f-1cb0c6962bed/scratchpad/**)",
+      "Bash(node fix-auth-unicode.mjs \"/c/Users/Emmanuel Ilori/OneDrive - NEW HOME DISTRIBUTION \\(AFRICA\\) LIMITED/Pictures/voltory\")"
     ]
   }
 }

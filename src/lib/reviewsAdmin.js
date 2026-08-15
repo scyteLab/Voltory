@@ -1,7 +1,7 @@
 import { supabase } from "./supabaseClient.js";
 
 /**
- * reviewsAdmin \u2014 the admin side of reviews.
+ * reviewsAdmin — the admin side of reviews.
  *
  * Reads every review regardless of status, joins customer name +
  * product name for the queue display, and provides approve/reject/
@@ -42,7 +42,7 @@ export async function fetchReviewsForAdmin({ status = "pending", limit = 100 } =
       productSlug: r.products?.slug  || null,
       productImage: r.products?.image || null,
       customerId:   r.customer_id,
-      customerName: r.customers?.name  || "Voltory customer",
+      customerName: r.customers?.name  || "NAVEN customer",
       customerPhone: r.customers?.phone || "",
       orderId:      r.order_id,
       verifiedBuyer: !!r.order_id,
@@ -121,7 +121,7 @@ export async function setReviewStatus(id, status, adminNote = null) {
 }
 
 /**
- * Hard delete \u2014 for spam / abusive reviews we don't want kept
+ * Hard delete — for spam / abusive reviews we don't want kept
  * even in the rejected pile. Use sparingly. The recompute trigger
  * fires on delete too.
  */

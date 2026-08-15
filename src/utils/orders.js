@@ -1,14 +1,14 @@
 /**
- * Orders \u2014 created at checkout, persisted to localStorage as a
+ * Orders — created at checkout, persisted to localStorage as a
  * write-through cache in front of Supabase.
  *
  * Sync model:
- *   \u00B7 saveOrder() writes to localStorage synchronously so the
+ *   · saveOrder() writes to localStorage synchronously so the
  *     confirmation page renders immediately.
- *   \u00B7 A background sweeper (see lib/ordersClient.js) tries to
+ *   · A background sweeper (see lib/ordersClient.js) tries to
  *     insert into Supabase. On success, it flips syncedAt on the
  *     local record via markOrderSynced().
- *   \u00B7 Orders without syncedAt are surfaced by getUnsyncedOrders()
+ *   · Orders without syncedAt are surfaced by getUnsyncedOrders()
  *     and retried by the sweeper at app boot and after each order.
  *
  * Order shape (unchanged; syncedAt is new):
@@ -41,7 +41,7 @@ export function listOrders() {
 }
 
 /**
- * Persist an order. Idempotent on `id` \u2014 if we're saving an order
+ * Persist an order. Idempotent on `id` — if we're saving an order
  * with an id that already exists, we replace it (useful for the
  * sweeper stamping syncedAt).
  */
@@ -81,12 +81,12 @@ export function markOrderSynced(id) {
 /**
  * Status enum. Reconciled with the admin's `orders.status` CHECK
  * constraint:
- *   confirmed \u2192 processing \u2192 shipped \u2192 delivered
- *                                       \u2198 refunded
- *   any pre-shipped \u2192 cancelled
+ *   confirmed → processing → shipped → delivered
+ *                                       ↘ refunded
+ *   any pre-shipped → cancelled
  *
  * `SHIPPED` is canonical. `OUT_FOR_DELIVERY` is exposed as an
- * alias so legacy imports keep compiling during migration \u2014 they
+ * alias so legacy imports keep compiling during migration — they
  * both point at the same string. Removed in Session 38.
  */
 export const ORDER_STATUS = {
@@ -109,7 +109,7 @@ export const STATUS_FLOW = [
 
 /**
  * Customer-facing labels. We deliberately show "Out for Delivery"
- * rather than "Shipped" \u2014 in Nigerian appliance retail context
+ * rather than "Shipped" — in Nigerian appliance retail context
  * "out for delivery" reads as the truck-is-coming milestone, which
  * is what customers care about.
  */

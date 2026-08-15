@@ -144,7 +144,7 @@ export default function Search() {
       )}
 
       {allMatchedProducts.length === 0 ? (
-        <NoResults query={q} />
+        <NoResults query={q} brands={brands} products={products} />
       ) : (
         <div className="cbody">
           <div className={"cfilter__shell" + (drawerOpen ? " cfilter__shell--open" : "")}>
@@ -253,7 +253,7 @@ function applyFilters(products, f) {
     }
     if (f.litres.length) {
       if (p.litres == null) return false;
-      const bucket = p.litres < 250 ? "Under 250L" : p.litres < 450 ? "250 \u2013 450L" : "Over 450L";
+      const bucket = p.litres < 250 ? "Under 250L" : p.litres < 450 ? "250 – 450L" : "Over 450L";
       if (!f.litres.includes(bucket)) return false;
     }
     if (f.doors.length && (p.doors == null || !f.doors.includes(p.doors))) return false;
@@ -289,7 +289,7 @@ function EmptyQuery() {
   );
 }
 
-function NoResults({ query }) {
+function NoResults({ query, brands, products }) {
   return (
     <section className="cempty" style={{ marginTop: 18 }}>
       <h3>No results for "{query}"</h3>

@@ -11,7 +11,7 @@ import AccountMenu from "./AccountMenu.jsx";
 export default function Header() {
   const { count, wishlistCount, compareCount } = useStore();
   const { customer } = useCustomerAuth();
-  const account = customer; // JSX below uses `account ? ...` \u2014 keep the name local
+  const account = customer; // JSX below uses `account ? ...` — keep the name local
   const [menuOpen, setMenuOpen] = useState(false);
   const location = useLocation();
 

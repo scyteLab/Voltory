@@ -5,7 +5,7 @@ import { STATUS_LABEL } from "../../utils/orders.js";
 import { naira } from "../../utils/format.js";
 
 /**
- * My Orders \u2014 lists every order belonging to the signed-in customer.
+ * My Orders — lists every order belonging to the signed-in customer.
  *
  * Reads from Supabase via useCustomerOrders (with a localStorage
  * fallback merged in). This means a customer who signs in on a new
@@ -19,7 +19,7 @@ export default function AccountOrders() {
       <div className="ord-list">
         <header className="ord-list__head">
           <h1>My Orders</h1>
-          <p>Loading your orders\u2026</p>
+          <p>Loading your orders…</p>
         </header>
       </div>
     );

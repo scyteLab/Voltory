@@ -63,7 +63,7 @@ export default function AccountMenu() {
           <div className="acctmenu__head">
             <span className="acctmenu__bigavatar"><User size={20} /></span>
             <div>
-              <b>{customer.name || "Voltory customer"}</b>
+              <b>{customer.name || "NAVEN customer"}</b>
               <small className="mono">{displayPhone}</small>
             </div>
           </div>

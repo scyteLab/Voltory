@@ -6,11 +6,11 @@ import {
 import { SITE } from "../config/site.js";
 
 /**
- * Review Guidelines \u2014 /reviews-guidelines
+ * Review Guidelines — /reviews-guidelines
  *
  * Public page. Explains, in plain English, how Voltory handles
  * customer reviews. Purpose is transparency: if we're ever accused
- * of hiding negative reviews, this page is our defence \u2014 here's
+ * of hiding negative reviews, this page is our defence — here's
  * exactly what we allow, what we don't, and how the process works.
  *
  * Deliberately hand-written (not from a CMS) so we own the wording
@@ -19,7 +19,7 @@ import { SITE } from "../config/site.js";
 export default function ReviewGuidelines() {
   useEffect(() => {
     const prev = document.title;
-    document.title = `Review Guidelines \u2014 ${SITE.name}`;
+    document.title = `Review Guidelines — ${SITE.name}`;
     return () => { document.title = prev; };
   }, []);
 
@@ -33,7 +33,7 @@ export default function ReviewGuidelines() {
         <MessageSquare size={40} strokeWidth={1.5} className="rg-hero__icon" />
         <h1>Our Review Guidelines</h1>
         <p>
-          We want honest reviews. This page explains exactly how reviews work on Voltory,
+          We want honest reviews. This page explains exactly how reviews work on NAVEN,
           what we allow, and what we remove. Nothing is hidden.
         </p>
       </header>
@@ -54,7 +54,7 @@ export default function ReviewGuidelines() {
             <Link to="/account/reviews"> My Reviews</Link> page. Your name is shown alongside your review.
           </li>
           <li>
-            <b>All reviews \u2014 positive and negative \u2014 are welcome.</b> A three-star review from
+            <b>All reviews — positive and negative — are welcome.</b> A three-star review from
             someone who bought the product is worth as much to future shoppers as a five-star one.
           </li>
         </ul>
@@ -75,12 +75,12 @@ export default function ReviewGuidelines() {
       <section className="rg-sec rg-sec--deny">
         <h2><XCircle size={22} /> What we remove</h2>
         <ul>
-          <li><b>Spam or promotional content</b> \u2014 links to other stores, referral codes, ads</li>
-          <li><b>Hate speech or personal attacks</b> \u2014 abuse aimed at people, not the product</li>
-          <li><b>Reviews for a different product</b> \u2014 posted on the wrong item by mistake</li>
-          <li><b>Fake reviews</b> \u2014 written by people who never bought the product, or paid to post</li>
-          <li><b>Confidential information</b> \u2014 phone numbers, addresses, order numbers of other people</li>
-          <li><b>Duplicate content</b> \u2014 the same review posted multiple times</li>
+          <li><b>Spam or promotional content</b> — links to other stores, referral codes, ads</li>
+          <li><b>Hate speech or personal attacks</b> — abuse aimed at people, not the product</li>
+          <li><b>Reviews for a different product</b> — posted on the wrong item by mistake</li>
+          <li><b>Fake reviews</b> — written by people who never bought the product, or paid to post</li>
+          <li><b>Confidential information</b> — phone numbers, addresses, order numbers of other people</li>
+          <li><b>Duplicate content</b> — the same review posted multiple times</li>
         </ul>
         <p className="rg-note">
           If your review is removed, you'll see the reason on your
@@ -92,7 +92,7 @@ export default function ReviewGuidelines() {
         <h2><Shield size={22} /> Our commitment</h2>
         <ul>
           <li>We <b>do not</b> remove reviews just because they are critical of a product</li>
-          <li>We <b>do not</b> remove reviews just because they are critical of Voltory</li>
+          <li>We <b>do not</b> remove reviews just because they are critical of NAVEN</li>
           <li>We <b>do not</b> ask customers to change or delete honest reviews</li>
           <li>We <b>do not</b> pay for reviews, or offer discounts in exchange for positive ones</li>
           <li>Every removal comes with a reason visible to the review's author</li>
@@ -108,7 +108,7 @@ export default function ReviewGuidelines() {
         </p>
       </section>
 
-      <p className="rg-updated">Last updated August 2026 \u2022 Questions? <Link to="/contact">Contact us</Link></p>
+      <p className="rg-updated">Last updated August 2026 • Questions? <Link to="/contact">Contact us</Link></p>
     </main>
   );
 }

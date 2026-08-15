@@ -12,14 +12,14 @@ import { DEFAULT_THEME, resolveThemeVars } from "../config/adminTokens.js";
  *   2) When no admin is signed in (login page), read/write
  *      localStorage under "voltory_admin_theme_local". This lets
  *      even the login screen respect the last theme.
- *   3) On sign-out, we keep the localStorage copy \u2014 same admin
+ *   3) On sign-out, we keep the localStorage copy — same admin
  *      returning sees the same theme.
  *
  * The provider exposes:
- *   theme       \u2014 the current theme object
- *   setTheme    \u2014 (key, value) => merges + persists + re-applies
- *   resetTheme  \u2014 back to DEFAULT_THEME
- *   themeVars   \u2014 the resolved CSS custom-property map, so any
+ *   theme       — the current theme object
+ *   setTheme    — (key, value) => merges + persists + re-applies
+ *   resetTheme  — back to DEFAULT_THEME
+ *   themeVars   — the resolved CSS custom-property map, so any
  *                 component (AdminShell) can apply it as style={}.
  */
 const Ctx = createContext(null);
@@ -48,7 +48,7 @@ export function AdminThemeProvider({ children }) {
 
   // On session change: try to hydrate from Supabase. Fall through to
   // whatever's in state (the localStorage default) if the fetch fails
-  // \u2014 e.g. table not yet created, offline, etc.
+  // — e.g. table not yet created, offline, etc.
   useEffect(() => {
     if (!session?.user?.id) return;
     let cancelled = false;
@@ -76,7 +76,7 @@ export function AdminThemeProvider({ children }) {
     const next = { ...theme, [key]: value };
     setThemeState(next);
     writeLocalTheme(next);
-    // Best-effort remote persistence \u2014 do NOT block UI on a failure.
+    // Best-effort remote persistence — do NOT block UI on a failure.
     if (session?.user?.id) {
       try {
         await supabase
@@ -86,7 +86,7 @@ export function AdminThemeProvider({ children }) {
             { onConflict: "user_id" }
           );
       } catch {
-        /* offline / RLS block / etc \u2014 local copy still saved */
+        /* offline / RLS block / etc — local copy still saved */
       }
     }
   }

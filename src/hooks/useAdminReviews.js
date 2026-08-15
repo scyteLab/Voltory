@@ -5,7 +5,7 @@ import {
 } from "../lib/reviewsAdmin.js";
 
 /**
- * useAdminReviews \u2014 loads reviews for the queue, filtered by
+ * useAdminReviews — loads reviews for the queue, filtered by
  * status, plus per-status counts for the tabs.
  *
  * Mutations are optimistic: approve/reject removes the row from
@@ -60,7 +60,7 @@ export function useAdminReviews(initialStatus = "pending") {
   }, [status, refresh]);
 
   const unapprove = useCallback(async (id) => {
-    // Back to pending \u2014 useful for undoing an accidental approve
+    // Back to pending — useful for undoing an accidental approve
     if (status !== "all" && status !== "pending") {
       setReviews((prev) => prev.filter((r) => r.id !== id));
     }

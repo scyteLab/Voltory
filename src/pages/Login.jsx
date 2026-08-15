@@ -1,32 +1,49 @@
-import { useState } from "react";
-import { Link, useNavigate, useSearchParams } from "react-router-dom";
-import { ChevronRight, LogIn, Smartphone } from "lucide-react";
-import { SITE } from "../config/site.js";
+import { useEffect, useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { Phone } from "lucide-react";
 import { useCustomerAuth } from "../context/AuthContext.jsx";
+import AuthShell from "../components/auth/AuthShell.jsx";
 
 /**
- * Login \u2014 Session 30
+ * Login  —  /login
  *
- * Same shape as SignUp but calls requestOtp({ purpose: 'login' }).
- * A login OTP will only complete if a customer exists for that
- * phone. Which is fine \u2014 because guest checkouts silently create
- * customers, any phone that has ever placed an order will also
- * be able to log in.
+ * REDESIGN: dropped the orbital-bubble character showcase in
+ * favor of a Termii-style animated brand panel. Now uses the
+ * shared AuthShell + AuthShowcase components so the visual
+ * language stays consistent with SignUp forever.
+ *
+ * Form logic unchanged from the previous version — clean phone
+ * number, call requestOtp, surface errors, navigate to /verify-otp
+ * on success.
  */
 export default function Login() {
-  const [phone, setPhone] = useState("");
-  const [error, setError] = useState(null);
-  const [submitting, setSubmitting] = useState(false);
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
-  const returnTo = searchParams.get("return") || "/account";
   const { requestOtp } = useCustomerAuth();
+
+  const [phone, setPhone]           = useState("");
+  const [error, setError]           = useState(null);
+  const [submitting, setSubmitting] = useState(false);
+
+  useEffect(() => {
+    const prev = document.title;
+    document.title = "Sign in — NAVEN";
+    return () => { document.title = prev; };
+  }, []);
 
   async function onSubmit(e) {
     e.preventDefault();
-    const cleaned = phone.replace(/\s/g, "");
-    if (!/^0[789][01]\d{8}$/.test(cleaned)) {
-      setError("Enter a valid Nigerian phone number (e.g. 0803 123 4567)");
+    setError(null);
+
+    /* Clean the phone: strip non-digits, coerce +234 or missing
+       leading 0 to canonical 11-digit local form. Server does
+       the final validation. */
+    const digits = phone.replace(/\D/g, "");
+    let cleaned = digits;
+    if (cleaned.startsWith("234")) cleaned = "0" + cleaned.slice(3);
+    if (cleaned.length === 10 && !cleaned.startsWith("0")) cleaned = "0" + cleaned;
+
+    if (!/^0[7-9][01]\d{8}$/.test(cleaned)) {
+      setError("Please enter a valid Nigerian phone number.");
       return;
     }
 
@@ -35,59 +52,86 @@ export default function Login() {
     setSubmitting(false);
 
     if (!res.ok) {
-      setError(res.error || "Couldn't send verification code. Try again.");
+      setError(res.error || "Couldn't send code. Please try again.");
       return;
     }
-
-    navigate(
-      `/verify-otp?phone=${encodeURIComponent(cleaned)}&path=login&return=${encodeURIComponent(returnTo)}`
-    );
+    navigate("/verify-otp", { state: { phone: cleaned, purpose: "login" } });
   }
 
   return (
-    <div className="auth-card">
-      <div className="auth-card__head">
-        <span className="auth-card__icon"><LogIn size={26} /></span>
-        <h1>Welcome back</h1>
-        <p>Enter your phone number to sign in. We'll send you a 4-digit code to verify.</p>
-      </div>
+    <AuthShell>
+      <div className="ashell-form__inner">
+        {/* Segmented control that visually shows Sign in / Sign up
+            as tabs. Links to real routes; keeps the pages separate
+            per your design decision, but presents them as a
+            connected pair like Termii. */}
+        <div className="ashell-form__tabs" role="tablist">
+          <Link
+            to="/login"
+            role="tab"
+            aria-selected="true"
+            className="ashell-form__tab ashell-form__tab--active"
+          >
+            Sign in
+          </Link>
+          <Link
+            to="/signup"
+            role="tab"
+            aria-selected="false"
+            className="ashell-form__tab"
+          >
+            Create account
+          </Link>
+        </div>
 
-      <form onSubmit={onSubmit} className="auth-form" noValidate>
-        <label className={"field" + (error ? " has-error" : "")}>
-          <span className="field__label">Phone Number</span>
-          <span className="auth-input">
-            <Smartphone size={16} />
-            <input
-              type="tel"
-              inputMode="tel"
-              autoComplete="tel"
-              placeholder="0803 123 4567"
-              value={phone}
-              onChange={(e) => { setPhone(e.target.value); setError(null); }}
-            />
-          </span>
-          {error && <span className="field__error">{error}</span>}
-        </label>
+        <h2 className="ashell-form__title">Welcome back</h2>
+        <p className="ashell-form__sub">
+          Enter your phone number to sign in. We'll send you a 4-digit code to verify.
+        </p>
 
-        <button type="submit" className="auth-submit" disabled={submitting}>
-          {submitting ? "Sending code\u2026" : <>Send Verification Code <ChevronRight size={16} /></>}
-        </button>
-      </form>
+        <form onSubmit={onSubmit}>
+          <div className="ashell-field">
+            <label htmlFor="phone">Phone number</label>
+            <div className="ashell-field__input">
+              <Phone size={16} />
+              <input
+                id="phone"
+                type="tel"
+                inputMode="numeric"
+                autoComplete="tel"
+                placeholder="0803 123 4567"
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
+                disabled={submitting}
+              />
+            </div>
+          </div>
 
-      <p className="auth-foot">
-        New to {SITE.name}?{" "}
-        <Link to={`/signup${returnTo !== "/account" ? `?return=${encodeURIComponent(returnTo)}` : ""}`}>
-          Create an account
-        </Link>
-      </p>
+          {error && <div className="ashell-error">{error}</div>}
 
-      <div className="auth-aside">
-        <p>
-          <b>Already shopped with us?</b><br />
-          Your account was created automatically the first time you checked out.
-          Just enter the phone number you used and we'll sign you straight in.
+          <button
+            type="submit"
+            className="ashell-btn ashell-btn--primary"
+            disabled={submitting || !phone.trim()}
+          >
+            {submitting ? "Sending…" : "Continue →"}
+          </button>
+        </form>
+
+        <div className="ashell-form__note">
+          <b>Already shopped with us?</b>
+          <p>
+            Your account was created automatically the first time you checked out.
+            Just enter the phone number you used and we'll sign you straight in.
+          </p>
+        </div>
+
+        <p className="ashell-form__legal">
+          By continuing you agree to NAVEN's{" "}
+          <Link to="/terms">Terms</Link> &amp;{" "}
+          <Link to="/privacy">Privacy Policy</Link>.
         </p>
       </div>
-    </div>
+    </AuthShell>
   );
 }

@@ -1,8 +1,8 @@
 /**
  * Warranty claim status metadata.
  * Flow:
- *   submitted \u2192 under_review \u2192 approved \u2192 resolved
- *                              \u2198 rejected  (terminal)
+ *   submitted → under_review → approved → resolved
+ *                              ↘ rejected  (terminal)
  */
 export const WARRANTY_STATUSES = {
   submitted:    { label: "New",        chip: "adm-chip--warn", tone: "warn" },

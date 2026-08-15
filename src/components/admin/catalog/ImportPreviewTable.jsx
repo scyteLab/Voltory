@@ -2,7 +2,7 @@ import { AlertTriangle, CheckCircle2, Pencil } from "lucide-react";
 import { naira } from "../../../utils/format.js";
 
 /**
- * ImportPreviewTable \u2014 dense table showing every parsed row with
+ * ImportPreviewTable — dense table showing every parsed row with
  * its verdict. Errors surface with red left border + a reason;
  * updates get a subtle blue tint; new creates are plain.
  *
@@ -38,14 +38,14 @@ export default function ImportPreviewTable({ rows, showAll, onShowAll }) {
             <tr key={r.rowIndex} className={"adm-import__row adm-import__row--" + r.verdict}>
               <td className="mono adm-import__num">{r.rowIndex + 2}</td>
               <td>{verdictPill(r.verdict)}</td>
-              <td className="mono">{r.resolved?.sku || r.row.sku || "\u2014"}</td>
-              <td className="adm-import__truncate">{r.resolved?.name || r.row.name || "\u2014"}</td>
-              <td>{r.row.brand || "\u2014"}</td>
-              <td>{r.row.category || "\u2014"}</td>
+              <td className="mono">{r.resolved?.sku || r.row.sku || "—"}</td>
+              <td className="adm-import__truncate">{r.resolved?.name || r.row.name || "—"}</td>
+              <td>{r.row.brand || "—"}</td>
+              <td>{r.row.category || "—"}</td>
               <td style={{ textAlign: "right" }}>
-                {r.resolved?.price ? naira(r.resolved.price) : "\u2014"}
+                {r.resolved?.price ? naira(r.resolved.price) : "—"}
               </td>
-              <td style={{ textAlign: "right" }}>{r.resolved?.stock ?? "\u2014"}</td>
+              <td style={{ textAlign: "right" }}>{r.resolved?.stock ?? "—"}</td>
               <td className="adm-import__errors">
                 {r.errors.length > 0 && (
                   <ul>{r.errors.map((e, i) => <li key={i}>{e}</li>)}</ul>

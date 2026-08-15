@@ -7,7 +7,7 @@ import { supabase } from "../lib/supabaseClient.js";
  *
  * We do the queries in parallel but wait on all of them so the
  * dashboard renders as a single unit rather than pop-in-per-widget.
- * If any query fails the whole set fails \u2014 the dashboard shows
+ * If any query fails the whole set fails — the dashboard shows
  * an error state and a retry button.
  */
 export function useDashboardData(refreshTick = 0) {
@@ -63,8 +63,8 @@ export function useDashboardData(refreshTick = 0) {
 /**
  * Percent-change delta between two numbers, e.g. this month vs last.
  * Returns { pct, direction } where direction is "up" | "down" | "flat".
- * When there is no prior period (last=0) we surface "\u2014" from the UI
- * rather than reporting +\u221E%.
+ * When there is no prior period (last=0) we surface "—" from the UI
+ * rather than reporting +∞%.
  */
 export function computeDelta(current, prior) {
   const c = Number(current || 0);

@@ -1,23 +1,23 @@
 /**
  * ============================================================
  *  BRAND PAGES CONFIG
- *  Per-brand storefront content \u2014 tagline, description, hero
+ *  Per-brand storefront content — tagline, description, hero
  *  color, partnership tier. The admin will later edit these
  *  through the Brand Settings page; the front-end doesn't change.
  *
  *  Tiers:
- *    "official"  \u2014 direct distribution relationship (Scanfrost)
- *    "featured"  \u2014 prominent stock partner (Midea, Samsung)
- *    "standard"  \u2014 catalog brand
+ *    "official"  — direct distribution relationship (Scanfrost)
+ *    "featured"  — prominent stock partner (Midea, Samsung)
+ *    "standard"  — catalog brand
  * ============================================================
  */
 
 export const BRAND_PAGES = {
   scanfrost: {
     tier: "official",
-    tagline: "Cooling, cooking & power appliances \u2014 backed by official warranty and after-sales support.",
+    tagline: "Cooling, cooking & power appliances — backed by official warranty and after-sales support.",
     description:
-      "Scanfrost is a Nigerian household name. Voltory is an official distributor, offering the full range with manufacturer warranty, professional installation, and dedicated after-sales support across the country.",
+      "Scanfrost is a Nigerian household name. NAVEN is an official distributor, offering the full range with manufacturer warranty, professional installation, and dedicated after-sales support across the country.",
     heroColor: "#0a2540",
     accent: "#dc2626",
   },
@@ -33,21 +33,21 @@ export const BRAND_PAGES = {
     tier: "featured",
     tagline: "Premium electronics with class-leading quality and innovation.",
     description:
-      "Samsung is a global leader in televisions, refrigerators and home appliances. Every Samsung product on Voltory comes with full Samsung Nigeria warranty.",
+      "Samsung is a global leader in televisions, refrigerators and home appliances. Every Samsung product on NAVEN comes with full Samsung Nigeria warranty.",
     heroColor: "#0a0a0a",
     accent: "#1428a0",
   },
   sony: {
     tier: "standard",
-    tagline: "Audio and visual excellence \u2014 crafted by Sony.",
+    tagline: "Audio and visual excellence — crafted by Sony.",
     description:
-      "Renowned for televisions and audio equipment. Voltory stocks select Sony lines with full manufacturer warranty.",
+      "Renowned for televisions and audio equipment. NAVEN stocks select Sony lines with full manufacturer warranty.",
     heroColor: "#000000",
     accent: "#000000",
   },
   kenwood: {
     tier: "standard",
-    tagline: "Kitchen confidence \u2014 trusted appliances for everyday cooking.",
+    tagline: "Kitchen confidence — trusted appliances for everyday cooking.",
     description:
       "Blenders, juicers, mixers and small kitchen appliances. Practical, reliable, and backed by Kenwood's heritage.",
     heroColor: "#7a1a1a",
@@ -63,9 +63,9 @@ export const BRAND_PAGES = {
   },
   lg: {
     tier: "standard",
-    tagline: "Life's Good \u2014 innovation for the modern home.",
+    tagline: "Life's Good — innovation for the modern home.",
     description:
-      "Dual Inverter ACs, side-by-side refrigerators, and premium TVs. Voltory carries select LG lines with official warranty.",
+      "Dual Inverter ACs, side-by-side refrigerators, and premium TVs. NAVEN carries select LG lines with official warranty.",
     heroColor: "#a50034",
     accent: "#a50034",
   },
@@ -87,7 +87,7 @@ export const BRAND_PAGES = {
   },
 };
 
-/** Tier metadata used by the UI \u2014 keep dumb components dumb. */
+/** Tier metadata used by the UI — keep dumb components dumb. */
 export const TIER_META = {
   official: {
     label: "Official Store",

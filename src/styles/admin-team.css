@@ -1,0 +1,436 @@
+/* ============================================================
+   ADMIN TEAM PAGE  \u2014  /admin/team
+   APPROVAL CARDS   \u2014  used by GM portal
+   Prefix: .team-*  and  .apv-*
+   ============================================================ */
+
+/* -----------------------------------------------------------
+   Team page
+   ----------------------------------------------------------- */
+
+.team-warn {
+  padding: 10px 14px;
+  background: #fef3c7;
+  color: #92400e;
+  border-left: 4px solid #f59e0b;
+  border-radius: var(--adm-r-sm);
+  font-size: 13px;
+  margin-bottom: 16px;
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+
+.team-section {
+  margin-bottom: 24px;
+  padding: 20px 24px;
+  background: var(--adm-surface);
+  border: 1.5px solid var(--adm-border);
+  border-radius: var(--adm-r-md);
+}
+.team-section h2 {
+  margin: 0 0 4px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--adm-ink);
+}
+.team-help {
+  margin: 0 0 14px;
+  font-size: 13px;
+  color: var(--adm-ink-2);
+  line-height: 1.5;
+}
+
+.team-empty {
+  padding: 24px;
+  text-align: center;
+  color: var(--adm-ink-3);
+  font-size: 13.5px;
+  border: 1.5px dashed var(--adm-border);
+  border-radius: var(--adm-r-sm);
+}
+
+.team-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 4px;
+}
+.team-table th,
+.team-table td {
+  padding: 12px 14px;
+  text-align: left;
+  border-bottom: 1px solid var(--adm-border);
+  font-size: 13.5px;
+}
+.team-table th {
+  font-size: 11.5px;
+  font-weight: 700;
+  color: var(--adm-ink-3);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  background: var(--adm-hover);
+}
+.team-table tr:last-child td { border-bottom: none; }
+
+.team-email {
+  font-weight: 600;
+  color: var(--adm-ink);
+}
+.team-you {
+  margin-left: 6px;
+  padding: 1px 6px;
+  background: var(--adm-brand-soft);
+  color: var(--adm-brand);
+  border-radius: 4px;
+  font-size: 10px;
+  font-style: normal;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.team-role {
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: 99px;
+  font-size: 11.5px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+.team-role--gm {
+  background: #fef3c7;
+  color: #92400e;
+}
+.team-role--staff {
+  background: #dbeafe;
+  color: #1e40af;
+}
+
+.team-2fa {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  color: #059669;
+  font-weight: 600;
+}
+.team-2fa--off {
+  color: var(--adm-ink-3);
+}
+
+/* ---- Add existing user form ---- */
+
+.team-add {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  gap: 12px;
+  align-items: end;
+}
+.team-add__field {
+  display: block;
+}
+.team-add__field label {
+  display: block;
+  font-size: 11.5px;
+  font-weight: 700;
+  color: var(--adm-ink-3);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 6px;
+}
+.team-add__field select {
+  padding: 10px 12px;
+  background: #ffffff;
+  border: 1.5px solid var(--adm-border);
+  border-radius: var(--adm-r-sm);
+  font: inherit;
+  font-size: 14px;
+  color: var(--adm-ink);
+}
+.team-add__field select:focus {
+  outline: none;
+  border-color: var(--adm-brand);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.10);
+}
+.team-add__input {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  background: #ffffff;
+  border: 1.5px solid var(--adm-border);
+  border-radius: var(--adm-r-sm);
+  min-width: 260px;
+}
+.team-add__input:focus-within {
+  border-color: var(--adm-brand);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.10);
+}
+.team-add__input svg { color: var(--adm-ink-3); flex-shrink: 0; }
+.team-add__input input {
+  flex: 1;
+  border: none;
+  outline: none;
+  font: inherit;
+  font-size: 14px;
+  color: var(--adm-ink);
+  background: transparent;
+  min-width: 0;
+}
+
+.team-msg {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 12px;
+  padding: 10px 14px;
+  border-radius: var(--adm-r-sm);
+  font-size: 13px;
+}
+.team-msg--ok  { background: #d1fae5; color: #065f46; border-left: 3px solid #059669; }
+.team-msg--err { background: var(--adm-err-bg); color: var(--adm-err); border-left: 3px solid var(--adm-err); }
+
+/* ---- Change-role modal ---- */
+
+.team-modal {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.55);
+  display: grid;
+  place-items: center;
+  z-index: 100;
+  padding: 20px;
+}
+.team-modal__card {
+  width: 100%;
+  max-width: 460px;
+  background: var(--adm-surface);
+  border-radius: var(--adm-r-md);
+  padding: 28px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.30);
+}
+.team-modal__card h3 {
+  margin: 0 0 8px;
+  font-size: 18px;
+  color: var(--adm-ink);
+}
+.team-modal__card > p {
+  margin: 0 0 20px;
+  font-size: 13.5px;
+  color: var(--adm-ink-2);
+  line-height: 1.55;
+}
+.team-modal__field {
+  display: block;
+  margin-bottom: 14px;
+}
+.team-modal__field label {
+  display: block;
+  font-size: 11.5px;
+  font-weight: 700;
+  color: var(--adm-ink-3);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 6px;
+}
+.team-modal__field select,
+.team-modal__field textarea {
+  width: 100%;
+  padding: 10px 12px;
+  background: #ffffff;
+  border: 1.5px solid var(--adm-border);
+  border-radius: var(--adm-r-sm);
+  font: inherit;
+  font-size: 14px;
+  color: var(--adm-ink);
+  box-sizing: border-box;
+  resize: vertical;
+}
+.team-modal__field select:focus,
+.team-modal__field textarea:focus {
+  outline: none;
+  border-color: var(--adm-brand);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.10);
+}
+.team-modal__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 20px;
+}
+
+/* -----------------------------------------------------------
+   Approval cards (used in GM Portal queue)
+   ----------------------------------------------------------- */
+
+.apv-list {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.apv-card {
+  padding: 20px 22px;
+  background: var(--adm-surface);
+  border: 1.5px solid var(--adm-border);
+  border-radius: var(--adm-r-md);
+}
+
+.apv-card__head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 14px;
+}
+.apv-card__badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  background: var(--adm-brand-soft);
+  color: var(--adm-brand);
+  border-radius: 99px;
+  font-size: 12px;
+  font-weight: 700;
+}
+.apv-card__time {
+  font-size: 12px;
+  color: var(--adm-ink-3);
+}
+
+.apv-card__body {
+  margin-bottom: 14px;
+}
+
+.apv-summary {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.apv-summary__main {
+  font-size: 15px;
+}
+.apv-summary__email {
+  font-weight: 700;
+  color: var(--adm-ink);
+}
+.apv-summary__change {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 13px;
+}
+.apv-role {
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: 99px;
+  font-size: 11.5px;
+  font-weight: 700;
+}
+.apv-role--gm    { background: #fef3c7; color: #92400e; }
+.apv-role--staff { background: #dbeafe; color: #1e40af; }
+.apv-role--none  { background: var(--adm-hover); color: var(--adm-ink-3); }
+
+.apv-summary__reason {
+  font-size: 13px;
+  color: var(--adm-ink-2);
+  padding: 8px 12px;
+  background: var(--adm-hover);
+  border-radius: 6px;
+  line-height: 1.5;
+}
+.apv-summary__reason b { color: var(--adm-ink); }
+
+.apv-summary__raw {
+  background: var(--adm-hover);
+  padding: 12px;
+  border-radius: 6px;
+  font-size: 12px;
+  overflow-x: auto;
+  color: var(--adm-ink);
+}
+
+.apv-card__self {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  background: #fef3c7;
+  color: #78350f;
+  border-radius: var(--adm-r-sm);
+  font-size: 12.5px;
+  border-left: 3px solid #f59e0b;
+}
+
+.apv-card__reason {
+  display: block;
+  margin-bottom: 12px;
+}
+.apv-card__reason label {
+  display: block;
+  font-size: 11.5px;
+  font-weight: 700;
+  color: var(--adm-ink-3);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 6px;
+}
+.apv-card__reason input {
+  width: 100%;
+  padding: 10px 12px;
+  background: #ffffff;
+  border: 1.5px solid var(--adm-border);
+  border-radius: var(--adm-r-sm);
+  font: inherit;
+  font-size: 13.5px;
+  color: var(--adm-ink);
+  box-sizing: border-box;
+}
+.apv-card__reason input:focus {
+  outline: none;
+  border-color: var(--adm-brand);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.10);
+}
+
+.apv-card__err {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 12px;
+  background: var(--adm-err-bg);
+  color: var(--adm-err);
+  border-radius: var(--adm-r-sm);
+  font-size: 12.5px;
+  margin-bottom: 12px;
+  border-left: 3px solid var(--adm-err);
+}
+
+.apv-card__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.adm-btn--danger {
+  background: var(--adm-err);
+  color: #ffffff;
+  border-color: var(--adm-err);
+}
+.adm-btn--danger:not(:disabled):hover {
+  background: #b91c1c;
+  border-color: #b91c1c;
+}
+
+/* -----------------------------------------------------------
+   Responsive
+   ----------------------------------------------------------- */
+
+@media (max-width: 760px) {
+  .team-add { grid-template-columns: 1fr; }
+  .team-add__input { min-width: 0; }
+  .team-table th:nth-child(3),
+  .team-table td:nth-child(3) { display: none; }
+  .apv-card { padding: 16px; }
+}

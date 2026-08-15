@@ -20,7 +20,7 @@ export default function TrackOrder() {
 
   useEffect(() => {
     const prev = document.title;
-    document.title = `Track Order \u2014 ${SITE.name}`;
+    document.title = `Track Order — ${SITE.name}`;
     return () => { document.title = prev; };
   }, []);
 
@@ -50,7 +50,7 @@ export default function TrackOrder() {
       return;
     }
     if (!cleaned.startsWith("VLT-")) {
-      setError("That doesn\u2019t look like a Voltory order ID. They start with VLT-.");
+      setError("That doesn’t look like a NAVEN order ID. They start with VLT-.");
       return;
     }
     setSubmitted(cleaned);
@@ -103,7 +103,7 @@ export default function TrackOrder() {
         <div className="track-noresult" style={{ borderColor: "var(--line)" }}>
           <span className="track-noresult__icon"><Search size={24} /></span>
           <div>
-            <h3>Looking up your order\u2026</h3>
+            <h3>Looking up your order…</h3>
             <p>One moment.</p>
           </div>
         </div>

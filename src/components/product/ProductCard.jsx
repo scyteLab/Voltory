@@ -43,7 +43,7 @@ export default function ProductCard({ product }) {
     e.stopPropagation();
     const result = toggleCompare(p.sku);
     if (result.full) {
-      // Cap of 4 hit \u2014 nudge user to the Compare page to remove an item.
+      // Cap of 4 hit — nudge user to the Compare page to remove an item.
       alert(`You can compare up to ${MAX_COMPARE} products at a time. Remove one from /compare to add this.`);
       navigate("/compare");
     }
@@ -53,7 +53,7 @@ export default function ProductCard({ product }) {
     <article className="pcard">
       {badge && <span className={`pcard__badge ${badge.cls}`}>{badge.label}</span>}
 
-      {/* corner action stack \u2014 wishlist heart + compare toggle */}
+      {/* corner action stack — wishlist heart + compare toggle */}
       <span className="pcard__actions-corner">
         <button
           className={"pcard__wish" + (wished ? " pcard__wish--on" : "")}

@@ -6,29 +6,29 @@ import ProductCard from "../product/ProductCard.jsx";
 import CountdownTimer from "./CountdownTimer.jsx";
 
 /**
- * ProductRowSection \u2014 the biggest configurable section type.
+ * ProductRowSection — the biggest configurable section type.
  *
  * A horizontal scrollable product row with a header. Powers
  * "Deals of the day", "Recommended products", and any custom row
  * the admin creates in Session 31b.
  *
  * Configurable via `config`:
- *   \u00B7 title           \u2014 header text
- *   \u00B7 link            \u2014 optional { text, href } (e.g. "View all deals \u2192")
- *   \u00B7 show_countdown  \u2014 boolean; renders a countdown next to the title
- *   \u00B7 source          \u2014 "auto" | { tag, category, brand, skus, limit }
- *   \u00B7 limit           \u2014 max products to show (default 10)
+ *   · title           — header text
+ *   · link            — optional { text, href } (e.g. "View all deals →")
+ *   · show_countdown  — boolean; renders a countdown next to the title
+ *   · source          — "auto" | { tag, category, brand, skus, limit }
+ *   · limit           — max products to show (default 10)
  *
  * `source: "auto"` means:
- *   \u00B7 If kind was 'deals_row' \u2014 all products with a `was` price
- *   \u00B7 If kind was 'featured_row' \u2014 first N products
+ *   · If kind was 'deals_row' — all products with a `was` price
+ *   · If kind was 'featured_row' — first N products
  * Since we don't have kind at this level, we use `source.mode` or
  * fall back to "featured".
  *
- * `source: { tag: "holiday-sale" }` \u2014 all products with that tag
- * `source: { category: "air-conditioners" }` \u2014 all products in the category
- * `source: { brand: "Scanfrost" }` \u2014 all products from that brand
- * `source: { skus: ["A", "B"] }` \u2014 exactly those SKUs, in order
+ * `source: { tag: "holiday-sale" }` — all products with that tag
+ * `source: { category: "air-conditioners" }` — all products in the category
+ * `source: { brand: "Scanfrost" }` — all products from that brand
+ * `source: { skus: ["A", "B"] }` — exactly those SKUs, in order
  */
 export default function ProductRowSection({ config = {}, sectionKind }) {
   const { products, getDeals, byCategory, byBrand, bySku } = useCatalog();

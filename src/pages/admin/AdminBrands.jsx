@@ -4,7 +4,7 @@ import { useAdminBrands } from "../../hooks/useAdminBrands.js";
 import BrandFormModal from "../../components/admin/catalog/BrandFormModal.jsx";
 
 /**
- * AdminBrands \u2014 /admin/catalog/brands
+ * AdminBrands — /admin/catalog/brands
  *
  * Lists every brand with logo, name, slug, product count, and
  * Edit/Delete actions. Product count uses brand.name as the key
@@ -39,7 +39,7 @@ export default function AdminBrands() {
   async function handleDelete(brand) {
     const count = counts[brand.name] || 0;
     const msg = count > 0
-      ? `"${brand.name}" has ${count} product${count === 1 ? "" : "s"} linked to it.\n\nDelete anyway? (Blocked \u2014 you'll get an error explaining why.)`
+      ? `"${brand.name}" has ${count} product${count === 1 ? "" : "s"} linked to it.\n\nDelete anyway? (Blocked — you'll get an error explaining why.)`
       : `Delete "${brand.name}"? This can't be undone.`;
     if (!window.confirm(msg)) return;
 
@@ -55,7 +55,7 @@ export default function AdminBrands() {
       <header className="adm-page__head">
         <div>
           <h1>Brands</h1>
-          <p>Manage the brands available on Voltory. Products link to brands by name, so brand names can't be renamed after creation.</p>
+          <p>Manage the brands available on NAVEN. Products link to brands by name, so brand names can't be renamed after creation.</p>
         </div>
         <button type="button" className="adm-btn adm-btn--primary" onClick={openCreate}>
           <Plus size={14} /> New brand
@@ -70,7 +70,7 @@ export default function AdminBrands() {
       )}
 
       {loading && brands.length === 0 ? (
-        <div className="hb__loading">Loading brands\u2026</div>
+        <div className="hb__loading">Loading brands…</div>
       ) : brands.length === 0 ? (
         <div className="cat-empty">
           <Award size={40} strokeWidth={1.2} />
@@ -97,7 +97,7 @@ export default function AdminBrands() {
                 </div>
                 <div className="cat-row__meta">
                   <code>{b.id}</code>
-                  <span className="cat-row__dot">\u00B7</span>
+                  <span className="cat-row__dot">·</span>
                   <span>{counts[b.name] || 0} product{(counts[b.name] || 0) === 1 ? "" : "s"}</span>
                 </div>
               </div>

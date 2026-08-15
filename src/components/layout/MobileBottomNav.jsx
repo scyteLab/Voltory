@@ -11,12 +11,12 @@ import Icon from "../ui/Icon.jsx";
 /**
  * Mobile-only sticky bottom nav. Hidden above 920px via CSS.
  * Four tabs:
- *   Home       \u2014 jumps to /
- *   Categories \u2014 opens a slide-up sheet listing all 9 categories
- *   Cart       \u2014 jumps to /cart with item-count badge
- *   Account    \u2014 jumps to /account (auth-gated) or /login if signed out
+ *   Home       — jumps to /
+ *   Categories — opens a slide-up sheet listing all 9 categories
+ *   Cart       — jumps to /cart with item-count badge
+ *   Account    — jumps to /account (auth-gated) or /login if signed out
  *
- * The Categories sheet auto-closes whenever the URL changes \u2014 so
+ * The Categories sheet auto-closes whenever the URL changes — so
  * tapping a category navigates and the sheet dismisses naturally.
  */
 export default function MobileBottomNav() {

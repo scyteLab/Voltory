@@ -5,13 +5,13 @@ import ReviewRow from "../../components/admin/reviews/ReviewRow.jsx";
 import RejectModal from "../../components/admin/reviews/RejectModal.jsx";
 
 /**
- * AdminReviews \u2014 /admin/reviews
+ * AdminReviews — /admin/reviews
  *
  * Tabbed queue:
- *   \u00B7 Pending (default) \u2014 the moderation inbox
- *   \u00B7 Approved         \u2014 what's live on the storefront
- *   \u00B7 Rejected         \u2014 audit trail
- *   \u00B7 All              \u2014 combined
+ *   · Pending (default) — the moderation inbox
+ *   · Approved         — what's live on the storefront
+ *   · Rejected         — audit trail
+ *   · All              — combined
  *
  * Each row lets the admin approve, reject (with reason), move back
  * to pending, or hard-delete. Every action fires the products.rating
@@ -101,7 +101,7 @@ export default function AdminReviews() {
       {actionErr && <div className="hb__err">{actionErr}</div>}
 
       {loading && reviews.length === 0 ? (
-        <div className="hb__loading">Loading reviews\u2026</div>
+        <div className="hb__loading">Loading reviews…</div>
       ) : reviews.length === 0 ? (
         <div className="cat-empty">
           <MessageSquare size={40} strokeWidth={1.2} />

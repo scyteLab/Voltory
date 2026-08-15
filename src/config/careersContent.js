@@ -2,7 +2,7 @@
  * ============================================================
  *  CAREERS CONTENT
  *  Open roles, culture, benefits, FAQ. Honest about being an
- *  early-stage business \u2014 the kind of role that suits someone
+ *  early-stage business — the kind of role that suits someone
  *  who wants to build, not just clock in.
  * ============================================================
  */
@@ -10,11 +10,11 @@
 export const CAREERS_HERO = {
   headline: "Help us build the most trusted appliance brand in Nigeria.",
   body:
-    "Voltory is in its founding chapter. The people who join us now will shape how appliances are sold, delivered, and serviced across the country. If you want a real seat at the table \u2014 read on.",
+    "NAVEN is in its founding chapter. The people who join us now will shape how appliances are sold, delivered, and serviced across the country. If you want a real seat at the table — read on.",
 };
 
 /**
- * Open roles. Each role has a clear scope, what you\u2019d own, who
+ * Open roles. Each role has a clear scope, what you’d own, who
  * fits, and a remote/onsite hint. When real roles open, edit
  * this file; when one closes, remove its entry.
  */
@@ -48,7 +48,7 @@ export const CAREERS_ROLES = [
     location: "Lagos / Remote (Hybrid)",
     type: "Full-time",
     snapshot:
-      "Be the voice of Voltory. Handle WhatsApp inquiries, support tickets, and post-purchase follow-up. Turn first-time buyers into repeat customers.",
+      "Be the voice of NAVEN. Handle WhatsApp inquiries, support tickets, and post-purchase follow-up. Turn first-time buyers into repeat customers.",
     youll: [
       "Respond to customer messages on WhatsApp, email, and the contact form",
       "Resolve order, delivery, and warranty issues end-to-end",
@@ -59,7 +59,7 @@ export const CAREERS_ROLES = [
       "Excellent written English and clear, warm communication style",
       "1+ year in customer service or front-line retail",
       "Patient, organised, comfortable juggling multiple conversations",
-      "Genuinely cares whether a customer\u2019s problem gets solved",
+      "Genuinely cares whether a customer’s problem gets solved",
     ],
     bonus: "Fluency in Yoruba, Igbo, or Hausa appreciated for customer empathy.",
   },
@@ -70,9 +70,9 @@ export const CAREERS_ROLES = [
     location: "Lagos (Field)",
     type: "Full-time or Contract",
     snapshot:
-      "Install ACs, refrigerators, washing machines and TVs in customers\u2019 homes. Carry the Voltory brand with every booking.",
+      "Install ACs, refrigerators, washing machines and TVs in customers’ homes. Carry the NAVEN brand with every booking.",
     youll: [
-      "Complete 3\u20136 installations per day across Lagos",
+      "Complete 3–6 installations per day across Lagos",
       "Diagnose minor issues during install and document anything outside scope",
       "Educate customers on appliance use and care",
       "Send completion photos and signed certificates to the back office",
@@ -80,7 +80,7 @@ export const CAREERS_ROLES = [
     looking: [
       "Demonstrated experience with AC installation (refrigerant handling required)",
       "Familiarity with at least 2 of: refrigerators, washing machines, gas cookers, TV mounts",
-      "Professional presentation \u2014 you represent the brand on every job",
+      "Professional presentation — you represent the brand on every job",
       "Own tools preferred; we provide branded uniform and consumables",
     ],
     bonus: "Brand certifications (Scanfrost / Midea / Samsung) move you to the front of the queue.",
@@ -112,9 +112,9 @@ export const CAREERS_ROLES = [
 export const CAREERS_VALUES = [
   {
     icon: "Rocket",
-    title: "Build, don\u2019t just maintain",
+    title: "Build, don’t just maintain",
     body:
-      "We\u2019re early. Every system you touch is one you\u2019re shaping. If you want to put your stamp on something real, this is the moment.",
+      "We’re early. Every system you touch is one you’re shaping. If you want to put your stamp on something real, this is the moment.",
   },
   {
     icon: "Eye",
@@ -126,13 +126,13 @@ export const CAREERS_VALUES = [
     icon: "Heart",
     title: "Customer obsession",
     body:
-      "We measure success by repeat customers, not first orders. Anything that hurts long-term trust loses arguments here, even when it\u2019d boost short-term numbers.",
+      "We measure success by repeat customers, not first orders. Anything that hurts long-term trust loses arguments here, even when it’d boost short-term numbers.",
   },
   {
     icon: "TrendingUp",
     title: "Growth in public",
     body:
-      "Performance feedback is direct and continuous, not annual. You\u2019ll get faster, sharper, and more confident if you take it seriously.",
+      "Performance feedback is direct and continuous, not annual. You’ll get faster, sharper, and more confident if you take it seriously.",
   },
 ];
 
@@ -147,23 +147,23 @@ export const CAREERS_BENEFITS = [
 
 export const CAREERS_FAQ = [
   {
-    q: "I don\u2019t see a role that matches my background. Can I still apply?",
-    a: "Yes \u2014 use the \u201cOpen Application\u201d option in the form. Tell us what you do well and what you\u2019d want to own here. We keep strong applications on file and reach out when a fit opens.",
+    q: "I don’t see a role that matches my background. Can I still apply?",
+    a: "Yes — use the “Open Application” option in the form. Tell us what you do well and what you’d want to own here. We keep strong applications on file and reach out when a fit opens.",
   },
   {
     q: "How fast do you respond to applications?",
-    a: "We acknowledge every application within 5 working days, and confirm a yes-or-no within 14 days for actively-open roles. If you don\u2019t hear back in that window, follow up by email \u2014 we\u2019d rather you nudge us than wonder.",
+    a: "We acknowledge every application within 5 working days, and confirm a yes-or-no within 14 days for actively-open roles. If you don’t hear back in that window, follow up by email — we’d rather you nudge us than wonder.",
   },
   {
-    q: "What\u2019s the interview process like?",
-    a: "For most roles: a 30-minute conversation with the founder, then a paid take-home or live task relevant to the job (4\u20136 hours of work), then a final reference call. We test what you\u2019d actually do on the job, not abstract puzzles.",
+    q: "What’s the interview process like?",
+    a: "For most roles: a 30-minute conversation with the founder, then a paid take-home or live task relevant to the job (4–6 hours of work), then a final reference call. We test what you’d actually do on the job, not abstract puzzles.",
   },
   {
-    q: "Is Voltory hiring remotely?",
-    a: "Most roles are Lagos-based right now because operations, dispatch, and installation are physical work. Customer Success is the most flexible. Over time as the team grows, we\u2019ll formalise remote options for roles where it makes sense.",
+    q: "Is NAVEN hiring remotely?",
+    a: "Most roles are Lagos-based right now because operations, dispatch, and installation are physical work. Customer Success is the most flexible. Over time as the team grows, we’ll formalise remote options for roles where it makes sense.",
   },
   {
     q: "What about technicians outside Lagos?",
-    a: "We\u2019re building installation networks in every major city. If you\u2019re a certified appliance technician anywhere in Nigeria \u2014 Abuja, Port Harcourt, Ibadan, Kano, anywhere \u2014 send us your details using the form. We onboard you to the network even before a formal opening.",
+    a: "We’re building installation networks in every major city. If you’re a certified appliance technician anywhere in Nigeria — Abuja, Port Harcourt, Ibadan, Kano, anywhere — send us your details using the form. We onboard you to the network even before a formal opening.",
   },
 ];

@@ -79,7 +79,7 @@ function useFacetCounts(products) {
         inverter[k] = (inverter[k] || 0) + 1;
       }
       if (p.litres != null) {
-        const bucket = p.litres < 250 ? "Under 250L" : p.litres < 450 ? "250 \u2013 450L" : "Over 450L";
+        const bucket = p.litres < 250 ? "Under 250L" : p.litres < 450 ? "250 – 450L" : "Over 450L";
         litres[bucket] = (litres[bucket] || 0) + 1;
       }
       if (p.doors != null) doors[p.doors] = (doors[p.doors] || 0) + 1;
@@ -151,7 +151,7 @@ const RENDERERS = {
       title="Capacity (Litres)"
       entries={[
         ["Under 250L", counts.litres["Under 250L"] || 0],
-        ["250 \u2013 450L", counts.litres["250 \u2013 450L"] || 0],
+        ["250 – 450L", counts.litres["250 – 450L"] || 0],
         ["Over 450L", counts.litres["Over 450L"] || 0],
       ].filter(([, c]) => c > 0)}
       active={filters.litres || []}
@@ -174,18 +174,18 @@ const RENDERERS = {
         <input
           type="text"
           inputMode="numeric"
-          placeholder={"\u20A6 Min"}
+          placeholder={"₦ Min"}
           value={filters.priceMin || ""}
           onChange={(e) => {
             const v = e.target.value.replace(/\D/g, "");
             setValue("priceMin", v ? Number(v) : "");
           }}
         />
-        <span>{"\u2014"}</span>
+        <span>{"—"}</span>
         <input
           type="text"
           inputMode="numeric"
-          placeholder={"\u20A6 Max"}
+          placeholder={"₦ Max"}
           value={filters.priceMax || ""}
           onChange={(e) => {
             const v = e.target.value.replace(/\D/g, "");
@@ -245,7 +245,7 @@ const RENDERERS = {
                       key={n}
                       className={n <= min ? "cfilter__star cfilter__star--on" : "cfilter__star"}
                       aria-hidden="true"
-                    >\u2605</span>
+                    >★</span>
                   ))}
                 </span>
                 <span className="cfilter__rating-lbl">& up</span>
@@ -260,7 +260,7 @@ const RENDERERS = {
 
 const PRICE_PRESETS = [
   { label: `Under ${naira(150000)}`, min: "", max: 150000 },
-  { label: `${naira(150000)} \u2013 ${naira(500000)}`, min: 150000, max: 500000 },
-  { label: `${naira(500000)} \u2013 ${naira(1000000)}`, min: 500000, max: 1000000 },
+  { label: `${naira(150000)} – ${naira(500000)}`, min: 150000, max: 500000 },
+  { label: `${naira(500000)} – ${naira(1000000)}`, min: 500000, max: 1000000 },
   { label: `Above ${naira(1000000)}`, min: 1000000, max: "" },
 ];

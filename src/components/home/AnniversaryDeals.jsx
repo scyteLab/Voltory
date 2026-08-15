@@ -20,7 +20,7 @@ export default function AnniversaryDeals() {
     <>
       <div className="anniv" aria-label="Anniversary sale">
         <div>
-          <span className="anniv__badge"><PartyPopper size={13} /> Voltory Anniversary Sale</span>
+          <span className="anniv__badge"><PartyPopper size={13} /> NAVEN Anniversary Sale</span>
           <h2>Up to 40% Off — Celebrate With Us</h2>
           <p>Our biggest discounts of the year on appliances you actually need.</p>
         </div>

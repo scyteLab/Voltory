@@ -41,7 +41,7 @@ export default function Brand() {
   useEffect(() => {
     if (brand) {
       const prev = document.title;
-      document.title = `${brand.name} \u2014 ${SITE.name}`;
+      document.title = `${brand.name} — ${SITE.name}`;
       return () => { document.title = prev; };
     }
   }, [brand]);
@@ -306,12 +306,12 @@ function buildActiveChips(f) {
   const chips = [];
   for (const v of f.availability) chips.push({ key: `availability:${v}`, type: "availability", value: v, label: v });
   if (f.rating) {
-    chips.push({ key: "rating", type: "rating", value: null, label: `${f.rating}\u2605 & up` });
+    chips.push({ key: "rating", type: "rating", value: null, label: `${f.rating}★ & up` });
   }
   if (f.priceMin !== "" || f.priceMax !== "") {
-    const a = f.priceMin !== "" ? `\u20A6${f.priceMin.toLocaleString()}` : "Any";
-    const b = f.priceMax !== "" ? `\u20A6${f.priceMax.toLocaleString()}` : "Any";
-    chips.push({ key: "price", type: "price", value: null, label: `Price: ${a} \u2013 ${b}` });
+    const a = f.priceMin !== "" ? `₦${f.priceMin.toLocaleString()}` : "Any";
+    const b = f.priceMax !== "" ? `₦${f.priceMax.toLocaleString()}` : "Any";
+    chips.push({ key: "price", type: "price", value: null, label: `Price: ${a} – ${b}` });
   }
   return chips;
 }

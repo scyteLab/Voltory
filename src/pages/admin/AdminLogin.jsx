@@ -8,8 +8,20 @@ import { useAdmin } from "../../context/AdminContext.jsx";
 import { AdminThemeProvider, useAdminTheme } from "../../context/AdminThemeContext.jsx";
 import Logo from "../../components/layout/Logo.jsx";
 
+/* Traveling streak lines behind the brand panel — same motion
+   signature (and same handcrafted values) as AuthShowcase on the
+   customer /login and /signup pages, so the two feel like one
+   design language. */
+const STREAKS = [
+  { top: "18%", width: "65%", duration: "5.4s", delay: "0s"   },
+  { top: "32%", width: "80%", duration: "6.1s", delay: "1.1s" },
+  { top: "50%", width: "55%", duration: "5.7s", delay: "0.6s" },
+  { top: "66%", width: "70%", duration: "6.5s", delay: "2.0s" },
+  { top: "80%", width: "58%", duration: "5.9s", delay: "1.6s" },
+];
+
 /**
- * Admin login \u2014 split-panel professional design.
+ * Admin login — split-panel professional design.
  *
  * LEFT (brand panel):
  *   Deep-navy gradient with subtle radial highlight. Logo top-left.
@@ -63,6 +75,23 @@ function LoginInner() {
     <div className="adm-login" data-mode={theme.mode} style={themeVars}>
       {/* LEFT: brand panel */}
       <aside className="adm-login__brand">
+        <div className="adm-login__brand-gradient" aria-hidden="true" />
+        <div className="adm-login__brand-glow" aria-hidden="true" />
+        <div className="adm-login__brand-lines" aria-hidden="true">
+          {STREAKS.map((s, i) => (
+            <div
+              key={i}
+              className="adm-login__brand-line"
+              style={{
+                top:               s.top,
+                width:             s.width,
+                animationDuration: s.duration,
+                animationDelay:    s.delay,
+              }}
+            />
+          ))}
+        </div>
+
         <Link to="/" className="adm-login__logo">
           <Logo tagline={false} />
         </Link>
@@ -74,7 +103,7 @@ function LoginInner() {
           </h2>
           <p className="adm-login__tagline">
             Real-time inventory, orders, warranty claims and reports —
-            everything you need to run Voltory in one place.
+            everything you need to run NAVEN in one place.
           </p>
 
           <ul className="adm-login__pillars">
@@ -103,7 +132,7 @@ function LoginInner() {
         </div>
 
         <p className="adm-login__footer">
-          © {new Date().getFullYear()} Voltory. All rights reserved.
+          © {new Date().getFullYear()} NAVEN. All rights reserved.
           <br />
           <Link to="/"><ArrowLeft size={11} /> Back to storefront</Link>
         </p>
@@ -128,7 +157,7 @@ function LoginInner() {
                 <input
                   type="email"
                   autoComplete="username"
-                  placeholder="admin@voltory.ng"
+                  placeholder="admin@mynaven.com"
                   value={email}
                   onChange={(e) => { setEmail(e.target.value); setError(null); }}
                   autoFocus
@@ -164,7 +193,7 @@ function LoginInner() {
               className="adm-login__submit"
               disabled={submitting}
             >
-              {submitting ? "Signing in\u2026" : "Sign in to Admin"}
+              {submitting ? "Signing in…" : "Sign in to Admin"}
             </button>
           </form>
 

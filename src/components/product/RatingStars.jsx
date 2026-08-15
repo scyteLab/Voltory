@@ -1,18 +1,18 @@
 import { Star } from "lucide-react";
 
 /**
- * RatingStars \u2014 shared across product cards, product page hero,
+ * RatingStars — shared across product cards, product page hero,
  * category listings.
  *
  * Honest empty state: when there are no approved reviews yet
  * (reviews === 0 or rating is null/0), we don't render empty
- * stars \u2014 that reads like "0 out of 5 stars" and lies. Instead
+ * stars — that reads like "0 out of 5 stars" and lies. Instead
  * we show a subtle "No reviews yet" label so nothing pretends
  * there's a rating.
  *
  * `variant` controls how compact the empty label is:
- *   \u00B7 "default" \u2014 "No reviews yet" text (product page)
- *   \u00B7 "compact" \u2014 empty span, nothing shown (tight card tiles)
+ *   · "default" — "No reviews yet" text (product page)
+ *   · "compact" — empty span, nothing shown (tight card tiles)
  */
 export default function RatingStars({ rating, reviews, size = 12, variant = "default" }) {
   const numRating  = Number(rating) || 0;

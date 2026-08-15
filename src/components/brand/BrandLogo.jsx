@@ -1,13 +1,13 @@
 /**
- * BrandLogo \u2014 renders the brand's logo image if we have one,
+ * BrandLogo — renders the brand's logo image if we have one,
  * otherwise falls back to a styled initial-letter tile.
  * Reusable across the brand directory, brand storefront, search
  * suggestions, and anywhere else a brand needs a face.
  *
  * Props:
- *   brand    \u2014 the brand record { id, name, logo }
- *   size     \u2014 visual variant: "sm" | "md" | "lg"
- *   grayscale\u2014 if true, applies the same greyscale-to-color hover
+ *   brand    — the brand record { id, name, logo }
+ *   size     — visual variant: "sm" | "md" | "lg"
+ *   grayscale— if true, applies the same greyscale-to-color hover
  *              treatment as on the home brand strip
  */
 export default function BrandLogo({ brand, size = "md", grayscale = false }) {

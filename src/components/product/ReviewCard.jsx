@@ -1,7 +1,7 @@
 import { BadgeCheck, Star } from "lucide-react";
 
 /**
- * ReviewCard \u2014 one approved review on the product page.
+ * ReviewCard — one approved review on the product page.
  * Verified-buyer badge if the review was linked to an order.
  */
 export default function ReviewCard({ review }) {

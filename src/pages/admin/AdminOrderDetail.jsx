@@ -8,7 +8,7 @@ import { fetchOrderWithItems, setOrderStatus } from "../../hooks/useOrders.js";
 import { ORDER_STATUSES, PAYMENT_LABELS, STATUS_TRANSITIONS } from "../../config/orderStatus.js";
 import OrderStatusTimeline from "../../components/admin/OrderStatusTimeline.jsx";
 
-function naira(n) { return "\u20A6" + Number(n || 0).toLocaleString("en-NG"); }
+function naira(n) { return "₦" + Number(n || 0).toLocaleString("en-NG"); }
 function fmtDateLong(iso) {
   if (!iso) return "";
   return new Date(iso).toLocaleString("en-NG", {
@@ -18,7 +18,7 @@ function fmtDateLong(iso) {
 }
 
 /**
- * Admin Order Detail page \u2014 the operator's fulfillment workspace
+ * Admin Order Detail page — the operator's fulfillment workspace
  * for a single order.
  *
  * Left column: status timeline + line items + totals summary.
@@ -311,7 +311,7 @@ function TransitionButton({ target, label, isConfirming, isSaving, onFire, onCan
           onClick={onFire}
           disabled={isSaving}
         >
-          {isSaving ? "Working\u2026" : `Yes, ${verb}`}
+          {isSaving ? "Working…" : `Yes, ${verb}`}
         </button>
       </span>
     );
@@ -323,7 +323,7 @@ function TransitionButton({ target, label, isConfirming, isSaving, onFire, onCan
       onClick={onFire}
       disabled={isSaving}
     >
-      <Icon size={13} /> {isSaving ? `\u2192 ${label}\u2026` : `Mark as ${label}`}
+      <Icon size={13} /> {isSaving ? `→ ${label}…` : `Mark as ${label}`}
     </button>
   );
 }

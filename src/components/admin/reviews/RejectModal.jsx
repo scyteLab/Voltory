@@ -2,8 +2,8 @@ import { useEffect, useRef, useState } from "react";
 import { X } from "lucide-react";
 
 /**
- * RejectModal \u2014 short modal for rejecting a review.
- * The reason is optional but strongly encouraged \u2014 it's shown to
+ * RejectModal — short modal for rejecting a review.
+ * The reason is optional but strongly encouraged — it's shown to
  * the customer on their /account/reviews page so they know why.
  *
  * A few quick-pick presets speed up common cases.
@@ -89,7 +89,7 @@ export default function RejectModal({ review, onClose, onSubmit }) {
               Cancel
             </button>
             <button type="submit" className="adm-btn adm-btn--primary" disabled={submitting}>
-              {submitting ? "Rejecting\u2026" : "Reject review"}
+              {submitting ? "Rejecting…" : "Reject review"}
             </button>
           </div>
         </form>

@@ -3,14 +3,17 @@ import ReactDOM from "react-dom/client";
 import App from "./App.jsx";
 import "./styles/tokens.css";
 import "./styles/global.css";
+import "./styles/site-background.css";
 import "./styles/layout.css";
 import "./styles/components.css";
 import "./styles/home.css";
 import "./styles/product.css";
+import "./styles/product-specs.css";
 import "./styles/cart-checkout.css";
 import "./styles/category.css";
 import "./styles/search.css";
 import "./styles/auth.css";
+import "./styles/auth-shell.css";
 import "./styles/account.css";
 import "./styles/brand.css";
 import "./styles/landing.css";
@@ -35,6 +38,11 @@ import "./styles/review-guidelines.css";
 import "./styles/whatsapp-quotes.css";
 import "./styles/admin-whatsapp.css";
 import "./styles/admin-import.css";
+import "./styles/admin-inventory.css";
+import "./styles/admin-marketing.css";
+import "./styles/admin-gm.css";
+import "./styles/admin-team.css";
+import "./styles/brands-directory.css";
 import "./styles/admin.css";
 
 ReactDOM.createRoot(document.getElementById("root")).render(
@@ -42,3 +50,5 @@ ReactDOM.createRoot(document.getElementById("root")).render(
     <App />
   </React.StrictMode>
 );
+
+

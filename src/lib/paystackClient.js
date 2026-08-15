@@ -6,8 +6,8 @@
  * promise that resolves with { ok, ref } or rejects with { cancelled }.
  *
  * Behaviour when VITE_PAYSTACK_PUBLIC_KEY is not set:
- *   \u00B7 openPaystack() rejects with a specific error
- *   \u00B7 isPaystackConfigured() returns false, so callers can
+ *   · openPaystack() rejects with a specific error
+ *   · isPaystackConfigured() returns false, so callers can
  *     branch to an alternate flow (e.g. force pay-on-delivery)
  *
  * We NEVER hardcode a key. If the env var is missing the feature
@@ -31,7 +31,7 @@ function loadPaystackSdk() {
       if (window.PaystackPop) resolve(window.PaystackPop);
       else reject(new Error("Paystack SDK loaded but PaystackPop is undefined"));
     };
-    script.onerror = () => reject(new Error("Failed to load Paystack SDK \u2014 check network / adblocker"));
+    script.onerror = () => reject(new Error("Failed to load Paystack SDK — check network / adblocker"));
     document.head.appendChild(script);
   });
   return sdkLoadPromise;
@@ -52,14 +52,14 @@ export function isPaystackConfigured() {
 }
 
 /**
- * Opens the Paystack inline modal. Amount MUST be in kobo (naira \u00D7 100).
+ * Opens the Paystack inline modal. Amount MUST be in kobo (naira × 100).
  *
  * @param {object} params
- * @param {number} params.amount       \u2014 in NAIRA (we convert to kobo internally)
+ * @param {number} params.amount       — in NAIRA (we convert to kobo internally)
  * @param {string} params.email
- * @param {string} params.reference    \u2014 use the Voltory order id
- * @param {object} params.metadata     \u2014 arbitrary payload sent to Paystack
- * @param {string[]} params.channels   \u2014 ['card', 'bank_transfer', 'ussd'] etc; empty = all
+ * @param {string} params.reference    — use the Voltory order id
+ * @param {object} params.metadata     — arbitrary payload sent to Paystack
+ * @param {string[]} params.channels   — ['card', 'bank_transfer', 'ussd'] etc; empty = all
  *
  * Resolves with { ok: true, ref } on success.
  * Resolves with { ok: false, cancelled: true } if user closes modal.
@@ -86,7 +86,7 @@ export async function openPaystack({ amount, email, reference, metadata = {}, ch
       currency: "NGN",
       ref: reference,
       metadata: {
-        source: "voltory-web",
+        source: "naven-web",
         ...metadata,
       },
       callback: (response) => {

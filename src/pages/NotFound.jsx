@@ -7,7 +7,7 @@ import {
 import { SITE } from "../config/site.js";
 
 /**
- * 404 page \u2014 mounted as the wildcard route inside <StoreLayout>,
+ * 404 page — mounted as the wildcard route inside <StoreLayout>,
  * so the full header / nav / footer still wrap it. Lost users
  * get popular destinations and a quick-jump search.
  */
@@ -25,7 +25,7 @@ export default function NotFound() {
 
   useEffect(() => {
     const prev = document.title;
-    document.title = `Page not found \u2014 ${SITE.name}`;
+    document.title = `Page not found — ${SITE.name}`;
     return () => { document.title = prev; };
   }, []);
 

@@ -5,7 +5,7 @@ import OrdersFilters from "../../components/admin/OrdersFilters.jsx";
 import OrdersTable from "../../components/admin/OrdersTable.jsx";
 
 /**
- * Admin Orders list. Simple orchestration \u2014 filters + table.
+ * Admin Orders list. Simple orchestration — filters + table.
  * Click a row to open /admin/orders/:id.
  */
 export default function AdminOrders() {

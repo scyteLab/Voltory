@@ -40,8 +40,6 @@ export default function Category() {
     }
   }, [category]);
 
-  if (!category) return <CategoryNotFound id={categoryId} />;
-
   const baseProducts = byCategory(categoryId);
   const filtered = applyFilters(baseProducts, filters);
   const sorted = applySort(filtered, sort);
@@ -75,17 +73,33 @@ export default function Category() {
 
   const activeChips = buildActiveChips(filters);
 
-  // Top deals for this category
-  const topDeals = baseProducts
+  // Top deals — scoped to the CURRENT filter state, not the whole
+  // category. Otherwise a URL like ?brand=LG shows Scanfrost/Midea/
+  // Samsung deals up top, contradicting the filter chip and making
+  // the page look broken. When the filter narrows to something with
+  // no discounts, the entire section hides gracefully.
+  const topDeals = filtered
     .filter((p) => p.was && p.was > p.price)
     .sort((a, b) => discountPct(b.price, b.was) - discountPct(a.price, a.was))
     .slice(0, 8);
 
-  // Brands in this category
+  // Brands in this category. Once the user has ALREADY picked a
+  // brand, the whole point of a "Shop by Brand" discovery strip is
+  // spent — we hide it. Same principle if any active filter has
+  // clearly narrowed intent (rating, price band): the discovery row
+  // stays useful even then, so we only hide it for brand filters.
+  const brandFilterActive = filters.brand && filters.brand.length > 0;
   const categoryBrands = useMemo(() => {
+    if (brandFilterActive) return [];
     const names = [...new Set(baseProducts.map((p) => p.brand))];
     return names.map((n) => brands.find((b) => b.name === n)).filter(Boolean);
-  }, [baseProducts]);
+  }, [baseProducts, brands, brandFilterActive]);
+
+  // Every hook above must run on every render (Rules of Hooks) — the
+  // "category not found" bail-out has to come after all of them, not
+  // before. It also has to come before this point, since everything
+  // below dereferences `category` directly.
+  if (!category) return <CategoryNotFound id={categoryId} />;
 
   // Sub-categories from megamenu
   const subCats = category.megamenu?.find((g) => g.heading === "By Type")?.items || [];
@@ -116,7 +130,11 @@ export default function Category() {
       {topDeals.length > 0 && (
         <section className="cdeals">
           <div className="cdeals__header">
-            <span>Top Deals on {category.label}</span>
+            <span>
+              Top Deals on
+              {brandFilterActive && filters.brand.length === 1 ? ` ${filters.brand[0]} ` : " "}
+              {category.label}
+            </span>
           </div>
           <div className="cdeals__grid">
             {topDeals.map((p) => (
@@ -333,7 +351,7 @@ function applyFilters(products, f) {
       const flag = p.stock > 0 ? "In Stock" : "Out of Stock";
       if (!f.availability.includes(flag)) return false;
     }
-    // Minimum rating filter \u2014 excludes products with fewer stars OR no reviews.
+    // Minimum rating filter — excludes products with fewer stars OR no reviews.
     // A "4 stars & up" filter should show 4.x-star products but hide 3.5-stars and unreviewed ones.
     if (f.rating) {
       const stars = Number(p.rating) || 0;
@@ -372,12 +390,12 @@ function buildActiveChips(f) {
   for (const v of f.doors) chips.push({ key: `doors:${v}`, type: "doors", value: v, label: `${v} Door${v === 1 ? "" : "s"}` });
   for (const v of f.availability) chips.push({ key: `availability:${v}`, type: "availability", value: v, label: v });
   if (f.rating) {
-    chips.push({ key: "rating", type: "rating", value: null, label: `${f.rating}\u2605 & up` });
+    chips.push({ key: "rating", type: "rating", value: null, label: `${f.rating}★ & up` });
   }
   if (f.priceMin !== "" || f.priceMax !== "") {
-    const a = f.priceMin !== "" ? `\u20A6${f.priceMin.toLocaleString()}` : "Any";
-    const b = f.priceMax !== "" ? `\u20A6${f.priceMax.toLocaleString()}` : "Any";
-    chips.push({ key: "price", type: "price", value: null, label: `Price: ${a} \u2013 ${b}` });
+    const a = f.priceMin !== "" ? `₦${f.priceMin.toLocaleString()}` : "Any";
+    const b = f.priceMax !== "" ? `₦${f.priceMax.toLocaleString()}` : "Any";
+    chips.push({ key: "price", type: "price", value: null, label: `Price: ${a} – ${b}` });
   }
   return chips;
 }

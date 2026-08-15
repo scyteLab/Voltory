@@ -7,16 +7,16 @@ import {
 import { fetchCustomerWithOrders } from "../../hooks/useCustomers.js";
 import { ORDER_STATUSES, PAYMENT_LABELS } from "../../config/orderStatus.js";
 
-function naira(n) { return "\u20A6" + Number(n || 0).toLocaleString("en-NG"); }
+function naira(n) { return "₦" + Number(n || 0).toLocaleString("en-NG"); }
 function fmtDateLong(iso) {
-  if (!iso) return "\u2014";
+  if (!iso) return "—";
   return new Date(iso).toLocaleString("en-NG", {
     year: "numeric", month: "short", day: "2-digit",
     hour: "2-digit", minute: "2-digit",
   });
 }
 function fmtDate(iso) {
-  if (!iso) return "\u2014";
+  if (!iso) return "—";
   const d = new Date(iso);
   return `${String(d.getDate()).padStart(2, "0")}/${String(d.getMonth() + 1).padStart(2, "0")}/${d.getFullYear()}`;
 }
@@ -275,7 +275,7 @@ export default function AdminCustomerDetail() {
                       <div>
                         {a.street && <b>{a.street}</b>}
                         <small>
-                          {[a.area, a.state].filter(Boolean).join(" \u00B7 ") || "\u2014"}
+                          {[a.area, a.state].filter(Boolean).join(" · ") || "—"}
                         </small>
                       </div>
                     </li>

@@ -10,10 +10,10 @@ import SectionEditor from "./SectionEditor.jsx";
  * SectionCard
  *
  * One row in the homepage builder. Shows kind + title, plus:
- *   \u2022 drag handle (works for keyboard reorder too via dnd-kit)
- *   \u2022 visibility toggle
- *   \u2022 expand button to open the editor body
- *   \u2022 delete button
+ *   • drag handle (works for keyboard reorder too via dnd-kit)
+ *   • visibility toggle
+ *   • expand button to open the editor body
+ *   • delete button
  *
  * Uses @dnd-kit/sortable for sort behavior. Wraps in a fragment
  * of setNodeRef + style so drag/reorder animations are smooth.

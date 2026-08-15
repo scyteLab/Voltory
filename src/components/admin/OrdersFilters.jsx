@@ -3,7 +3,7 @@ import { ORDER_STATUSES } from "../../config/orderStatus.js";
 
 /**
  * Filter row for the Orders list. Same shape as CatalogFilters
- * so the admin looks consistent \u2014 search on the left, selects, then
+ * so the admin looks consistent — search on the left, selects, then
  * active-filter chips + total count on the second line.
  */
 export default function OrdersFilters({ filters, onChange, total }) {

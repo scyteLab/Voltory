@@ -6,9 +6,9 @@ import {
 } from "lucide-react";
 import { useCustomers } from "../../hooks/useCustomers.js";
 
-function naira(n) { return "\u20A6" + Number(n || 0).toLocaleString("en-NG"); }
+function naira(n) { return "₦" + Number(n || 0).toLocaleString("en-NG"); }
 function fmtDate(iso) {
-  if (!iso) return "\u2014";
+  if (!iso) return "—";
   const d = new Date(iso);
   return `${String(d.getDate()).padStart(2, "0")}/${String(d.getMonth() + 1).padStart(2, "0")}/${d.getFullYear()}`;
 }
@@ -180,7 +180,7 @@ export default function AdminCustomers() {
                     </span>
                     <div className="adm-ptbl__product-meta">
                       <b>{row.name || "Unnamed"}</b>
-                      <small>{row.email || "\u2014 no email"}</small>
+                      <small>{row.email || "— no email"}</small>
                     </div>
                   </div>
 

@@ -5,13 +5,13 @@ import Icon from "../../components/ui/Icon.jsx";
 import CategoryFormModal from "../../components/admin/catalog/CategoryFormModal.jsx";
 
 /**
- * AdminCategories \u2014 /admin/catalog/categories
+ * AdminCategories — /admin/catalog/categories
  *
  * List every category, plus Add, Edit and Delete buttons. Each row
  * shows the icon, label, slug, blurb, "Hot" badge if set, and the
  * count of products currently in that category.
  *
- * Delete is guarded twice \u2014 native confirm on the button, plus the
+ * Delete is guarded twice — native confirm on the button, plus the
  * DB-level FK constraint so we can never orphan products.
  */
 export default function AdminCategories() {
@@ -45,7 +45,7 @@ export default function AdminCategories() {
   async function handleDelete(cat) {
     const count = counts[cat.id] || 0;
     const msg = count > 0
-      ? `"${cat.label}" has ${count} product${count === 1 ? "" : "s"} linked to it.\n\nDelete anyway? (It won't actually delete if products remain \u2014 that's blocked by the database.)`
+      ? `"${cat.label}" has ${count} product${count === 1 ? "" : "s"} linked to it.\n\nDelete anyway? (It won't actually delete if products remain — that's blocked by the database.)`
       : `Delete "${cat.label}"? This can't be undone.`;
     if (!window.confirm(msg)) return;
 
@@ -78,7 +78,7 @@ export default function AdminCategories() {
       )}
 
       {loading && categories.length === 0 ? (
-        <div className="hb__loading">Loading categories\u2026</div>
+        <div className="hb__loading">Loading categories…</div>
       ) : categories.length === 0 ? (
         <div className="cat-empty">
           <Package size={40} strokeWidth={1.2} />
@@ -100,10 +100,10 @@ export default function AdminCategories() {
                 </div>
                 <div className="cat-row__meta">
                   <code>{c.id}</code>
-                  <span className="cat-row__dot">\u00B7</span>
+                  <span className="cat-row__dot">·</span>
                   <span>{counts[c.id] || 0} product{(counts[c.id] || 0) === 1 ? "" : "s"}</span>
                   {c.blurb && <>
-                    <span className="cat-row__dot">\u00B7</span>
+                    <span className="cat-row__dot">·</span>
                     <span className="cat-row__blurb">{c.blurb}</span>
                   </>}
                 </div>

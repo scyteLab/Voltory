@@ -4,7 +4,7 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useCatalog } from "../../context/CatalogContext.jsx";
 
 /**
- * Shop By Top Brands \u2014 horizontal scrollable strip of brand logos.
+ * Shop By Top Brands — horizontal scrollable strip of brand logos.
  *
  * Was previously inline in Home.jsx. Extracted so it can be
  * reordered / hidden via site_sections. Title is configurable;

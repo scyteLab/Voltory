@@ -11,23 +11,23 @@ import { SITE } from "../config/site.js";
 import RatingStars from "../components/product/RatingStars.jsx";
 
 /**
- * Compare page \u2014 up to 4 products side-by-side.
+ * Compare page — up to 4 products side-by-side.
  * Empty columns prompt the user to add more from the browsing.
  * Smart rows: spec rows only render if at least one product has
  * that attribute, so a comparison of TVs doesn't show empty
  * "HP" rows from the AC spec template.
  */
 const ATTRIBUTE_ROWS = [
-  { key: "price",     label: "Price",          format: (v) => v != null ? naira(v) : "\u2014" },
+  { key: "price",     label: "Price",          format: (v) => v != null ? naira(v) : "—" },
   { key: "brand",     label: "Brand" },
   { key: "category",  label: "Category",       format: (v) => categoryLabel(v) },
   { key: "rating",    label: "Rating",         render: (p) => <RatingStars rating={p.rating} reviews={p.reviews} size={12} /> },
   { key: "stock",     label: "Availability",   render: (p) => <StockBadge product={p} /> },
-  { key: "hp",        label: "HP",             format: (v) => v != null ? `${v} HP` : "\u2014" },
-  { key: "inverter",  label: "Inverter",       format: (v) => v === true ? "Yes" : v === false ? "No" : "\u2014" },
-  { key: "litres",    label: "Capacity",       format: (v) => v != null ? `${v} L` : "\u2014" },
-  { key: "doors",     label: "Doors",          format: (v) => v != null ? `${v} door${v === 1 ? "" : "s"}` : "\u2014" },
-  { key: "model",     label: "Model",          format: (v) => v || "\u2014" },
+  { key: "hp",        label: "HP",             format: (v) => v != null ? `${v} HP` : "—" },
+  { key: "inverter",  label: "Inverter",       format: (v) => v === true ? "Yes" : v === false ? "No" : "—" },
+  { key: "litres",    label: "Capacity",       format: (v) => v != null ? `${v} L` : "—" },
+  { key: "doors",     label: "Doors",          format: (v) => v != null ? `${v} door${v === 1 ? "" : "s"}` : "—" },
+  { key: "model",     label: "Model",          format: (v) => v || "—" },
 ];
 
 export default function Compare() {
@@ -38,7 +38,7 @@ export default function Compare() {
 
   useEffect(() => {
     const prev = document.title;
-    document.title = `Compare Products \u2014 ${SITE.name}`;
+    document.title = `Compare Products — ${SITE.name}`;
     return () => { document.title = prev; };
   }, []);
 
@@ -50,7 +50,7 @@ export default function Compare() {
     ALWAYS_SHOW.has(r.key) || items.some((p) => p && p[r.key] != null)
   );
 
-  // Find the row with all distinct values \u2014 the things that
+  // Find the row with all distinct values — the things that
   // actually distinguish these products. We'll highlight those.
   const distinctRows = new Set();
   for (const r of rows) {
@@ -113,13 +113,13 @@ export default function Compare() {
                       ) : r.format ? (
                         r.format(p[r.key])
                       ) : (
-                        p[r.key] || "\u2014"
+                        p[r.key] || "—"
                       )}
                     </td>
                   ))}
                 </tr>
               ))}
-              {/* Highlights row \u2014 long-form list per product */}
+              {/* Highlights row — long-form list per product */}
               {items.some((p) => p?.highlights?.length) && (
                 <tr>
                   <th scope="row" className="cmp-table__rowhead">Highlights</th>

@@ -5,10 +5,10 @@ import { supabase } from "../lib/supabaseClient.js";
  * Catalog data hook.
  *
  * Owns:
- *   \u00B7 the product list (paginated + filtered + sorted)
- *   \u00B7 the list of brands / categories (for filter dropdowns)
- *   \u00B7 loading + error state
- *   \u00B7 mutations (upsertProduct, deleteProduct, setProductStatus)
+ *   · the product list (paginated + filtered + sorted)
+ *   · the list of brands / categories (for filter dropdowns)
+ *   · loading + error state
+ *   · mutations (upsertProduct, deleteProduct, setProductStatus)
  *
  * The filter shape:
  *   { search, categoryId, brandId, status, sort: {col, dir}, page, pageSize }
@@ -174,7 +174,7 @@ export function useCatalog(filters) {
 
 /**
  * Fetch a single product by SKU. Used when we deep-link
- * `?focus=VAC-0015INV` from the \u2318K palette \u2014 the focused product
+ * `?focus=VAC-0015INV` from the ⌘K palette — the focused product
  * needs to open in the edit panel even if it isn't on the current
  * page of the paginated list.
  */

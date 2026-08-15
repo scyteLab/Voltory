@@ -18,7 +18,7 @@ import { listOrders as listLocalOrders, getOrder as getLocalOrder } from "../uti
  */
 
 /* ============================================================
-   Shape adapter: Supabase row \u2192 storefront order shape
+   Shape adapter: Supabase row → storefront order shape
    ============================================================ */
 
 /**
@@ -70,10 +70,10 @@ function toStorefrontShape(row) {
 /**
  * Given remote orders (from Supabase) and local orders (from
  * localStorage), produce the customer-facing list:
- *   \u00B7 Deduped by id
- *   \u00B7 Supabase wins on any overlap (its status is fresher)
- *   \u00B7 Local-only orders are included after remote ones
- *   \u00B7 Sorted by createdAt desc
+ *   · Deduped by id
+ *   · Supabase wins on any overlap (its status is fresher)
+ *   · Local-only orders are included after remote ones
+ *   · Sorted by createdAt desc
  */
 function mergeOrders(remoteList, localList) {
   const byId = new Map();
@@ -97,7 +97,7 @@ function mergeOrders(remoteList, localList) {
  *
  * We match on customer_id first (the clean linkage established at
  * checkout via upsertFromCheckout). We also match on customer_phone
- * as a fallback \u2014 legacy orders (before customer_id was populated)
+ * as a fallback — legacy orders (before customer_id was populated)
  * still work.
  *
  * Returns the merged storefront-shape list. Never throws; on any
@@ -114,7 +114,7 @@ export async function fetchCustomerOrders({ customerId, phone }) {
   if (!supabaseConfigured) return { orders: local, error: null, source: "local" };
 
   try {
-    // Build the .or() clause safely \u2014 both filters as fallback for
+    // Build the .or() clause safely — both filters as fallback for
     // legacy orders (no customer_id) and clean links (customer_id set).
     let query = supabase
       .from("orders")
@@ -145,7 +145,7 @@ export async function fetchCustomerOrders({ customerId, phone }) {
 
 /**
  * Fetch one order by id. Used by OrderConfirmation and TrackOrder.
- * Falls back to localStorage on any Supabase miss/failure \u2014
+ * Falls back to localStorage on any Supabase miss/failure —
  * important for the confirmation page immediately after checkout
  * (Supabase sync may not have completed yet).
  */

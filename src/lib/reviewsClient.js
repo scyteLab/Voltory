@@ -49,11 +49,11 @@ export async function fetchProductReviews(productSku, { limit = 20 } = {}) {
       createdAt: r.created_at,
       customerId: r.customer_id,
       orderId: r.order_id,
-      authorName: r.customers?.name || "Voltory customer",
+      authorName: r.customers?.name || "NAVEN customer",
       verifiedBuyer: !!r.order_id,
     }));
 
-    // Aggregate \u2014 separate lightweight query for count and average.
+    // Aggregate — separate lightweight query for count and average.
     // Doing this DB-side means we don't pay to fetch all rows.
     const aggRes = await supabase
       .from("reviews")
@@ -90,7 +90,7 @@ export async function checkReviewEligibility(customerId, productSku) {
   if (!supabaseConfigured) return { canReview: false };
 
   try {
-    // Check for existing review first (regardless of order history \u2014
+    // Check for existing review first (regardless of order history —
     // if they somehow have a review, they can edit it)
     const existRes = await supabase
       .from("reviews")
@@ -132,7 +132,7 @@ function validateReview(input) {
   const rating = Number(input.rating);
   if (!rating || rating < 1 || rating > 5) return "Please pick a rating from 1 to 5 stars";
   if (!input.body?.trim()) return "Please write a short review";
-  if (input.body.trim().length < 10) return "Review is a bit too short \u2014 tell us a little more";
+  if (input.body.trim().length < 10) return "Review is a bit too short — tell us a little more";
   if (input.body.length > 2000) return "Review is too long (max 2000 characters)";
   if (input.title && input.title.length > 120) return "Title is too long (max 120 characters)";
   return null;
@@ -143,7 +143,7 @@ function validateReview(input) {
  * Because we have a unique (product_sku, customer_id) constraint,
  * we detect existing rows and update instead of insert.
  *
- * Every write lands as status='pending' \u2014 admin approval required.
+ * Every write lands as status='pending' — admin approval required.
  * Editing a previously-approved review resets it to pending.
  */
 export async function upsertReview({ customerId, productSku, orderId, rating, title, body }) {
@@ -153,15 +153,15 @@ export async function upsertReview({ customerId, productSku, orderId, rating, ti
 
   try {
     // Hybrid moderation:
-    //   \u2022 Verified buyer (order_id present) \u2192 auto-approved on first
+    //   • Verified buyer (order_id present) → auto-approved on first
     //     submission. They earned the right by actually buying.
-    //   \u2022 Non-verified (order_id null) \u2192 held pending for review.
+    //   • Non-verified (order_id null) → held pending for review.
     //     In practice this branch is rarely hit since our UI only
     //     shows the write-review form to verified buyers, but the
     //     safety net is here for anything that slips through.
-    //   \u2022 Editing an already-approved review \u2192 stays approved.
+    //   • Editing an already-approved review → stays approved.
     //     Holding every typo-fix would feel punitive.
-    //   \u2022 Editing a pending/rejected review \u2192 stays in its bucket
+    //   • Editing a pending/rejected review → stays in its bucket
     //     until the admin takes action, matching prior behaviour.
     const isVerifiedBuyer = !!orderId;
 
@@ -240,7 +240,7 @@ export async function deleteReview(customerId, reviewId) {
 }
 
 /* ============================================================
-   My Reviews \u2014 for /account/reviews
+   My Reviews — for /account/reviews
    ============================================================ */
 
 /**

@@ -15,6 +15,7 @@ import { MAX_COMPARE } from "../utils/comparison.js";
 import RatingStars from "../components/product/RatingStars.jsx";
 import Gallery from "../components/product/Gallery.jsx";
 import SpecsTabs from "../components/product/SpecsTabs.jsx";
+import ProductSpecsSection from "../components/product/ProductSpecsSection.jsx";
 import ReviewsSection from "../components/product/ReviewsSection.jsx";
 import AddToCartBar from "../components/product/AddToCartBar.jsx";
 import ProductCard from "../components/product/ProductCard.jsx";
@@ -79,7 +80,7 @@ export default function Product() {
     if (!product) return;
     addRecentlyViewed(product.sku);
     const prev = document.title;
-    document.title = `${product.name} \u2014 ${SITE.name}`;
+    document.title = `${product.name} — ${SITE.name}`;
     return () => { document.title = prev; };
   }, [product]);
 
@@ -246,6 +247,8 @@ export default function Product() {
       )}
 
       <SpecsTabs product={product} />
+
+      <ProductSpecsSection product={product} />
 
       <ReviewsSection productSku={product.sku} productName={product.name} />
 

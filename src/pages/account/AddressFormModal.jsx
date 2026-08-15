@@ -7,9 +7,9 @@ import { X } from "lucide-react";
  * Create/edit an entry in customer_addresses. Mirrors Checkout's
  * address form shape (state / lga / street / landmark) plus a few
  * extras that make it useful as a saved-address:
- *   \u00B7 Label \u2014 "Home", "Office", "Mum's place"
- *   \u00B7 Recipient name + phone \u2014 for gift deliveries etc
- *   \u00B7 is_default checkbox
+ *   · Label — "Home", "Office", "Mum's place"
+ *   · Recipient name + phone — for gift deliveries etc
+ *   · is_default checkbox
  *
  * Reuses .cat-modal__* styles from the admin categories modal since
  * the shape is identical.
@@ -132,7 +132,7 @@ export default function AddressFormModal({ address, defaultName, defaultPhone, o
                 className="hb-input"
                 value={lga}
                 onChange={(e) => setLga(e.target.value)}
-                placeholder="Ikeja, Lekki, Surulere\u2026"
+                placeholder="Ikeja, Lekki, Surulere…"
                 required
               />
             </div>
@@ -183,7 +183,7 @@ export default function AddressFormModal({ address, defaultName, defaultPhone, o
               Cancel
             </button>
             <button type="submit" className="adm-btn adm-btn--primary" disabled={submitting}>
-              {submitting ? "Saving\u2026" : isEdit ? "Save changes" : "Add address"}
+              {submitting ? "Saving…" : isEdit ? "Save changes" : "Add address"}
             </button>
           </div>
         </form>

@@ -2,7 +2,7 @@ import { Link } from "react-router-dom";
 import { Gift, ShieldCheck, Star, Truck } from "lucide-react";
 
 /**
- * Hero promo tiles \u2014 the two side-by-side call-outs shown next to
+ * Hero promo tiles — the two side-by-side call-outs shown next to
  * the hero on desktop.
  *
  * Configurable via the site_sections table. Each tile has:

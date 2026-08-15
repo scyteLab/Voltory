@@ -24,12 +24,12 @@ import BottomBenefits from "./BottomBenefits.jsx";
  *   2. Build the component (accepts `config` prop)
  *   3. Register it in the SECTIONS map below
  *
- * If a kind isn't in the map, that section is silently skipped \u2014
+ * If a kind isn't in the map, that section is silently skipped —
  * safer than crashing when we add a new kind server-side before the
  * client bundle catches up.
  */
 
-/** kind \u2192 component */
+/** kind → component */
 const SECTIONS = {
   category_sidebar:  CategorySidebar,
   hero:              Hero,
@@ -44,14 +44,14 @@ const SECTIONS = {
   service_cards:     ServiceCards,
   app_promo:         AppPromo,
   bottom_benefits:   BottomBenefits,
-  // promo_banner: PromoBanner \u2014 lands with Session 31b when we build the admin UI
+  // promo_banner: PromoBanner — lands with Session 31b when we build the admin UI
 };
 
 /**
  * Sections that render inside the .wrap container. A few (like the
  * hero row and bottom benefits strip) span full width and should
  * live outside. We keep the same structural decisions the original
- * Home.jsx made \u2014 just data-driven now.
+ * Home.jsx made — just data-driven now.
  */
 const FULL_WIDTH_KINDS = new Set(["bottom_benefits"]);
 
@@ -66,7 +66,7 @@ export default function HomeRenderer() {
   const { sections, loading } = useSiteSections();
 
   if (loading && sections.length === 0) {
-    // Empty first paint \u2014 avoids a flash of "nothing". Better than
+    // Empty first paint — avoids a flash of "nothing". Better than
     // showing a spinner because in normal use the fallback data
     // resolves so fast this branch never triggers.
     return null;

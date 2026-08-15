@@ -4,7 +4,7 @@ import {
 } from "../lib/whatsappQuotesAdmin.js";
 
 /**
- * useAdminWhatsappQuotes \u2014 queue list + tab counts.
+ * useAdminWhatsappQuotes — queue list + tab counts.
  *
  * Optimistic status changes: when the rep changes status of a quote
  * to something outside the current tab, the row drops from view

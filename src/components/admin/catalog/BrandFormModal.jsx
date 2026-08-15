@@ -6,8 +6,8 @@ import { validateBrandSlug } from "../../../lib/brandsAdmin.js";
  * BrandFormModal
  *
  * Both id and name are locked in edit mode because:
- *   \u00B7 URL /brand/:id \u2014 renaming would break bookmarks
- *   \u00B7 products.brand references brand.name \u2014 renaming would orphan
+ *   · URL /brand/:id — renaming would break bookmarks
+ *   · products.brand references brand.name — renaming would orphan
  *
  * Only the logo URL can be updated post-creation.
  */
@@ -88,7 +88,7 @@ export default function BrandFormModal({ brand, onClose, onSubmit }) {
             />
             {isEdit ? (
               <p className="cat-modal__hint cat-modal__hint--lock">
-                <b>Locked.</b> Every product on Voltory links to this brand by name.
+                <b>Locked.</b> Every product on NAVEN links to this brand by name.
                 Renaming would orphan those products. If you truly need to rename, delete
                 and re-create the brand and reassign products.
               </p>
@@ -133,7 +133,7 @@ export default function BrandFormModal({ brand, onClose, onSubmit }) {
               className="hb-input"
               value={logo}
               onChange={(e) => setLogo(e.target.value)}
-              placeholder="/brand-logos/hisense.png or https://\u2026"
+              placeholder="/brand-logos/hisense.png or https://…"
             />
             <p className="cat-modal__hint">
               Path or full URL. Recommended: transparent PNG or SVG, roughly 200x80 aspect ratio, dark logo on transparent background.
@@ -152,7 +152,7 @@ export default function BrandFormModal({ brand, onClose, onSubmit }) {
               Cancel
             </button>
             <button type="submit" className="adm-btn adm-btn--primary" disabled={submitting}>
-              {submitting ? "Saving\u2026" : isEdit ? "Save changes" : "Create brand"}
+              {submitting ? "Saving…" : isEdit ? "Save changes" : "Create brand"}
             </button>
           </div>
         </form>

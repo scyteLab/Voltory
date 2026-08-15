@@ -15,7 +15,7 @@ export default function HelpCenter() {
 
   useEffect(() => {
     const prev = document.title;
-    document.title = `Help Center \u2014 ${SITE.name}`;
+    document.title = `Help Center — ${SITE.name}`;
     return () => { document.title = prev; };
   }, []);
 
@@ -80,7 +80,7 @@ export default function HelpCenter() {
         )}
       </div>
 
-      {/* Topic tiles \u2014 hidden while searching */}
+      {/* Topic tiles — hidden while searching */}
       {!query && (
         <section className="help-topics">
           <button

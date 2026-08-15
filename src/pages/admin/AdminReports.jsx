@@ -6,7 +6,7 @@ import {
 import { exportTableToCsv, useReports } from "../../hooks/useReports.js";
 import { ORDER_STATUSES } from "../../config/orderStatus.js";
 
-function naira(n) { return "\u20A6" + Number(n || 0).toLocaleString("en-NG"); }
+function naira(n) { return "₦" + Number(n || 0).toLocaleString("en-NG"); }
 
 /**
  * Reports page.
@@ -37,10 +37,10 @@ export default function AdminReports() {
             "customer_email", "payment_method", "subtotal", "discount",
             "delivery_fee", "installation_fee", "total",
           ],
-          filename: `voltory-orders-${todayStamp()}.csv`,
+          filename: `naven-orders-${todayStamp()}.csv`,
           orderBy: { col: "created_at", dir: "desc" },
         });
-        setExportMsg(`Exported ${res.rows} orders \u2014 check your Downloads folder.`);
+        setExportMsg(`Exported ${res.rows} orders — check your Downloads folder.`);
       } else if (kind === "customers") {
         const res = await exportTableToCsv({
           table: "customers_summary",
@@ -48,10 +48,10 @@ export default function AdminReports() {
             "phone", "name", "email", "order_count", "active_orders",
             "total_spent", "first_order_at", "last_order_at", "tag",
           ],
-          filename: `voltory-customers-${todayStamp()}.csv`,
+          filename: `naven-customers-${todayStamp()}.csv`,
           orderBy: { col: "last_order_at", dir: "desc" },
         });
-        setExportMsg(`Exported ${res.rows} customers \u2014 check your Downloads folder.`);
+        setExportMsg(`Exported ${res.rows} customers — check your Downloads folder.`);
       }
     } catch (e) {
       setExportMsg(`Export failed: ${e.message || String(e)}`);
@@ -192,7 +192,7 @@ export default function AdminReports() {
                   onClick={() => doExport("orders")}
                 >
                   <FileSpreadsheet size={20} />
-                  <span>{exporting === "orders" ? "Exporting\u2026" : "Export Orders (CSV)"}</span>
+                  <span>{exporting === "orders" ? "Exporting…" : "Export Orders (CSV)"}</span>
                 </button>
                 <button
                   className="adm-quick"
@@ -200,7 +200,7 @@ export default function AdminReports() {
                   onClick={() => doExport("customers")}
                 >
                   <Download size={20} />
-                  <span>{exporting === "customers" ? "Exporting\u2026" : "Export Customers (CSV)"}</span>
+                  <span>{exporting === "customers" ? "Exporting…" : "Export Customers (CSV)"}</span>
                 </button>
               </div>
               {exportMsg && (
@@ -262,9 +262,9 @@ function SalesChart({ data }) {
           const y = padT + ih * (1 - v / range);
           return (
             <text key={i} x={padL - 6} y={y + 3} textAnchor="end" className="adm-rep__ylabel">
-              {v >= 1_000_000 ? `\u20A6${(v / 1_000_000).toFixed(1)}M` :
-               v >= 1_000     ? `\u20A6${Math.round(v / 1_000)}k` :
-                                `\u20A6${Math.round(v)}`}
+              {v >= 1_000_000 ? `₦${(v / 1_000_000).toFixed(1)}M` :
+               v >= 1_000     ? `₦${Math.round(v / 1_000)}k` :
+                                `₦${Math.round(v)}`}
             </text>
           );
         })}

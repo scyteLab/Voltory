@@ -1,14 +1,14 @@
 import { BadgeCheck, Check, RotateCcw, Star, Trash2, X } from "lucide-react";
 
 /**
- * ReviewRow \u2014 one card in the admin queue.
+ * ReviewRow — one card in the admin queue.
  *
  * Shows product thumbnail + name + SKU, customer info, rating,
  * title, body, timestamps. Action buttons switch depending on
  * current status:
- *   \u00B7 pending  \u2192 Approve, Reject, Delete
- *   \u00B7 approved \u2192 Move back to pending, Reject, Delete
- *   \u00B7 rejected \u2192 Approve (reconsider), Move back to pending, Delete
+ *   · pending  → Approve, Reject, Delete
+ *   · approved → Move back to pending, Reject, Delete
+ *   · rejected → Approve (reconsider), Move back to pending, Delete
  */
 export default function ReviewRow({ review, onApprove, onReject, onUnapprove, onDelete, busy }) {
   const dateStr = new Date(review.createdAt).toLocaleString("en-NG", {

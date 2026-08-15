@@ -1,18 +1,18 @@
 import { Check } from "lucide-react";
 
 /**
- * Grid of "option cards" \u2014 richer than a plain radio, more compact
+ * Grid of "option cards" — richer than a plain radio, more compact
  * than swatches. Each card can render its own preview via a child
  * function or a static preview string.
  *
  * Props:
- *   options   \u2014 map { key: { label, preview?, ...anything else } }
- *   value     \u2014 currently-selected key
- *   onChange  \u2014 (key) => void
- *   label     \u2014 group label
- *   hint      \u2014 group helper text
- *   renderPreview \u2014 optional (opt, key) => JSX to render each preview
- *   columns   \u2014 grid columns override (default 3)
+ *   options   — map { key: { label, preview?, ...anything else } }
+ *   value     — currently-selected key
+ *   onChange  — (key) => void
+ *   label     — group label
+ *   hint      — group helper text
+ *   renderPreview — optional (opt, key) => JSX to render each preview
+ *   columns   — grid columns override (default 3)
  */
 export default function OptionCard({
   options, value, onChange, label, hint, renderPreview, columns = 3,

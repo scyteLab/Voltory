@@ -3,7 +3,7 @@ import { useAdminWhatsappQuotes } from "../../hooks/useAdminWhatsappQuotes.js";
 import QuoteRow from "../../components/whatsapp/QuoteRow.jsx";
 
 /**
- * AdminWhatsappQuotes \u2014 /admin/whatsapp-quotes
+ * AdminWhatsappQuotes — /admin/whatsapp-quotes
  *
  * The rep's inbox. Status tabs, tap through to detail for edit.
  * Click count on each tab shows work outstanding.
@@ -52,7 +52,7 @@ export default function AdminWhatsappQuotes() {
       {error && <div className="hb__err">Couldn't load quotes: {error}</div>}
 
       {loading && quotes.length === 0 ? (
-        <div className="hb__loading">Loading quotes\u2026</div>
+        <div className="hb__loading">Loading quotes…</div>
       ) : quotes.length === 0 ? (
         <div className="cat-empty">
           <MessageCircle size={40} strokeWidth={1.2} />

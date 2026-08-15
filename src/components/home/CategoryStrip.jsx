@@ -5,13 +5,13 @@ import { useCatalog } from "../../context/CatalogContext.jsx";
 import Icon from "../ui/Icon.jsx";
 
 /**
- * CategoryStrip \u2014 horizontal scrollable strip of categories with tile
+ * CategoryStrip — horizontal scrollable strip of categories with tile
  * images (or icon fallback when no image is registered).
  *
  * Reads categories from useCatalog() so new categories added via the
  * admin appear automatically. Image resolution is a two-tier fallback:
  *   1. Curated tile image from the hardcoded IMG map (for the seeded
- *      categories \u2014 keeps their nice product photography)
+ *      categories — keeps their nice product photography)
  *   2. Icon on a coloured square (for any category not in the map)
  *
  * Later, when we add an image_url field to the categories table

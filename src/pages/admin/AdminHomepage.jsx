@@ -55,7 +55,7 @@ export default function AdminHomepage() {
         </div>
         <div className="hb__head-actions">
           {saving && (
-            <span className="hb__saving"><Loader2 size={13} className="hb__spin" /> Saving\u2026</span>
+            <span className="hb__saving"><Loader2 size={13} className="hb__spin" /> Saving…</span>
           )}
           <a
             href="/"
@@ -72,7 +72,7 @@ export default function AdminHomepage() {
         <div className="hb__err">
           <div style={{ flex: 1 }}>
             Something went wrong: {error}. Latest changes have been rolled back.
-            Check your browser console (F12 \u2192 Console) for details.
+            Check your browser console (F12 → Console) for details.
           </div>
           <button
             type="button"
@@ -93,7 +93,7 @@ export default function AdminHomepage() {
       )}
 
       {loading && sections.length === 0 ? (
-        <div className="hb__loading">Loading sections\u2026</div>
+        <div className="hb__loading">Loading sections…</div>
       ) : (
         <>
           <DndContext

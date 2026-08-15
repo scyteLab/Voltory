@@ -49,7 +49,7 @@ export default function InstallationServices() {
 
   useEffect(() => {
     const prev = document.title;
-    document.title = `Installation Services \u2014 ${SITE.name}`;
+    document.title = `Installation Services — ${SITE.name}`;
     return () => { document.title = prev; };
   }, []);
 
@@ -235,7 +235,7 @@ export default function InstallationServices() {
           <span className="ins-success__icon"><CheckCircle2 size={56} /></span>
           <h3>Installation request received</h3>
           <p>
-            Thanks — a Voltory technician will call you within <b>2 hours</b> to confirm
+            Thanks — a NAVEN technician will call you within <b>2 hours</b> to confirm
             your {submitted.applianceName.toLowerCase()} installation slot.
           </p>
           <div className="ins-success__summary">
@@ -443,7 +443,7 @@ export default function InstallationServices() {
       <div className="section-head" style={{ marginTop: 40 }}>
         <h2>Installation FAQ</h2>
         <p style={{ fontSize: 12.5, color: "var(--mut)", margin: 0 }}>
-          The most common questions about Voltory installation
+          The most common questions about NAVEN installation
         </p>
       </div>
       <section className="ins-faq">

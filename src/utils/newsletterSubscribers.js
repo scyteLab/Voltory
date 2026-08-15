@@ -1,5 +1,5 @@
 /**
- * Newsletter subscribers \u2014 saved to localStorage from the Footer
+ * Newsletter subscribers — saved to localStorage from the Footer
  * input and the Blog Coming Soon page. Backend swap-out is one
  * function. Same shape as supportTickets and installationRequests.
  *

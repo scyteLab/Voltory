@@ -6,8 +6,8 @@
  *  only valid next-status buttons. The table reads it for chips.
  *
  *  Flow diagram:
- *     confirmed \u2192 processing \u2192 shipped \u2192 delivered \u2192 refunded
- *          \u2193           \u2193
+ *     confirmed → processing → shipped → delivered → refunded
+ *          ↓           ↓
  *      cancelled   cancelled
  * ============================================================
  */
@@ -36,19 +36,19 @@ export const STATUS_TRANSITIONS = {
 
 /**
  * The forward timeline shown in the detail view. Cancelled/refunded
- * are branch states \u2014 they replace the last position rather than
+ * are branch states — they replace the last position rather than
  * appear in the linear flow.
  */
 export const TIMELINE_ORDER = ["confirmed", "processing", "shipped", "delivered"];
 
 /**
  * Format an order id for display: keep only the trailing chunk.
- * VLT-202601180430-A9F3 \u2192 "\u2026-A9F3" for compact table view.
+ * VLT-202601180430-A9F3 → "…-A9F3" for compact table view.
  */
 export function shortOrderId(id) {
   if (!id) return "";
   const parts = id.split("-");
-  return parts.length > 2 ? `\u2026-${parts[parts.length - 1]}` : id;
+  return parts.length > 2 ? `…-${parts[parts.length - 1]}` : id;
 }
 
 /**

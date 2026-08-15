@@ -152,7 +152,7 @@ export default function Cart() {
           </button>
 
           <p className="cart-secure">
-            🔒 Secure checkout \u00B7 Pay on delivery available
+            🔒 Secure checkout · Pay on delivery available
           </p>
         </aside>
       </div>

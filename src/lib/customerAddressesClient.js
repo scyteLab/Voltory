@@ -43,7 +43,7 @@ function validate(input) {
   if (!input.state?.trim()) return "State is required";
   if (!input.lga?.trim()) return "LGA / City is required";
   if (!input.street?.trim()) return "Street address is required";
-  if (input.street.trim().length < 5) return "Street address seems too short \u2014 include a house number and street name";
+  if (input.street.trim().length < 5) return "Street address seems too short — include a house number and street name";
   return null;
 }
 

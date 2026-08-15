@@ -4,7 +4,7 @@ import { naira } from "../utils/format.js";
 /**
  * Email HTML templates.
  *
- * Emails must use INLINE styles \u2014 many email clients (Gmail, Outlook,
+ * Emails must use INLINE styles — many email clients (Gmail, Outlook,
  * Apple Mail) strip <style> blocks or handle them inconsistently.
  * Layout uses tables because that's what actually works in Outlook.
  *
@@ -19,7 +19,7 @@ const BRAND_LINE     = "#e2e8f0";
 const BRAND_BG       = "#f8fafc";
 
 /* ============================================================
-   Shared shell \u2014 header + footer
+   Shared shell — header + footer
    ============================================================ */
 
 function shell({ title, body, preheader = "" }) {
@@ -38,7 +38,7 @@ function shell({ title, body, preheader = "" }) {
         <table role="presentation" cellpadding="0" cellspacing="0" width="600" style="max-width:600px;background:#ffffff;border-radius:12px;overflow:hidden;box-shadow:0 1px 3px rgba(15,23,42,0.08);">
           <tr>
             <td style="background:${BRAND_COLOR};padding:24px;text-align:center;">
-              <span style="font-size:22px;font-weight:800;color:#ffffff;letter-spacing:-0.02em;">${escapeHtml(SITE.name || "Voltory")}</span>
+              <span style="font-size:22px;font-weight:800;color:#ffffff;letter-spacing:-0.02em;">${escapeHtml(SITE.name || "NAVEN")}</span>
             </td>
           </tr>
           <tr>
@@ -48,7 +48,7 @@ function shell({ title, body, preheader = "" }) {
           </tr>
           <tr>
             <td style="background:${BRAND_BG};padding:20px 28px;text-align:center;border-top:1px solid ${BRAND_LINE};font-size:12px;color:${BRAND_MUT};">
-              <p style="margin:0 0 6px;">${escapeHtml(SITE.name || "Voltory")} \u2014 Nigerian appliance ecommerce</p>
+              <p style="margin:0 0 6px;">${escapeHtml(SITE.name || "NAVEN")} — Nigerian appliance ecommerce</p>
               <p style="margin:0;">Questions? WhatsApp us at <a href="${SITE.whatsappLink || "#"}" style="color:${BRAND_COLOR};text-decoration:none;">${escapeHtml(SITE.whatsapp || "")}</a></p>
             </td>
           </tr>
@@ -61,7 +61,7 @@ function shell({ title, body, preheader = "" }) {
 }
 
 /* ============================================================
-   Items table \u2014 shared between customer + admin emails
+   Items table — shared between customer + admin emails
    ============================================================ */
 
 function itemsTable(items) {
@@ -104,7 +104,7 @@ function totalsBlock(totals) {
       ${totals?.discount ? `
       <tr>
         <td style="padding:6px 8px;font-size:13px;color:${BRAND_MUT};">Discount</td>
-        <td style="padding:6px 8px;font-size:13px;text-align:right;color:#dc2626;">\u2212${escapeHtml(naira(totals.discount))}</td>
+        <td style="padding:6px 8px;font-size:13px;text-align:right;color:#dc2626;">−${escapeHtml(naira(totals.discount))}</td>
       </tr>
       ` : ""}
       <tr>
@@ -126,15 +126,15 @@ function totalsBlock(totals) {
 }
 
 /* ============================================================
-   TEMPLATE 1 \u2014 order confirmation (to customer)
+   TEMPLATE 1 — order confirmation (to customer)
    ============================================================ */
 
 export function orderConfirmationEmail(order) {
   const name = order.contact?.name || order.account?.name || "there";
   const orderId = order.id;
-  const orderUrl = `${(SITE.appUrl || "https://voltory.ng")}/order/${orderId}`;
+  const orderUrl = `${(SITE.appUrl || "https://mynaven.com")}/order/${orderId}`;
   const address = order.address || {};
-  const addressLine = [address.street, address.lga, address.state].filter(Boolean).join(", ") || "\u2014";
+  const addressLine = [address.street, address.lga, address.state].filter(Boolean).join(", ") || "—";
 
   const paymentLabel = ({
     card: "Card payment",
@@ -168,7 +168,7 @@ export function orderConfirmationEmail(order) {
     ${address.landmark ? `<p style="margin:0;font-size:12px;color:${BRAND_MUT};font-style:italic;">Landmark: ${escapeHtml(address.landmark)}</p>` : ""}
 
     <h3 style="margin:24px 0 8px;font-size:15px;color:${BRAND_INK};">Payment</h3>
-    <p style="margin:0 0 4px;font-size:14px;color:${BRAND_INK};">${escapeHtml(paymentLabel)} \u00B7 ${paidStatus}</p>
+    <p style="margin:0 0 4px;font-size:14px;color:${BRAND_INK};">${escapeHtml(paymentLabel)} · ${paidStatus}</p>
     ${order.paystackRef ? `<p style="margin:0;font-size:12px;color:${BRAND_MUT};font-family:ui-monospace,monospace;">Ref: ${escapeHtml(order.paystackRef)}</p>` : ""}
 
     <div style="margin:32px 0 8px;text-align:center;">
@@ -181,7 +181,7 @@ export function orderConfirmationEmail(order) {
   `;
 
   return {
-    subject: `Order ${orderId} confirmed \u2014 ${SITE.name || "Voltory"}`,
+    subject: `Order ${orderId} confirmed — ${SITE.name || "NAVEN"}`,
     html: shell({
       title: `Order ${orderId} confirmed`,
       preheader: `Thank you ${name}, we've received your order.`,
@@ -191,23 +191,23 @@ export function orderConfirmationEmail(order) {
 }
 
 /* ============================================================
-   TEMPLATE 2 \u2014 admin notification (new order)
+   TEMPLATE 2 — admin notification (new order)
    ============================================================ */
 
 export function adminOrderNotificationEmail(order) {
   const orderId = order.id;
-  const orderAdminUrl = `${(SITE.appUrl || "https://voltory.ng")}/admin/orders/${orderId}`;
+  const orderAdminUrl = `${(SITE.appUrl || "https://mynaven.com")}/admin/orders/${orderId}`;
   const address = order.address || {};
-  const addressLine = [address.street, address.lga, address.state].filter(Boolean).join(", ") || "\u2014";
+  const addressLine = [address.street, address.lga, address.state].filter(Boolean).join(", ") || "—";
 
   const paidLabel = order.paymentStatus === "paid"
-    ? `<span style="color:#047857;font-weight:700;">\u2705 PAID</span>`
-    : `<span style="color:#b45309;font-weight:700;">\u23F3 Awaiting payment</span>`;
+    ? `<span style="color:#047857;font-weight:700;">✅ PAID</span>`
+    : `<span style="color:#b45309;font-weight:700;">⏳ Awaiting payment</span>`;
 
   const body = `
-    <h1 style="margin:0 0 8px;font-size:22px;color:${BRAND_INK};">New order \u2014 ${escapeHtml(naira(order.totals?.grand || 0))}</h1>
+    <h1 style="margin:0 0 8px;font-size:22px;color:${BRAND_INK};">New order — ${escapeHtml(naira(order.totals?.grand || 0))}</h1>
     <p style="margin:0 0 16px;font-size:14px;color:${BRAND_MUT};">
-      ${paidLabel} \u00B7 ${escapeHtml(order.items?.length || 0)} item${(order.items?.length || 0) === 1 ? "" : "s"}
+      ${paidLabel} · ${escapeHtml(order.items?.length || 0)} item${(order.items?.length || 0) === 1 ? "" : "s"}
     </p>
 
     <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="margin:16px 0;">
@@ -225,7 +225,7 @@ export function adminOrderNotificationEmail(order) {
       </tr>
       <tr>
         <td style="padding:6px 0;font-size:13px;color:${BRAND_MUT};">Email</td>
-        <td style="padding:6px 0;font-size:13px;">${escapeHtml(order.contact?.email || "\u2014")}</td>
+        <td style="padding:6px 0;font-size:13px;">${escapeHtml(order.contact?.email || "—")}</td>
       </tr>
       <tr>
         <td style="padding:6px 0;font-size:13px;color:${BRAND_MUT};vertical-align:top;">Address</td>
@@ -233,7 +233,7 @@ export function adminOrderNotificationEmail(order) {
       </tr>
       <tr>
         <td style="padding:6px 0;font-size:13px;color:${BRAND_MUT};">Payment</td>
-        <td style="padding:6px 0;font-size:13px;">${escapeHtml(order.payment || "\u2014")}${order.paystackRef ? `<br><span style="color:${BRAND_MUT};font-size:11px;font-family:ui-monospace,monospace;">Ref: ${escapeHtml(order.paystackRef)}</span>` : ""}</td>
+        <td style="padding:6px 0;font-size:13px;">${escapeHtml(order.payment || "—")}${order.paystackRef ? `<br><span style="color:${BRAND_MUT};font-size:11px;font-family:ui-monospace,monospace;">Ref: ${escapeHtml(order.paystackRef)}</span>` : ""}</td>
       </tr>
     </table>
 
@@ -246,10 +246,10 @@ export function adminOrderNotificationEmail(order) {
   `;
 
   return {
-    subject: `[Voltory] New order ${orderId} \u2014 ${naira(order.totals?.grand || 0)}`,
+    subject: `[NAVEN] New order ${orderId} — ${naira(order.totals?.grand || 0)}`,
     html: shell({
       title: `New order ${orderId}`,
-      preheader: `${order.contact?.name} \u00B7 ${naira(order.totals?.grand || 0)}`,
+      preheader: `${order.contact?.name} · ${naira(order.totals?.grand || 0)}`,
       body,
     }),
   };

@@ -6,11 +6,11 @@ import { Check } from "lucide-react";
  * contrast color.
  *
  * Props:
- *   options   \u2014 object map { key: { label, hex, ink? } }
- *   value     \u2014 the currently-selected key
- *   onChange  \u2014 (key) => void
- *   label     \u2014 group label
- *   hint      \u2014 helper text below the label
+ *   options   — object map { key: { label, hex, ink? } }
+ *   value     — the currently-selected key
+ *   onChange  — (key) => void
+ *   label     — group label
+ *   hint      — helper text below the label
  */
 export default function SwatchGrid({ options, value, onChange, label, hint }) {
   return (

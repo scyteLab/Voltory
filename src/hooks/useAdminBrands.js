@@ -5,7 +5,7 @@ import {
 } from "../lib/brandsAdmin.js";
 
 /**
- * useAdminBrands \u2014 mirrors useAdminCategories in shape.
+ * useAdminBrands — mirrors useAdminCategories in shape.
  * `counts` is keyed by brand NAME (not id), because products link by name.
  */
 export function useAdminBrands() {

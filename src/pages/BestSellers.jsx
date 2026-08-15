@@ -26,7 +26,7 @@ export default function BestSellers() {
 
   useEffect(() => {
     const prev = document.title;
-    document.title = `Best Sellers \u2014 ${SITE.name}`;
+    document.title = `Best Sellers — ${SITE.name}`;
     return () => { document.title = prev; };
   }, []);
 
@@ -230,7 +230,7 @@ function buildActiveChips(f) {
   if (f.priceMin !== "" || f.priceMax !== "") {
     const a = f.priceMin !== "" ? naira(f.priceMin) : "Any";
     const b = f.priceMax !== "" ? naira(f.priceMax) : "Any";
-    chips.push({ key: "price", type: "price", value: null, label: `Price: ${a} \u2013 ${b}` });
+    chips.push({ key: "price", type: "price", value: null, label: `Price: ${a} – ${b}` });
   }
   return chips;
 }

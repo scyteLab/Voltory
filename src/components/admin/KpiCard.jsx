@@ -4,17 +4,17 @@ import { ArrowDown, ArrowUp, Minus } from "lucide-react";
  * A single KPI card. Matches the mockup:
  *   [icon]  Label
  *   Big number
- *   \u2191 12.4% vs last month     [sparkline path if provided]
+ *   ↑ 12.4% vs last month     [sparkline path if provided]
  *
  * Props:
- *   label      \u2014 e.g. "Total Revenue"
- *   value      \u2014 the main number (already formatted)
- *   icon       \u2014 lucide component
- *   accent     \u2014 "brand" | "accent" | "ok" | "warn" | "err" | "info"
+ *   label      — e.g. "Total Revenue"
+ *   value      — the main number (already formatted)
+ *   icon       — lucide component
+ *   accent     — "brand" | "accent" | "ok" | "warn" | "err" | "info"
  *                 controls the icon tile background
- *   delta      \u2014 { pct: 12.4, direction: "up"|"down"|"flat" } | null
- *   deltaLabel \u2014 e.g. "vs last month"
- *   sparkline  \u2014 array of numbers to render as an SVG mini-chart
+ *   delta      — { pct: 12.4, direction: "up"|"down"|"flat" } | null
+ *   deltaLabel — e.g. "vs last month"
+ *   sparkline  — array of numbers to render as an SVG mini-chart
  */
 const ACCENT_STYLES = {
   brand: { bg: "var(--adm-brand-soft)", fg: "var(--adm-brand)" },

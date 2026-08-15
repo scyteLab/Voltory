@@ -8,16 +8,16 @@ import {
  * Fires order emails via the Netlify Function at /api/send-email.
  *
  * Every function here is FIRE-AND-FORGET:
- *   \u00B7 Never blocks the checkout flow
- *   \u00B7 Failures are logged, never surfaced to the customer
- *   \u00B7 The order is the source of truth; email is a nice-to-have
+ *   · Never blocks the checkout flow
+ *   · Failures are logged, never surfaced to the customer
+ *   · The order is the source of truth; email is a nice-to-have
  *
  * Behaviour when the endpoint is unavailable (local dev, function
  * not deployed yet, Resend key not set):
- *   \u00B7 Fetch fails / returns non-2xx \u2192 log warning, move on
- *   \u00B7 Endpoint returns { skipped: true } \u2192 log info, treat as success
+ *   · Fetch fails / returns non-2xx → log warning, move on
+ *   · Endpoint returns { skipped: true } → log info, treat as success
  *
- * We deliberately DON'T retry \u2014 the order is confirmed; if the
+ * We deliberately DON'T retry — the order is confirmed; if the
  * email doesn't send, the admin can resend it from admin/orders/:id
  * later (that surface will be added when we build the admin email
  * tools).
@@ -82,7 +82,7 @@ export async function sendOrderConfirmation(order) {
 export async function sendAdminOrderNotification(order, adminEmail = null) {
   // If caller didn't pass one, we can't know the admin address from
   // the browser. But the serverless function knows it via env var.
-  // Send a sentinel and let the server fill it in \u2014 or fail gracefully.
+  // Send a sentinel and let the server fill it in — or fail gracefully.
   //
   // For now: if no adminEmail is passed and no fallback env is baked
   // in, we skip. Session 35c (admin config surface) can improve this.

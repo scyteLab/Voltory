@@ -1,0 +1,171 @@
+/* ============================================================
+   ADMIN INVENTORY  \u2014  /admin/inventory
+   Prefix: .inv
+   ============================================================ */
+
+/* ---- Summary strip ---- */
+
+.inv-summary {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.inv-sumcard {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px 18px;
+  background: var(--adm-surface);
+  border: 1.5px solid var(--adm-border);
+  border-radius: var(--adm-r-md);
+  color: var(--adm-ink);
+  cursor: pointer;
+  text-align: left;
+  transition: border-color var(--adm-tr-fast), background var(--adm-tr-fast), transform 60ms;
+  font-family: inherit;
+}
+.inv-sumcard:hover:not(.inv-sumcard--total) {
+  border-color: var(--adm-brand);
+  transform: translateY(-1px);
+}
+.inv-sumcard--on {
+  border-width: 2.5px;
+  background: var(--adm-brand-soft);
+}
+
+.inv-sumcard > div { display: flex; flex-direction: column; }
+.inv-sumcard b { font-size: 22px; font-weight: 800; }
+.inv-sumcard span { font-size: 11.5px; color: var(--adm-ink-3); text-transform: uppercase; letter-spacing: 0.03em; }
+
+.inv-sumcard--out { border-left: 4px solid #dc2626; }
+.inv-sumcard--out svg { color: #dc2626; }
+.inv-sumcard--out b { color: #dc2626; }
+
+.inv-sumcard--low { border-left: 4px solid #f59e0b; }
+.inv-sumcard--low svg { color: #f59e0b; }
+.inv-sumcard--low b { color: #b45309; }
+
+.inv-sumcard--ok { border-left: 4px solid #10b981; }
+.inv-sumcard--ok svg { color: #10b981; }
+.inv-sumcard--ok b { color: #047857; }
+
+.inv-sumcard--total { cursor: default; border-left: 4px solid var(--adm-brand); }
+.inv-sumcard--total svg { color: var(--adm-brand); }
+.inv-sumcard--total b { color: var(--adm-brand); }
+
+/* ---- Filter bar ---- */
+
+.inv-filters {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.inv-search {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex: 1;
+  min-width: 240px;
+  padding: 8px 12px;
+  background: var(--adm-surface);
+  border: 1.5px solid var(--adm-border);
+  border-radius: var(--adm-r-sm);
+}
+.inv-search svg { color: var(--adm-ink-3); flex-shrink: 0; }
+.inv-search input {
+  flex: 1;
+  border: none;
+  outline: none;
+  font: inherit;
+  font-size: 14px;
+  background: transparent;
+  color: var(--adm-ink);
+}
+
+.inv-filters select {
+  padding: 8px 12px;
+  background: var(--adm-surface);
+  border: 1.5px solid var(--adm-border);
+  border-radius: var(--adm-r-sm);
+  font: inherit;
+  font-size: 13px;
+  color: var(--adm-ink);
+  cursor: pointer;
+}
+.inv-filters select:focus {
+  outline: none;
+  border-color: var(--adm-brand);
+}
+
+/* ---- Table ---- */
+
+.inv-table-wrap {
+  background: var(--adm-surface);
+  border: 1.5px solid var(--adm-border);
+  border-radius: var(--adm-r-md);
+  overflow: auto;
+  max-height: calc(100vh - 340px);
+}
+
+.inv-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13.5px;
+}
+.inv-table th {
+  padding: 10px 14px;
+  background: var(--adm-hover);
+  text-align: left;
+  font-size: 11.5px;
+  color: var(--adm-ink-3);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  border-bottom: 1px solid var(--adm-border);
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+.inv-table td {
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--adm-border);
+  vertical-align: middle;
+  color: var(--adm-ink);
+}
+.inv-row--out { background: rgba(220, 38, 38, 0.04); }
+.inv-row--out td:first-child { border-left: 2px solid #dc2626; }
+.inv-row--low td:first-child { border-left: 2px solid #f59e0b; }
+.inv-row--ok  td:first-child { border-left: 2px solid transparent; }
+
+.inv-row a {
+  color: var(--adm-ink);
+  text-decoration: none;
+}
+.inv-row a:hover { color: var(--adm-brand); text-decoration: underline; }
+
+.inv-name a {
+  font-weight: 600;
+}
+.inv-name {
+  max-width: 340px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.inv-stock b {
+  font-size: 15px;
+  color: var(--adm-ink);
+}
+.inv-row--out .inv-stock b { color: #dc2626; }
+.inv-row--low .inv-stock b { color: #b45309; }
+
+@media (max-width: 900px) {
+  .inv-filters { flex-direction: column; align-items: stretch; }
+  .inv-search { min-width: 0; }
+  .inv-name { max-width: 200px; }
+}

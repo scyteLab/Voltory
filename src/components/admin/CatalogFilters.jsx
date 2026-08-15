@@ -2,7 +2,7 @@ import { Search, X } from "lucide-react";
 
 /**
  * Catalog filter row: search + category + brand + status + stock band.
- * All controlled \u2014 the parent (CatalogProducts) owns the filter state
+ * All controlled — the parent (CatalogProducts) owns the filter state
  * and passes it down. This component is dumb / stateless.
  *
  * Active filters render as removable chips beneath the row.
@@ -15,7 +15,7 @@ const STATUS_OPTIONS = [
 
 const STOCK_OPTIONS = [
   { value: "",    label: "All Stock" },
-  { value: "low", label: "Low Stock (\u2264 10)" },
+  { value: "low", label: "Low Stock (≤ 10)" },
   { value: "out", label: "Out of Stock" },
 ];
 

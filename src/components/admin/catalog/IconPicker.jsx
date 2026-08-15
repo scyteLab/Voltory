@@ -2,17 +2,17 @@ import { useState } from "react";
 import Icon from "../../ui/Icon.jsx";
 
 /**
- * IconPicker \u2014 grid of icon names, one selectable.
+ * IconPicker — grid of icon names, one selectable.
  *
  * Uses the storefront's shared Icon registry (from ui/Icon.jsx) so
  * that whatever the admin picks here renders identically on the
  * storefront category sidebar. Picking an icon outside this list
- * would render as the fallback circle \u2014 hence a fixed picker.
+ * would render as the fallback circle — hence a fixed picker.
  */
 
 /**
  * Ordered list of icons that make sense for category use.
- * Reorderable / expandable \u2014 mirrors the registry in ui/Icon.jsx
+ * Reorderable / expandable — mirrors the registry in ui/Icon.jsx
  * but curates the household-appliance-friendly ones first.
  */
 const CATEGORY_ICONS = [

@@ -15,7 +15,7 @@ export const INSTALL_APPLIANCES = [
     id: "ac-split",
     icon: "AirVent",
     name: "Split Air Conditioner",
-    sizeNote: "1.0HP \u2013 2.0HP",
+    sizeNote: "1.0HP – 2.0HP",
     fee: 15000,
     includes: [
       "Wall mounting & drilling",
@@ -23,7 +23,7 @@ export const INSTALL_APPLIANCES = [
       "Vacuum test & gas check",
       "First-run calibration",
     ],
-    upcharge: "Add \u20A65,000 per HP above 2.0",
+    upcharge: "Add ₦5,000 per HP above 2.0",
   },
   {
     id: "fridge",
@@ -37,7 +37,7 @@ export const INSTALL_APPLIANCES = [
       "Water line setup (if applicable)",
       "Temperature calibration",
     ],
-    upcharge: "Free above 500L \u2014 included with delivery",
+    upcharge: "Free above 500L — included with delivery",
   },
   {
     id: "washing-machine",
@@ -57,7 +57,7 @@ export const INSTALL_APPLIANCES = [
     id: "tv-mount",
     icon: "Tv",
     name: "TV Wall Mount",
-    sizeNote: "32\" \u2013 75\" displays",
+    sizeNote: "32\" – 75\" displays",
     fee: 12000,
     includes: [
       "Wall bracket installation",
@@ -101,7 +101,7 @@ export const INSTALL_STEPS = [
   {
     n: 1,
     title: "Book Installation",
-    body: "Tell us what you bought, where you are, and when you\u2019d like us to come. Takes under 2 minutes \u2014 you don\u2019t need to have purchased from Voltory.",
+    body: "Tell us what you bought, where you are, and when you’d like us to come. Takes under 2 minutes — you don’t need to have purchased from NAVEN.",
   },
   {
     n: 2,
@@ -115,7 +115,7 @@ export const INSTALL_STEPS = [
   },
   {
     n: 4,
-    title: "Done \u2014 With Proof",
+    title: "Done — With Proof",
     body: "Photo of the completed install is shared by SMS for your records. Your manufacturer warranty stays fully intact, with our 90-day workmanship guarantee on top.",
   },
 ];
@@ -123,8 +123,8 @@ export const INSTALL_STEPS = [
 export const INSTALL_COVERAGE = [
   { zone: "Lagos", sla: "Same day or next day", color: "var(--ok)" },
   { zone: "Abuja FCT", sla: "Same day or next day", color: "var(--ok)" },
-  { zone: "Port Harcourt, Ibadan, Kano", sla: "Within 24\u201348 hours", color: "var(--p)" },
-  { zone: "All other state capitals", sla: "Within 2\u20133 working days", color: "var(--p)" },
+  { zone: "Port Harcourt, Ibadan, Kano", sla: "Within 24–48 hours", color: "var(--p)" },
+  { zone: "All other state capitals", sla: "Within 2–3 working days", color: "var(--p)" },
   { zone: "Remote / non-capital areas", sla: "Quoted on request", color: "var(--mut)" },
 ];
 
@@ -132,12 +132,12 @@ export const INSTALL_TRUST = [
   {
     icon: "BadgeCheck",
     title: "Certified Technicians",
-    body: "Every installer is brand-certified and identity-verified \u2014 you\u2019ll see their photo on the booking confirmation.",
+    body: "Every installer is brand-certified and identity-verified — you’ll see their photo on the booking confirmation.",
   },
   {
     icon: "ShieldCheck",
     title: "Warranty Stays Intact",
-    body: "Our installation is manufacturer-approved \u2014 your warranty isn\u2019t voided. We also add a 90-day workmanship guarantee.",
+    body: "Our installation is manufacturer-approved — your warranty isn’t voided. We also add a 90-day workmanship guarantee.",
   },
   {
     icon: "Receipt",
@@ -148,27 +148,27 @@ export const INSTALL_TRUST = [
 
 export const INSTALL_FAQ = [
   {
-    q: "Do I have to buy the appliance from Voltory to book installation?",
-    a: "No. We install appliances bought anywhere \u2014 just tell us the brand and model when you book. We treat external-purchase installs with the same warranty protection as our own.",
+    q: "Do I have to buy the appliance from NAVEN to book installation?",
+    a: "No. We install appliances bought anywhere — just tell us the brand and model when you book. We treat external-purchase installs with the same warranty protection as our own.",
   },
   {
     q: "Will installation void my manufacturer warranty?",
-    a: "No. Our technicians follow each brand\u2019s official installation manual, and we share photo records of the install so the warranty stays fully intact. Voltory installation is manufacturer-recognised across all the brands we stock.",
+    a: "No. Our technicians follow each brand’s official installation manual, and we share photo records of the install so the warranty stays fully intact. NAVEN installation is manufacturer-recognised across all the brands we stock.",
   },
   {
     q: "What if my appliance turns out to be faulty during installation?",
-    a: "If we detect a manufacturing defect during install, we stop, document the issue with photo evidence, and \u2014 if you bought from Voltory \u2014 arrange immediate replacement at no extra charge. For external purchases, we provide the documentation you need to claim with the seller.",
+    a: "If we detect a manufacturing defect during install, we stop, document the issue with photo evidence, and — if you bought from NAVEN — arrange immediate replacement at no extra charge. For external purchases, we provide the documentation you need to claim with the seller.",
   },
   {
     q: "Do you supply the mounting bracket / hose / accessories?",
-    a: "Standard fittings (brackets for TVs, gas hoses, water lines) can be added to your booking. We\u2019ll confirm the parts cost upfront when you book \u2014 nothing surprise-added on the day.",
+    a: "Standard fittings (brackets for TVs, gas hoses, water lines) can be added to your booking. We’ll confirm the parts cost upfront when you book — nothing surprise-added on the day.",
   },
   {
     q: "Can you remove and dispose of my old appliance?",
-    a: "Yes. Add the disposal service when booking. Most appliances cost \u20A65,000 to dispose of responsibly; refrigerators and ACs cost more due to refrigerant handling requirements.",
+    a: "Yes. Add the disposal service when booking. Most appliances cost ₦5,000 to dispose of responsibly; refrigerators and ACs cost more due to refrigerant handling requirements.",
   },
   {
-    q: "What happens after install \u2014 do I get a receipt?",
-    a: "You receive an SMS with photos of the completed install, the technician\u2019s details, and your installation certificate (PDF by email if you provide one). Keep this with your warranty paperwork.",
+    q: "What happens after install — do I get a receipt?",
+    a: "You receive an SMS with photos of the completed install, the technician’s details, and your installation certificate (PDF by email if you provide one). Keep this with your warranty paperwork.",
   },
 ];

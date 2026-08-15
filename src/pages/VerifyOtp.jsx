@@ -5,7 +5,7 @@ import { useCustomerAuth } from "../context/AuthContext.jsx";
 
 const RESEND_SECONDS = 30;
 
-/** "08031234567" \u2192 "0803 123 4567" */
+/** "08031234567" → "0803 123 4567" */
 function formatPhone(p) {
   const d = (p || "").replace(/\D/g, "");
   if (d.length !== 11) return p;
@@ -13,7 +13,7 @@ function formatPhone(p) {
 }
 
 /**
- * VerifyOtp \u2014 Session 30
+ * VerifyOtp — Session 30
  *
  * Reads phone + path (login|signup) + optional payload from the URL.
  * Calls verifyOtp() from AuthContext on submission. On success the
@@ -53,7 +53,7 @@ export default function VerifyOtp() {
     // path in Session 32 when Termii is wired.
     // eslint-disable-next-line no-console
     console.info(
-      "%c[dev] Voltory OTP = 1234",
+      "%c[dev] NAVEN OTP = 1234",
       "color:#94a3b8;font-size:11px;font-style:italic"
     );
   }, []);

@@ -12,14 +12,14 @@ import { useCustomerAuth } from "../../context/AuthContext.jsx";
  *
  * Reads sign-in state from the AuthProvider (real Supabase-backed
  * session). Renders nothing while the initial session resolve is
- * in flight \u2014 avoids the flash of "not signed in \u2192 redirect" that
+ * in flight — avoids the flash of "not signed in → redirect" that
  * would happen on a fresh page load / refresh.
  */
 export default function AuthGuard({ children }) {
   const { customer, loading } = useCustomerAuth();
   const location = useLocation();
 
-  // Session still being resolved on mount \u2014 wait, don't redirect.
+  // Session still being resolved on mount — wait, don't redirect.
   if (loading) return null;
 
   if (!customer) {

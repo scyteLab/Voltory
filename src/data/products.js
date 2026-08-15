@@ -6,7 +6,7 @@
  *  In production this is replaced by the API; the shape stays.
  *
  *  IMAGES: files live in public/products/ and are referenced
- *  by path here \u2014 several SKUs may share one photo until each
+ *  by path here — several SKUs may share one photo until each
  *  product gets its own shot (SKU-named files in the bulk pipeline).
  *
  *  CATEGORY FILTERS: each category declares which filters its
@@ -159,7 +159,7 @@ export const PRODUCTS = [
       ["Cooling Mode", "Turbo / Sleep / Eco"],
       ["Air Flow", "4-Way Auto Swing"],
       ["Noise Level", "Low Noise Operation"],
-      ["Power Supply", "220 \u2013 240V / 50Hz"],
+      ["Power Supply", "220 – 240V / 50Hz"],
       ["Warranty", "1 Year on Product"],
     ],
     description:

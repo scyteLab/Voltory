@@ -2,7 +2,7 @@ import { useNavigate } from "react-router-dom";
 import { ArrowDown, ArrowUp, ChevronLeft, ChevronRight, ExternalLink } from "lucide-react";
 import { ORDER_STATUSES, PAYMENT_LABELS } from "../../config/orderStatus.js";
 
-function naira(n) { return "\u20A6" + Number(n || 0).toLocaleString("en-NG"); }
+function naira(n) { return "₦" + Number(n || 0).toLocaleString("en-NG"); }
 
 function fmtDate(iso) {
   if (!iso) return "";

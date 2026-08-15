@@ -7,17 +7,17 @@ import {
 import { supabase } from "../../lib/supabaseClient.js";
 
 /**
- * The \u2318K command palette. Opens as a centered modal. Types-to-
+ * The ⌘K command palette. Opens as a centered modal. Types-to-
  * search across:
- *   \u00B7 Static navigation items (Dashboard, Products, Settings)
- *   \u00B7 Products from Supabase (name + sku match)
- *   \u00B7 Orders from Supabase (customer_name + id match)
+ *   · Static navigation items (Dashboard, Products, Settings)
+ *   · Products from Supabase (name + sku match)
+ *   · Orders from Supabase (customer_name + id match)
  *
  * Keyboard:
- *   \u2318K / Ctrl-K \u2014 toggle open
- *   Esc            \u2014 close
- *   \u2191\u2193             \u2014 move highlighted item
- *   Enter          \u2014 navigate
+ *   ⌘K / Ctrl-K — toggle open
+ *   Esc            — close
+ *   ↑↓             — move highlighted item
+ *   Enter          — navigate
  */
 
 const NAV_ITEMS = [
@@ -83,7 +83,7 @@ export default function CommandPalette({ open, onClose }) {
     return () => { cancelled = true; clearTimeout(t); };
   }, [q, open]);
 
-  // Flatten into a single indexed list so \u2191\u2193 highlights work
+  // Flatten into a single indexed list so ↑↓ highlights work
   const flat = useMemo(() => {
     const items = [];
     const term = q.trim().toLowerCase();
@@ -154,7 +154,7 @@ export default function CommandPalette({ open, onClose }) {
         <div className="adm-palette__body">
           {flat.length === 0 && (
             <div className="adm-palette__empty">
-              {loading ? "Searching\u2026" : q ? "Nothing matches yet." : "Start typing to search across products, orders, and navigation."}
+              {loading ? "Searching…" : q ? "Nothing matches yet." : "Start typing to search across products, orders, and navigation."}
             </div>
           )}
 

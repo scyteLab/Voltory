@@ -1,18 +1,18 @@
 import { supabase } from "./supabaseClient.js";
 
 /**
- * brandsAdmin \u2014 CRUD wrapper for the `brands` table.
+ * brandsAdmin — CRUD wrapper for the `brands` table.
  *
  * Schema:  id (text PK), name (text NOT NULL), logo (text nullable)
  *
  * Important quirk about the brands table:
- *   \u00B7 products.brand references brand.name (not brand.id)
- *   \u00B7 URLs use /brand/:id (the slug)
+ *   · products.brand references brand.name (not brand.id)
+ *   · URLs use /brand/:id (the slug)
  *
  * That means BOTH id and name have downstream references and are
  * dangerous to change after creation:
- *   \u00B7 Renaming id \u2192 breaks bookmarked URLs
- *   \u00B7 Renaming name \u2192 orphans products (they'd no longer match)
+ *   · Renaming id → breaks bookmarked URLs
+ *   · Renaming name → orphans products (they'd no longer match)
  *
  * So the modal locks both id and name in edit mode. Only the logo
  * can be updated post-creation via the current editor.
@@ -33,11 +33,11 @@ export async function fetchAllBrands() {
 
 /**
  * Slug validation: lowercase letters, digits, hyphens.
- * Length 2\u201340. Returns null if valid, error string otherwise.
+ * Length 2–40. Returns null if valid, error string otherwise.
  */
 export function validateBrandSlug(slug) {
   if (!slug) return "Slug is required";
-  if (slug.length < 2 || slug.length > 40) return "Slug must be 2\u201340 characters";
+  if (slug.length < 2 || slug.length > 40) return "Slug must be 2–40 characters";
   if (!/^[a-z0-9-]+$/.test(slug)) return "Slug can only contain lowercase letters, numbers, and hyphens";
   if (slug.startsWith("-") || slug.endsWith("-")) return "Slug can't start or end with a hyphen";
   return null;
@@ -121,13 +121,13 @@ export async function updateBrand(id, patch) {
 /**
  * Delete a brand. Products link by `name`, not `id`, so there's no
  * FK constraint stopping deletion. That means we have to guard
- * against it ourselves \u2014 refuse deletion if any products still
+ * against it ourselves — refuse deletion if any products still
  * reference the brand by name.
  */
 export async function deleteBrand(brand) {
   if (!brand?.id) return { ok: false, error: "Missing brand" };
 
-  // Check for linked products first \u2014 by name, since that's how they link
+  // Check for linked products first — by name, since that's how they link
   try {
     const { count, error: cntErr } = await supabase
       .from("products")

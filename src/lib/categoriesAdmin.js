@@ -1,10 +1,10 @@
 import { supabase } from "./supabaseClient.js";
 
 /**
- * categoriesAdmin \u2014 CRUD wrapper for the `categories` table.
+ * categoriesAdmin — CRUD wrapper for the `categories` table.
  * All calls assume authenticated admin (enforced by the existing
  * "admin write categories" RLS policy). Anon reads still work via
- * the public read policy \u2014 the storefront uses those.
+ * the public read policy — the storefront uses those.
  */
 
 export async function fetchAllCategories() {
@@ -22,11 +22,11 @@ export async function fetchAllCategories() {
 
 /**
  * Slug validation: lowercase letters, digits, hyphens.
- * Length 2\u201340. Returns null if valid, error string otherwise.
+ * Length 2–40. Returns null if valid, error string otherwise.
  */
 export function validateSlug(slug) {
   if (!slug) return "Slug is required";
-  if (slug.length < 2 || slug.length > 40) return "Slug must be 2\u201340 characters";
+  if (slug.length < 2 || slug.length > 40) return "Slug must be 2–40 characters";
   if (!/^[a-z0-9-]+$/.test(slug)) return "Slug can only contain lowercase letters, numbers, and hyphens";
   if (slug.startsWith("-") || slug.endsWith("-")) return "Slug can't start or end with a hyphen";
   return null;
@@ -57,7 +57,7 @@ export async function createCategory(input) {
       .select()
       .single();
     if (error) {
-      // Duplicate primary key \u2014 friendlier error
+      // Duplicate primary key — friendlier error
       if (error.code === "23505") {
         return { ok: false, error: `A category with slug "${row.id}" already exists.` };
       }
@@ -73,7 +73,7 @@ export async function createCategory(input) {
 
 /**
  * Update an existing category. `id` is the current PK; the other
- * fields are what we're updating (not the id itself \u2014 changing
+ * fields are what we're updating (not the id itself — changing
  * a slug is a whole different operation since products FK to it).
  */
 export async function updateCategory(id, patch) {
@@ -111,14 +111,14 @@ export async function updateCategory(id, patch) {
 
 /**
  * Delete a category. Will fail cleanly if products still reference
- * it \u2014 that's the FK constraint doing its job.
+ * it — that's the FK constraint doing its job.
  */
 export async function deleteCategory(id) {
   if (!id) return { ok: false, error: "Missing category id" };
   try {
     const { error } = await supabase.from("categories").delete().eq("id", id);
     if (error) {
-      // FK violation \u2014 category has products
+      // FK violation — category has products
       if (error.code === "23503") {
         return {
           ok: false,

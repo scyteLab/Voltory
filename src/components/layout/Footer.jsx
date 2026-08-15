@@ -13,7 +13,7 @@ import Logo from "./Logo.jsx";
 const BADGE_ICONS = { "Secure Payments": Lock, "Pay on Delivery": Banknote, "Nationwide Delivery": Truck };
 
 /**
- * Footer link map \u2014 single source of truth for where each label
+ * Footer link map — single source of truth for where each label
  * routes. Labels not in the map fall through to "#" so a developer
  * spots them immediately. Updated to route Blog to its own page.
  */

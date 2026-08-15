@@ -11,18 +11,18 @@ import {
 import { naira } from "../../utils/format.js";
 
 /**
- * AdminWhatsappQuoteDetail \u2014 /admin/whatsapp-quotes/:id
+ * AdminWhatsappQuoteDetail — /admin/whatsapp-quotes/:id
  *
  * The rep's working surface. Here they:
- *   \u00B7 See who sent the quote and when
- *   \u00B7 Open WhatsApp or call the customer
- *   \u00B7 Adjust qty and price per line as they negotiate
- *   \u00B7 Remove lines the customer changed their mind on
- *   \u00B7 Add internal notes
- *   \u00B7 Change status through the pipeline
- *   \u00B7 Convert to a real order once the deal closes
+ *   · See who sent the quote and when
+ *   · Open WhatsApp or call the customer
+ *   · Adjust qty and price per line as they negotiate
+ *   · Remove lines the customer changed their mind on
+ *   · Add internal notes
+ *   · Change status through the pipeline
+ *   · Convert to a real order once the deal closes
  *
- * We DON'T add-new-item from here right now \u2014 rep can do that from
+ * We DON'T add-new-item from here right now — rep can do that from
  * the order page after conversion. Keeps the surface focused.
  */
 export default function AdminWhatsappQuoteDetail() {
@@ -115,7 +115,7 @@ export default function AdminWhatsappQuoteDetail() {
   }
 
   if (loading && !quote) {
-    return <div className="adm-page"><div className="hb__loading">Loading quote\u2026</div></div>;
+    return <div className="adm-page"><div className="hb__loading">Loading quote…</div></div>;
   }
   if (error && !quote) {
     return (
@@ -162,7 +162,7 @@ export default function AdminWhatsappQuoteDetail() {
           <h1>{quote.customerName || "Unknown customer"}</h1>
           <p className="waq-detail__sub">
             Sent {new Date(quote.createdAt).toLocaleString("en-NG", { dateStyle: "medium", timeStyle: "short" })}
-            {" \u00B7 "}
+            {" · "}
             Subtotal: <b>{naira(quote.subtotal)}</b>
           </p>
         </div>
@@ -274,7 +274,7 @@ export default function AdminWhatsappQuoteDetail() {
           value={notes}
           onChange={(e) => { setNotes(e.target.value); setNotesDirty(true); }}
           disabled={busy}
-          placeholder="Anything worth remembering \u2014 discount offered, delivery preference, timing, etc."
+          placeholder="Anything worth remembering — discount offered, delivery preference, timing, etc."
         />
         {notesDirty && (
           <div style={{ marginTop: 8 }}>

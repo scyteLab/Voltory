@@ -102,7 +102,7 @@ export default function AdminLayout() {
           ))}
         </div>
 
-        <a href="mailto:support@voltory.ng" className="adm-sidebar__help">
+        <a href="mailto:support@mynaven.com" className="adm-sidebar__help">
           <LifeBuoy size={15} /> Need Help? Contact Support
         </a>
       </aside>

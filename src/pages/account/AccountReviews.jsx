@@ -3,7 +3,7 @@ import { MessageSquare, Star, Trash2 } from "lucide-react";
 import { useCustomerReviews } from "../../hooks/useCustomerReviews.js";
 
 /**
- * AccountReviews \u2014 /account/reviews
+ * AccountReviews — /account/reviews
  *
  * Every review the customer has written, all statuses. Useful for
  * seeing "which of my reviews are still pending" and for deleting
@@ -26,7 +26,7 @@ export default function AccountReviews() {
         <h1>My Reviews</h1>
         <p>
           {loading
-            ? "Loading\u2026"
+            ? "Loading…"
             : reviews.length === 0
             ? "You haven't reviewed any products yet."
             : `${reviews.length} review${reviews.length === 1 ? "" : "s"} written.`}
@@ -69,7 +69,7 @@ export default function AccountReviews() {
                   </span>
                 </div>
                 {r.title && <b className="myrev-row__title">{r.title}</b>}
-                <p className="myrev-row__excerpt">{r.body.length > 220 ? r.body.slice(0, 220) + "\u2026" : r.body}</p>
+                <p className="myrev-row__excerpt">{r.body.length > 220 ? r.body.slice(0, 220) + "…" : r.body}</p>
                 {r.status === "rejected" && r.adminNote && (
                   <p className="myrev-row__adminnote"><b>Reason:</b> {r.adminNote}</p>
                 )}

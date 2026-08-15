@@ -9,14 +9,14 @@ import { useDashboardData, computeDelta } from "../../hooks/useDashboardData.js"
 import KpiCard from "../../components/admin/KpiCard.jsx";
 
 /**
- * Admin dashboard \u2014 Voltory operator's home page.
+ * Admin dashboard — Voltory operator's home page.
  * Matches the mockup: 4 KPI cards, order alerts feed, inventory
  * warnings, quick actions, top selling products. Data is pulled
  * live from Supabase via useDashboardData().
  */
 
 function naira(n) {
-  return "\u20A6" + Number(n || 0).toLocaleString("en-NG");
+  return "₦" + Number(n || 0).toLocaleString("en-NG");
 }
 
 function timeAgo(iso) {

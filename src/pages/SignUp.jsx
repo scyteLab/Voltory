@@ -1,137 +1,149 @@
-import { useState } from "react";
-import { Link, useNavigate, useSearchParams } from "react-router-dom";
-import { AtSign, ChevronRight, Smartphone, User, UserPlus } from "lucide-react";
-import { SITE } from "../config/site.js";
+import { useEffect, useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { Phone, User } from "lucide-react";
 import { useCustomerAuth } from "../context/AuthContext.jsx";
+import AuthShell from "../components/auth/AuthShell.jsx";
 
 /**
- * SignUp \u2014 Session 30
+ * SignUp  —  /signup
  *
- * Explicit signup path. Collects name, phone, optional email; calls
- * requestOtp({ purpose: 'signup' }) which drops a challenge row into
- * customer_otp_challenges; then navigates to /verify-otp with the
- * profile payload so VerifyOtp can complete the signup.
+ * REDESIGN: matches the new Login page visually via the shared
+ * AuthShell. Tab strip flips "Create account" to active.
  *
- * We deliberately gate on requestOtp succeeding before navigating \u2014
- * that way an obvious "Supabase unreachable" error surfaces here
- * rather than on the OTP screen.
+ * Form logic unchanged — collect name + phone, requestOtp with
+ * purpose 'signup', navigate to /verify-otp on success.
  */
 export default function SignUp() {
-  const [name, setName] = useState("");
-  const [phone, setPhone] = useState("");
-  const [email, setEmail] = useState("");
-  const [errors, setErrors] = useState({});
-  const [submitting, setSubmitting] = useState(false);
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
-  const returnTo = searchParams.get("return") || "/account";
   const { requestOtp } = useCustomerAuth();
+
+  const [name, setName]             = useState("");
+  const [phone, setPhone]           = useState("");
+  const [error, setError]           = useState(null);
+  const [submitting, setSubmitting] = useState(false);
+
+  useEffect(() => {
+    const prev = document.title;
+    document.title = "Create account — NAVEN";
+    return () => { document.title = prev; };
+  }, []);
 
   async function onSubmit(e) {
     e.preventDefault();
-    const errs = {};
-    if (!name.trim()) errs.name = "Full name required";
-    const cleanedPhone = phone.replace(/\s/g, "");
-    if (!/^0[789][01]\d{8}$/.test(cleanedPhone)) {
-      errs.phone = "Enter a valid Nigerian phone number";
-    }
-    if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      errs.email = "Invalid email format";
-    }
-    if (Object.keys(errs).length) { setErrors(errs); return; }
+    setError(null);
 
-    setSubmitting(true);
-    const res = await requestOtp({ phone: cleanedPhone, purpose: "signup" });
-    setSubmitting(false);
-
-    if (!res.ok) {
-      setErrors({ phone: res.error || "Couldn't send verification code. Try again." });
+    const cleanedName = name.trim();
+    if (cleanedName.length < 2) {
+      setError("Please enter your name.");
       return;
     }
 
-    const payload = encodeURIComponent(
-      JSON.stringify({ name: name.trim(), phone: cleanedPhone, email: email.trim() })
-    );
-    navigate(
-      `/verify-otp?phone=${encodeURIComponent(cleanedPhone)}&path=signup&payload=${payload}&return=${encodeURIComponent(returnTo)}`
-    );
+    /* Same phone cleanup pattern as Login. */
+    const digits = phone.replace(/\D/g, "");
+    let cleaned = digits;
+    if (cleaned.startsWith("234")) cleaned = "0" + cleaned.slice(3);
+    if (cleaned.length === 10 && !cleaned.startsWith("0")) cleaned = "0" + cleaned;
+
+    if (!/^0[7-9][01]\d{8}$/.test(cleaned)) {
+      setError("Please enter a valid Nigerian phone number.");
+      return;
+    }
+
+    setSubmitting(true);
+    const res = await requestOtp({
+      phone: cleaned,
+      purpose: "signup",
+      name:   cleanedName,
+    });
+    setSubmitting(false);
+
+    if (!res.ok) {
+      setError(res.error || "Couldn't send code. Please try again.");
+      return;
+    }
+    navigate("/verify-otp", {
+      state: { phone: cleaned, purpose: "signup", name: cleanedName },
+    });
   }
 
   return (
-    <div className="auth-card">
-      <div className="auth-card__head">
-        <span className="auth-card__icon"><UserPlus size={26} /></span>
-        <h1>Create your account</h1>
-        <p>Sign up to track orders, save addresses, and check out faster next time.</p>
+    <AuthShell>
+      <div className="ashell-form__inner">
+        <div className="ashell-form__tabs" role="tablist">
+          <Link
+            to="/login"
+            role="tab"
+            aria-selected="false"
+            className="ashell-form__tab"
+          >
+            Sign in
+          </Link>
+          <Link
+            to="/signup"
+            role="tab"
+            aria-selected="true"
+            className="ashell-form__tab ashell-form__tab--active"
+          >
+            Create account
+          </Link>
+        </div>
+
+        <h2 className="ashell-form__title">Create your account</h2>
+        <p className="ashell-form__sub">
+          Two quick fields and you're in. We'll send a code to your phone to confirm.
+        </p>
+
+        <form onSubmit={onSubmit}>
+          <div className="ashell-field">
+            <label htmlFor="name">Full name</label>
+            <div className="ashell-field__input">
+              <User size={16} />
+              <input
+                id="name"
+                type="text"
+                autoComplete="name"
+                placeholder="Adaeze Okoye"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                disabled={submitting}
+              />
+            </div>
+          </div>
+
+          <div className="ashell-field">
+            <label htmlFor="phone">Phone number</label>
+            <div className="ashell-field__input">
+              <Phone size={16} />
+              <input
+                id="phone"
+                type="tel"
+                inputMode="numeric"
+                autoComplete="tel"
+                placeholder="0803 123 4567"
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
+                disabled={submitting}
+              />
+            </div>
+          </div>
+
+          {error && <div className="ashell-error">{error}</div>}
+
+          <button
+            type="submit"
+            className="ashell-btn ashell-btn--primary"
+            disabled={submitting || !phone.trim() || !name.trim()}
+          >
+            {submitting ? "Sending…" : "Continue →"}
+          </button>
+        </form>
+
+        <p className="ashell-form__legal">
+          By creating an account you agree to NAVEN's{" "}
+          <Link to="/terms">Terms</Link> &amp;{" "}
+          <Link to="/privacy">Privacy Policy</Link>.
+        </p>
       </div>
-
-      <form onSubmit={onSubmit} className="auth-form" noValidate>
-        <label className={"field" + (errors.name ? " has-error" : "")}>
-          <span className="field__label">Full Name</span>
-          <span className="auth-input">
-            <User size={16} />
-            <input
-              type="text"
-              autoComplete="name"
-              placeholder="e.g. Chinedu Okafor"
-              value={name}
-              onChange={(e) => { setName(e.target.value); setErrors((er) => ({ ...er, name: undefined })); }}
-            />
-          </span>
-          {errors.name && <span className="field__error">{errors.name}</span>}
-        </label>
-
-        <label className={"field" + (errors.phone ? " has-error" : "")}>
-          <span className="field__label">
-            Phone Number <small className="field__note">\u2014 your account ID</small>
-          </span>
-          <span className="auth-input">
-            <Smartphone size={16} />
-            <input
-              type="tel"
-              inputMode="tel"
-              autoComplete="tel"
-              placeholder="0803 123 4567"
-              value={phone}
-              onChange={(e) => { setPhone(e.target.value); setErrors((er) => ({ ...er, phone: undefined })); }}
-            />
-          </span>
-          {errors.phone && <span className="field__error">{errors.phone}</span>}
-        </label>
-
-        <label className={"field" + (errors.email ? " has-error" : "")}>
-          <span className="field__label">
-            Email Address <small className="field__note">\u2014 optional</small>
-          </span>
-          <span className="auth-input">
-            <AtSign size={16} />
-            <input
-              type="email"
-              autoComplete="email"
-              placeholder="you@example.com"
-              value={email}
-              onChange={(e) => { setEmail(e.target.value); setErrors((er) => ({ ...er, email: undefined })); }}
-            />
-          </span>
-          {errors.email && <span className="field__error">{errors.email}</span>}
-        </label>
-
-        <button type="submit" className="auth-submit" disabled={submitting}>
-          {submitting ? "Sending code\u2026" : <>Send Verification Code <ChevronRight size={16} /></>}
-        </button>
-      </form>
-
-      <p className="auth-foot">
-        Already have an account?{" "}
-        <Link to={`/login${returnTo !== "/account" ? `?return=${encodeURIComponent(returnTo)}` : ""}`}>
-          Sign in
-        </Link>
-      </p>
-
-      <p className="auth-terms">
-        By creating an account you agree to {SITE.name}'s Terms of Service and Privacy Policy.
-        You don't need an account to shop \u2014 we can create one for you at checkout instead.
-      </p>
-    </div>
+    </AuthShell>
   );
 }

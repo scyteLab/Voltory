@@ -10,12 +10,18 @@ import AdminLogin from "./pages/admin/AdminLogin.jsx";
 import AdminDashboard from "./pages/admin/AdminDashboard.jsx";
 import CatalogProducts from "./pages/admin/CatalogProducts.jsx";
 import CatalogProductsImport from "./pages/admin/CatalogProductsImport.jsx";
+import CatalogStockImport from "./pages/admin/CatalogStockImport.jsx";
+import AdminInventory from "./pages/admin/AdminInventory.jsx";
+import AdminMarketing from "./pages/admin/AdminMarketing.jsx";
+import GMPortal from "./pages/admin/GMPortal.jsx";
+import GMSetup from "./pages/admin/GMSetup.jsx";
 import AdminCategories from "./pages/admin/AdminCategories.jsx";
 import AdminBrands from "./pages/admin/AdminBrands.jsx";
 import AdminOrders from "./pages/admin/AdminOrders.jsx";
 import AdminOrderDetail from "./pages/admin/AdminOrderDetail.jsx";
 import AdminCustomers from "./pages/admin/AdminCustomers.jsx";
 import AdminCustomerDetail from "./pages/admin/AdminCustomerDetail.jsx";
+import AdminTeam from "./pages/admin/AdminTeam.jsx";
 import AdminWarranty from "./pages/admin/AdminWarranty.jsx";
 import AdminWarrantyDetail from "./pages/admin/AdminWarrantyDetail.jsx";
 import AdminReports from "./pages/admin/AdminReports.jsx";
@@ -177,9 +183,15 @@ export default function App() {
 
               <Route path="*" element={<NotFound />} />
             </Route>
+            {/* Login and SignUp are both fully self-contained pages now
+                (each wraps its form in <AuthShell>, which renders its
+                own brand showcase panel) — nesting them in AuthLayout
+                would render a second brand panel around them. VerifyOtp
+                still uses the plain .auth-card design, so it keeps
+                relying on AuthLayout for the brand panel. */}
+            <Route path="/login" element={<Login />} />
+            <Route path="/signup" element={<SignUp />} />
             <Route element={<AuthLayout />}>
-              <Route path="/login" element={<Login />} />
-              <Route path="/signup" element={<SignUp />} />
               <Route path="/verify-otp" element={<VerifyOtp />} />
             </Route>
 
@@ -187,6 +199,11 @@ export default function App() {
             <Route element={<AdminGuard><AdminShell /></AdminGuard>}>
               <Route path="/admin" element={<AdminDashboard />} />
               <Route path="/admin/products/import" element={<CatalogProductsImport />} />
+              <Route path="/admin/inventory" element={<AdminInventory />} />
+              <Route path="/admin/inventory/update" element={<CatalogStockImport />} />
+              <Route path="/admin/marketing" element={<AdminMarketing />} />
+              <Route path="/admin/gm-portal" element={<GMPortal />} />
+              <Route path="/admin/gm-setup" element={<GMSetup />} />
               <Route path="/admin/products" element={<CatalogProducts />} />
               <Route path="/admin/catalog/categories" element={<AdminCategories />} />
               <Route path="/admin/catalog/brands" element={<AdminBrands />} />
@@ -194,6 +211,7 @@ export default function App() {
               <Route path="/admin/orders/:id" element={<AdminOrderDetail />} />
               <Route path="/admin/customers" element={<AdminCustomers />} />
               <Route path="/admin/customers/:phone" element={<AdminCustomerDetail />} />
+              <Route path="/admin/team" element={<AdminTeam />} />
               <Route path="/admin/warranty" element={<AdminWarranty />} />
               <Route path="/admin/warranty/:id" element={<AdminWarrantyDetail />} />
               <Route path="/admin/reports" element={<AdminReports />} />

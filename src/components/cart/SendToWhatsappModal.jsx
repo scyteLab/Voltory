@@ -143,7 +143,7 @@ export default function SendToWhatsappModal({ onClose }) {
           <div className="swa-modal__preview">
             <div className="swa-modal__preview-head">
               <b>Your cart</b>
-              <span>{cart.length} item{cart.length === 1 ? "" : "s"} \u00B7 {naira(totals.subtotal)}</span>
+              <span>{cart.length} item{cart.length === 1 ? "" : "s"} · {naira(totals.subtotal)}</span>
             </div>
             <ul>
               {cart.slice(0, 4).map((line) => {
@@ -151,7 +151,7 @@ export default function SendToWhatsappModal({ onClose }) {
                 if (!p) return null;
                 return (
                   <li key={line.sku}>
-                    <span className="swa-modal__preview-qty">{line.qty}\u00D7</span>
+                    <span className="swa-modal__preview-qty">{line.qty}×</span>
                     <span className="swa-modal__preview-name">{p.name}</span>
                     <span className="swa-modal__preview-price">{naira(p.price * line.qty)}</span>
                   </li>
@@ -172,7 +172,7 @@ export default function SendToWhatsappModal({ onClose }) {
               Cancel
             </button>
             <button type="submit" className="btn-shop swa-modal__submit" disabled={submitting}>
-              {submitting ? "Preparing\u2026" : (
+              {submitting ? "Preparing…" : (
                 <><MessageCircle size={15} /> Open WhatsApp</>
               )}
             </button>

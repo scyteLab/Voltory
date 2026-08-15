@@ -1,5 +1,5 @@
 /**
- * Career applications \u2014 saved to localStorage from the Careers
+ * Career applications — saved to localStorage from the Careers
  * form. Real persistence, real confirmation IDs, real follow-up
  * possibility. When the backend lands, this becomes a POST to
  * /api/applications and the admin gets an inbox view.

@@ -8,25 +8,25 @@
 
 export const SITE = {
   // ---- Identity (edit these to rename the business) ----
-  name: "Voltory",
-  legalName: "Voltory Electronics Ltd",
-  tagline: "Original Brands. Genuine Quality.",
-  footerPromise: "Original electronics. Trusted performance. Better living.",
+  name: "NAVEN",
+  legalName: "NAVEN Electronics Ltd",
+  tagline: "Life, Better Equipped.",
+  footerPromise: "Life, Better Equipped.",
   copyrightYear: 2026,
 
   // Logo: index of the letter replaced by the bolt icon (the "O" in V⚡LTORY).
   // Set to -1 to show the bolt before the name instead (works for any rename).
-  logoBoltIndex: 1,
+  logoBoltIndex: -1,
 
   // ---- Contact ----
   phone: "0700 888 6658",
-  supportEmail: "support@voltory.ng",
+  supportEmail: "support@mynaven.com",
   whatsapp: "+234 803 888 6658",
   whatsappLink: "https://wa.me/2348038886658",
 
   // ---- Commerce ----
   currency: "NGN",
-  currencySymbol: "\u20A6",
+  currencySymbol: "₦",
   freeDeliveryOver: 150000,
   installationFee: 25000,
   welcomeCoupon: { code: "WELCOME10", percent: 10 },
@@ -69,7 +69,7 @@ export const SITE = {
 
   // ---- App promo ----
   app: {
-    headline: "Voltory in your pocket — soon",
+    headline: "NAVEN in your pocket — soon",
     subhead: "Order, track and chat with us from one screen. Get notified the day our app drops.",
     funnyPopup: {
       title: "Ah ahn, na so we go take rush am?",
@@ -81,7 +81,7 @@ export const SITE = {
   // ---- Themes (admin-controlled; customers cannot change this) ----
   defaultTheme: "navy",
   themes: [
-    { id: "navy", label: "Voltory Navy", note: "Electric & trusted — the default.", swatches: ["#0A1C3A", "#1D4ED8", "#F5A623"] },
+    { id: "navy", label: "NAVEN Navy", note: "Electric & trusted — the default.", swatches: ["#0A1C3A", "#1D4ED8", "#F5A623"] },
     { id: "green", label: "Market Green", note: "Fresh & Nigerian — distinct from every competitor.", swatches: ["#06251E", "#0A5C49", "#F2A91E"] },
     { id: "purple", label: "Royal Purple", note: "Premium & bold — for campaign seasons.", swatches: ["#1E1038", "#6D28D9", "#F5A623"] },
   ],
@@ -105,4 +105,4 @@ export const wordmarkParts = () => {
 };
 
 export const pageTitle = (suffix) =>
-  suffix ? `${suffix} \u2014 ${SITE.name}` : `${SITE.name} \u2014 ${SITE.tagline}`;
+  suffix ? `${suffix} — ${SITE.name}` : `${SITE.name} — ${SITE.tagline}`;

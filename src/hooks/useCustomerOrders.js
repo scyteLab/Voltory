@@ -10,11 +10,11 @@ import { useCustomerAuth } from "../context/AuthContext.jsx";
  * customer identity changes.
  *
  * Returns { orders, loading, error, source, refresh }.
- *   \u00B7 orders  \u2014 always an array (possibly empty)
- *   \u00B7 loading \u2014 true only during first fetch
- *   \u00B7 error   \u2014 string message on Supabase failure (still returns local orders)
- *   \u00B7 source  \u2014 "supabase" | "local" \u2014 useful for a DevTools banner
- *   \u00B7 refresh \u2014 manual refetch (e.g. after placing an order)
+ *   · orders  — always an array (possibly empty)
+ *   · loading — true only during first fetch
+ *   · error   — string message on Supabase failure (still returns local orders)
+ *   · source  — "supabase" | "local" — useful for a DevTools banner
+ *   · refresh — manual refetch (e.g. after placing an order)
  */
 export function useCustomerOrders() {
   const { customer } = useCustomerAuth();
@@ -28,7 +28,7 @@ export function useCustomerOrders() {
 
     async function run() {
       if (!customer) {
-        // Not signed in \u2014 nothing to fetch. Emit empty list.
+        // Not signed in — nothing to fetch. Emit empty list.
         setState({ orders: [], loading: false, error: null, source: null });
         return;
       }

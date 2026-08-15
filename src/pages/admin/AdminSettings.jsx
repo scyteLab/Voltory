@@ -12,7 +12,7 @@ import SwatchGrid from "../../components/admin/SwatchGrid.jsx";
 import OptionCard from "../../components/admin/OptionCard.jsx";
 
 /**
- * Admin Settings \u2014 Theme customization.
+ * Admin Settings — Theme customization.
  *
  * All changes fire immediately (no Save button) because the theme
  * context persists on every setTheme call. The Reset button
@@ -33,7 +33,7 @@ export default function AdminSettings() {
   }
 
   function onReset() {
-    if (!window.confirm("Reset the admin theme to Voltory defaults?")) return;
+    if (!window.confirm("Reset the admin theme to NAVEN defaults?")) return;
     resetTheme();
   }
 
@@ -45,7 +45,7 @@ export default function AdminSettings() {
           <p>Customise the look of your admin console. Changes save automatically and follow your account across devices.</p>
         </div>
         <button className="adm-btn adm-btn--secondary" onClick={onReset}>
-          <RotateCcw size={13} /> Reset to Voltory defaults
+          <RotateCcw size={13} /> Reset to NAVEN defaults
         </button>
       </header>
 
@@ -98,7 +98,7 @@ export default function AdminSettings() {
                 columns={3}
                 renderPreview={(opt) => (
                   <span style={{ fontFamily: opt.stack, fontSize: 18, fontWeight: 700, letterSpacing: "-0.01em" }}>
-                    Voltory Aa
+                    NAVEN Aa
                   </span>
                 )}
               />
@@ -226,7 +226,7 @@ export default function AdminSettings() {
                 <div className="adm-settings__demo-tblrow">
                   <span className="adm-ptbl__thumb"><Package size={16} /></span>
                   <div className="adm-ptbl__product-meta">
-                    <b>Voltory 1.5HP Split AC</b>
+                    <b>NAVEN 1.5HP Split AC</b>
                     <small>SKU <span className="adm-mono">VAC-DEMO01</span></small>
                   </div>
                   <span style={{ fontWeight: 700 }}>₦520,000</span>
@@ -259,7 +259,7 @@ export default function AdminSettings() {
               <div className="adm-settings__account">
                 <span className="adm-user__avatar">V</span>
                 <div>
-                  <b>Voltory Admin</b>
+                  <b>NAVEN Admin</b>
                   <small>Super Admin · preferences save to your account</small>
                 </div>
               </div>

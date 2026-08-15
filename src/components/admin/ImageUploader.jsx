@@ -7,11 +7,11 @@ import { deleteProductImage, uploadProductImage, validateImageFile } from "../..
  *
  * Manages a primary image plus up to 3 additional gallery images.
  * The parent owns the state and passes:
- *   mainImage         \u2014 string URL (or "")
- *   gallery           \u2014 string[] of extra URLs
- *   onMainChange      \u2014 (url) => void
- *   onGalleryChange   \u2014 (urls) => void
- *   skuHint           \u2014 grouping key for the storage path
+ *   mainImage         — string URL (or "")
+ *   gallery           — string[] of extra URLs
+ *   onMainChange      — (url) => void
+ *   onGalleryChange   — (urls) => void
+ *   skuHint           — grouping key for the storage path
  *
  * Drag-and-drop, click-to-browse, upload progress spinner,
  * remove button per image, inline error surface.
@@ -33,7 +33,7 @@ export default function ImageUploader({
       const { publicUrl } = await uploadProductImage(file, { skuHint });
       if (slot === "main") {
         // If replacing an existing main image, try to delete the old one
-        // (best-effort \u2014 don't fail the whole op if delete fails)
+        // (best-effort — don't fail the whole op if delete fails)
         if (mainImage) { deleteProductImage(mainImage).catch(() => {}); }
         onMainChange(publicUrl);
       } else {
@@ -170,7 +170,7 @@ export default function ImageUploader({
           </div>
         ))}
 
-        {/* Empty gallery slots \u2014 one clickable "add" for the next slot,
+        {/* Empty gallery slots — one clickable "add" for the next slot,
             plus placeholder outlines for the rest so alignment stays clean */}
         {emptyCount > 0 && Array.from({ length: emptyCount }, (_, k) => {
           const slotIndex = filledGallery.length + k;

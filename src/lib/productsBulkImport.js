@@ -2,24 +2,24 @@ import Papa from "papaparse";
 import { supabase } from "./supabaseClient.js";
 
 /**
- * productsBulkImport  \u2014 CSV parsing + validation + commit
+ * productsBulkImport  — CSV parsing + validation + commit
  *
  * Public API:
- *   parseCsvFile(file)         \u2192 { ok, rows, errors }
- *   validateRows(rows, refs)   \u2192 { rowsWithVerdict, summary }
- *   commitRows(rowsWithVerdict) \u2192 { created, updated, errors }
- *   TEMPLATE_CSV               \u2014 the download template string
- *   COLUMNS                    \u2014 canonical column definitions
+ *   parseCsvFile(file)         → { ok, rows, errors }
+ *   validateRows(rows, refs)   → { rowsWithVerdict, summary }
+ *   commitRows(rowsWithVerdict) → { created, updated, errors }
+ *   TEMPLATE_CSV               — the download template string
+ *   COLUMNS                    — canonical column definitions
  *
  * Design:
- *   \u00B7 Every row is either 'create', 'update', or 'error' with a reason
- *   \u00B7 Reference data (existing SKUs, brand names, category id\u2194name map)
+ *   · Every row is either 'create', 'update', or 'error' with a reason
+ *   · Reference data (existing SKUs, brand names, category id↔name map)
  *     is passed in explicitly so validation is deterministic and testable
- *   \u00B7 Commit uses upsert with onConflict: 'sku' \u2014 same path the single-
+ *   · Commit uses upsert with onConflict: 'sku' — same path the single-
  *     product editor uses. If a row was flagged 'update', we let Postgres
  *     confirm by returning `xmax != 0` from the upsert (we skip that
  *     complexity; we already know from validation)
- *   \u00B7 Commit runs sequentially with a small delay so we don't hammer
+ *   · Commit runs sequentially with a small delay so we don't hammer
  *     Supabase's rate limits. 100-product imports take ~5s, tolerable.
  */
 
@@ -144,7 +144,7 @@ export function validateRows(rows, refs) {
     const brand = (row.brand || "").trim();
     if (!brand) errors.push("Brand is required");
     else if (!brandNames.has(brand)) {
-      errors.push(`Brand "${brand}" doesn't exist. Create it in Catalog \u2192 Brands first.`);
+      errors.push(`Brand "${brand}" doesn't exist. Create it in Catalog → Brands first.`);
     }
     resolved.brand = brand;
 
@@ -158,7 +158,7 @@ export function validateRows(rows, refs) {
     } else if (categoryByName.has(categoryRaw.toLowerCase())) {
       categoryId = categoryByName.get(categoryRaw.toLowerCase());
     } else {
-      errors.push(`Category "${categoryRaw}" doesn't exist. Create it in Catalog \u2192 Categories first, or use its id.`);
+      errors.push(`Category "${categoryRaw}" doesn't exist. Create it in Catalog → Categories first, or use its id.`);
     }
     resolved.category = categoryId;
 
@@ -293,7 +293,7 @@ export async function commitRows(rowsWithVerdict, onProgress) {
 
     if (onProgress) onProgress(i + 1, committable.length);
 
-    // Small delay to avoid hammering \u2014 100 products = 5s. Adjust if
+    // Small delay to avoid hammering — 100 products = 5s. Adjust if
     // you're doing much bigger imports.
     await new Promise((r) => setTimeout(r, 40));
   }

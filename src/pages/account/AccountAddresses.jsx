@@ -7,15 +7,15 @@ import { useCustomerAddresses } from "../../hooks/useCustomerAddresses.js";
 import AddressFormModal from "../../components/account/AddressFormModal.jsx";
 
 /**
- * Saved Addresses \u2014 the customer's address book.
+ * Saved Addresses — the customer's address book.
  *
  * Two sections:
- *   1. Saved addresses \u2014 rows from customer_addresses. Full CRUD.
- *   2. Recently used \u2014 addresses derived from order history that
+ *   1. Saved addresses — rows from customer_addresses. Full CRUD.
+ *   2. Recently used — addresses derived from order history that
  *      aren't in the saved set. Each has a "Save to my addresses"
  *      button that promotes it into customer_addresses.
  *
- * This is the pattern Jumia and Amazon both use \u2014 explicit saved
+ * This is the pattern Jumia and Amazon both use — explicit saved
  * addresses that you manage, with recent order addresses shown as
  * one-tap "save this" shortcuts.
  */
@@ -127,7 +127,7 @@ export default function AccountAddresses() {
       {actionErr && <div className="hb__err" style={{ marginBottom: 12 }}>{actionErr}</div>}
 
       {loading && addresses.length === 0 && recentlyUsed.length === 0 ? (
-        <div className="hb__loading" style={{ padding: 40 }}>Loading\u2026</div>
+        <div className="hb__loading" style={{ padding: 40 }}>Loading…</div>
       ) : addresses.length === 0 && recentlyUsed.length === 0 ? (
         <div className="ord-empty">
           <MapPin size={48} strokeWidth={1.1} />

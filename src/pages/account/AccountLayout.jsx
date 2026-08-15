@@ -11,7 +11,7 @@ import { useCustomerAuth } from "../../context/AuthContext.jsx";
  * top of the sidebar come from the Supabase-backed customer row.
  *
  * Loading state: shows nothing until AuthContext resolves the
- * session on mount \u2014 avoids the flash of "not signed in \u2192 redirect"
+ * session on mount — avoids the flash of "not signed in → redirect"
  * that would happen on refresh otherwise.
  */
 const LINKS = [
@@ -26,9 +26,9 @@ export default function AccountLayout() {
   const { customer, loading, signOut } = useCustomerAuth();
   const navigate = useNavigate();
 
-  // Still resolving the session (initial mount) \u2014 render nothing.
+  // Still resolving the session (initial mount) — render nothing.
   if (loading) return null;
-  // Session resolved and no customer \u2014 not signed in.
+  // Session resolved and no customer — not signed in.
   if (!customer) return <Navigate to="/login?return=/account" replace />;
 
   async function handleSignOut() {
@@ -36,7 +36,7 @@ export default function AccountLayout() {
     navigate("/");
   }
 
-  const displayName = customer.name || "Voltory customer";
+  const displayName = customer.name || "NAVEN customer";
   // customer.phone is stored as +2348012345678; strip the +234 for
   // display so it reads as a familiar 08... number.
   const displayPhone = (customer.phone || "").startsWith("+234")

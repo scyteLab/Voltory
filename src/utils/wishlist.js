@@ -1,5 +1,5 @@
 /**
- * Wishlist persistence \u2014 stores SKUs in localStorage. Same shape
+ * Wishlist persistence — stores SKUs in localStorage. Same shape
  * as the cart but simpler (no quantities, no totals; just a list of
  * SKUs the customer wants to keep an eye on).
  *

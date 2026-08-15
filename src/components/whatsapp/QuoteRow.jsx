@@ -3,7 +3,7 @@ import { Clock, ExternalLink, MessageCircle, Phone } from "lucide-react";
 import { naira } from "../../utils/format.js";
 
 /**
- * QuoteRow \u2014 one card in the WhatsApp quotes queue.
+ * QuoteRow — one card in the WhatsApp quotes queue.
  * Compact list format, click through to detail for edits.
  */
 export default function QuoteRow({ quote }) {
@@ -30,14 +30,14 @@ export default function QuoteRow({ quote }) {
 
         <div className="waq-row__body">
           <b>{quote.customerName || "Unknown customer"}</b>
-          <span className="mono waq-row__phone">{quote.customerPhone || "\u2014"}</span>
+          <span className="mono waq-row__phone">{quote.customerPhone || "—"}</span>
         </div>
 
         <div className="waq-row__meta">
           <span className="waq-row__amt"><b>{naira(quote.subtotal)}</b></span>
           <span className="waq-row__date"><Clock size={11} /> {dateStr}</span>
           {quote.linkedOrderId && (
-            <span className="waq-row__linked">\u2192 {quote.linkedOrderId}</span>
+            <span className="waq-row__linked">→ {quote.linkedOrderId}</span>
           )}
         </div>
       </Link>

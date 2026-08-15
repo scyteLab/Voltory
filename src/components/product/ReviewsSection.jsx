@@ -7,18 +7,18 @@ import ReviewCard from "./ReviewCard.jsx";
 import ReviewForm from "./ReviewForm.jsx";
 
 /**
- * ReviewsSection \u2014 the "Customer Reviews" block on the product page.
+ * ReviewsSection — the "Customer Reviews" block on the product page.
  *
  * Renders:
- *   \u2022 Aggregate (average + count of approved reviews)
- *   \u2022 Write / Edit review CTA \u2014 gated to signed-in verified buyers
- *   \u2022 List of approved reviews
+ *   • Aggregate (average + count of approved reviews)
+ *   • Write / Edit review CTA — gated to signed-in verified buyers
+ *   • List of approved reviews
  *
  * States it handles honestly:
- *   \u00B7 Signed out \u2014 shows "Sign in to leave a review" link
- *   \u00B7 Signed in, hasn't bought \u2014 shows "Only verified buyers can review"
- *   \u00B7 Signed in verified buyer, no review yet \u2014 "Write a review" button
- *   \u00B7 Signed in with existing review \u2014 "Edit / Delete" + shows status
+ *   · Signed out — shows "Sign in to leave a review" link
+ *   · Signed in, hasn't bought — shows "Only verified buyers can review"
+ *   · Signed in verified buyer, no review yet — "Write a review" button
+ *   · Signed in with existing review — "Edit / Delete" + shows status
  */
 export default function ReviewsSection({ productSku, productName }) {
   const { customer } = useCustomerAuth();
@@ -51,7 +51,7 @@ export default function ReviewsSection({ productSku, productName }) {
       {/* Aggregate summary */}
       <div className="revs__summary">
         <div className="revs__big">
-          <span className="revs__bignum">{roundAvg > 0 ? roundAvg.toFixed(1) : "\u2013"}</span>
+          <span className="revs__bignum">{roundAvg > 0 ? roundAvg.toFixed(1) : "–"}</span>
           <span className="revs__bigstars">
             {[1, 2, 3, 4, 5].map((n) => (
               <Star
@@ -137,7 +137,7 @@ export default function ReviewsSection({ productSku, productName }) {
 
       {/* Reviews list */}
       {loading ? (
-        <div className="revs__loading">Loading reviews\u2026</div>
+        <div className="revs__loading">Loading reviews…</div>
       ) : reviews.length === 0 ? (
         <div className="revs__empty">
           <MessageSquare size={36} strokeWidth={1.2} />

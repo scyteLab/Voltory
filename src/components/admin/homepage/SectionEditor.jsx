@@ -7,20 +7,20 @@ import ProductSourcePicker from "./ProductSourcePicker.jsx";
  * The collapsible edit body shown when a section card is expanded.
  * What's editable depends on the section's `kind`:
  *
- *   \u2022 Product rows (deals_row, featured_row)
- *       \u2013 title
- *       \u2013 source (auto / tag / category / hand-picked)
- *       \u2013 limit
- *       \u2013 show_countdown (only deals_row)
+ *   • Product rows (deals_row, featured_row)
+ *       – title
+ *       – source (auto / tag / category / hand-picked)
+ *       – limit
+ *       – show_countdown (only deals_row)
  *
- *   \u2022 Brand tiles
- *       \u2013 title
+ *   • Brand tiles
+ *       – title
  *
- *   \u2022 Hero promo tiles
- *       \u2013 title + subtitle + CTA + href per tile (up to 2)
+ *   • Hero promo tiles
+ *       – title + subtitle + CTA + href per tile (up to 2)
  *
- *   \u2022 Other kinds (hero, category_sidebar, service_cards, etc.)
- *       \u2013 nothing to edit \u2014 they're pure layout components. We
+ *   • Other kinds (hero, category_sidebar, service_cards, etc.)
+ *       – nothing to edit — they're pure layout components. We
  *         show a small note so operators know why.
  *
  * All edits debounce-save on blur (not per-keystroke) via
@@ -46,7 +46,7 @@ export default function SectionEditor({ section, onPatch }) {
     return (
       <div className="hb-editor">
         <p className="hb-hint">
-          This is a fixed layout section \u2014 it has no editable content in this
+          This is a fixed layout section — it has no editable content in this
           release. You can still reorder or hide it above.
         </p>
       </div>

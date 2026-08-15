@@ -5,7 +5,7 @@ import {
 } from "../lib/categoriesAdmin.js";
 
 /**
- * useAdminCategories \u2014 exposes list, product counts, and mutations
+ * useAdminCategories — exposes list, product counts, and mutations
  * for the /admin/catalog/categories page. All mutations return their
  * result so the caller can show errors inline in the modal.
  */

@@ -1,0 +1,171 @@
+/* ============================================================
+   PRODUCT SPECS
+   Prefix: .adm-specs-* (admin edit panel)
+           .pspecs-*    (customer product page)
+   ============================================================ */
+
+/* -----------------------------------------------------------
+   Admin edit panel \u2014 Specifications section
+   ----------------------------------------------------------- */
+
+.adm-specs-section {
+  margin-top: 8px;
+  padding: 20px 0 4px;
+  border-top: 1.5px dashed var(--adm-border);
+}
+
+.adm-specs-section__title {
+  margin: 0 0 4px;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--adm-ink);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+.adm-specs-section__hint {
+  margin: 0 0 16px;
+  font-size: 12.5px;
+  color: var(--adm-ink-3);
+  line-height: 1.55;
+}
+
+.adm-specs-list {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.adm-specs-list__row {
+  display: grid;
+  grid-template-columns: minmax(140px, 1fr) minmax(180px, 1.4fr) auto;
+  gap: 8px;
+  align-items: center;
+}
+.adm-specs-list__row input {
+  padding: 8px 10px;
+  border: 1.5px solid var(--adm-border);
+  border-radius: var(--adm-r-sm);
+  background: #ffffff;
+  font: inherit;
+  font-size: 13.5px;
+  color: var(--adm-ink);
+  min-width: 0;
+}
+.adm-specs-list__row input:focus {
+  outline: none;
+  border-color: var(--adm-brand);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.10);
+}
+.adm-specs-list__row button {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  border: 1.5px solid var(--adm-border);
+  background: var(--adm-surface);
+  color: var(--adm-ink-3);
+  border-radius: var(--adm-r-sm);
+  cursor: pointer;
+  transition: color 140ms, border-color 140ms;
+}
+.adm-specs-list__row button:hover {
+  color: var(--adm-err);
+  border-color: var(--adm-err);
+}
+
+@media (max-width: 720px) {
+  .adm-specs-list__row {
+    grid-template-columns: 1fr auto;
+    grid-template-areas:
+      "label remove"
+      "value remove";
+  }
+  .adm-specs-list__row input:nth-child(1) { grid-area: label; }
+  .adm-specs-list__row input:nth-child(2) { grid-area: value; }
+  .adm-specs-list__row button              { grid-area: remove; align-self: start; }
+}
+
+/* -----------------------------------------------------------
+   Customer product page \u2014 specs section
+   ----------------------------------------------------------- */
+
+.pspecs {
+  margin-top: 32px;
+  padding: 24px;
+  background: #ffffff;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+}
+
+.pspecs__title {
+  margin: 0 0 16px;
+  font-size: 18px;
+  font-weight: 800;
+  color: var(--ink);
+  letter-spacing: -0.01em;
+}
+
+.pspecs__badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.pspecs__badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  border-radius: 99px;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1;
+}
+.pspecs__badge svg { flex-shrink: 0; }
+
+.pspecs__badge--warranty {
+  background: #dcfce7;
+  color: #14532d;
+}
+.pspecs__badge--warranty svg { color: #16a34a; }
+
+.pspecs__badge--energy {
+  background: #fef3c7;
+  color: #78350f;
+}
+.pspecs__badge--energy svg { color: #d97706; }
+
+.pspecs__table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+.pspecs__table th,
+.pspecs__table td {
+  padding: 12px 14px;
+  text-align: left;
+  border-bottom: 1px solid var(--line);
+  vertical-align: top;
+}
+.pspecs__table tr:last-child th,
+.pspecs__table tr:last-child td { border-bottom: none; }
+
+.pspecs__table th {
+  width: 40%;
+  font-weight: 600;
+  color: var(--mut);
+  background: #f8fafc;
+}
+.pspecs__table td {
+  color: var(--ink);
+}
+
+@media (max-width: 560px) {
+  .pspecs { padding: 18px; }
+  .pspecs__table th { width: 45%; font-size: 13px; }
+  .pspecs__table td { font-size: 13px; }
+}

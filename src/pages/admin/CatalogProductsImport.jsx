@@ -12,14 +12,14 @@ import ImportDropzone from "../../components/admin/catalog/ImportDropzone.jsx";
 import ImportPreviewTable from "../../components/admin/catalog/ImportPreviewTable.jsx";
 
 /**
- * CatalogProductsImport \u2014 /admin/products/import
+ * CatalogProductsImport — /admin/products/import
  *
  * Flow:
- *   1. Page loads \u2192 fetches reference data (existing SKUs, brand names,
- *      category id\u2194name maps)
- *   2. User drops CSV \u2192 we parse + validate immediately
- *   3. Preview table shown \u2014 counts by verdict at the top
- *   4. User clicks "Import" \u2192 commit runs sequentially, progress bar
+ *   1. Page loads → fetches reference data (existing SKUs, brand names,
+ *      category id↔name maps)
+ *   2. User drops CSV → we parse + validate immediately
+ *   3. Preview table shown — counts by verdict at the top
+ *   4. User clicks "Import" → commit runs sequentially, progress bar
  *   5. Summary screen with a Done button back to Catalog Products
  *
  * The whole thing lives in one page component because each step
@@ -98,7 +98,7 @@ export default function CatalogProductsImport() {
       return;
     }
     if (!refs) {
-      // Shouldn't happen \u2014 refs load before the user can pick a file \u2014
+      // Shouldn't happen — refs load before the user can pick a file —
       // but guard anyway
       setParseErrors([{ message: "Reference data still loading. Try again in a moment." }]);
       setParsing(false);
@@ -143,7 +143,7 @@ export default function CatalogProductsImport() {
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = "voltory-product-import-template.csv";
+    a.download = "naven-product-import-template.csv";
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
@@ -155,7 +155,7 @@ export default function CatalogProductsImport() {
   /* ---------- render ---------- */
 
   if (refsLoading) {
-    return <div className="adm-page"><div className="hb__loading">Loading catalog reference data\u2026</div></div>;
+    return <div className="adm-page"><div className="hb__loading">Loading catalog reference data…</div></div>;
   }
   if (refsError) {
     return (
@@ -214,7 +214,7 @@ export default function CatalogProductsImport() {
               <ul>
                 {result.errors.map((e, i) => (
                   <li key={i}>
-                    Row {e.rowIndex + 2} ({e.sku || "\u2014"}): {e.message}
+                    Row {e.rowIndex + 2} ({e.sku || "—"}): {e.message}
                   </li>
                 ))}
               </ul>
@@ -265,7 +265,7 @@ export default function CatalogProductsImport() {
         <summary><Info size={14} /> How this works</summary>
         <ol>
           <li>Download the template CSV above.</li>
-          <li>Open it in Excel or Google Sheets. The header row shows the column names \u2014 don't rename them.</li>
+          <li>Open it in Excel or Google Sheets. The header row shows the column names — don't rename them.</li>
           <li>Fill one row per product. Required fields: <b>sku, name, brand, category, price, stock</b>.</li>
           <li><b>Brands and categories must already exist</b> in Catalog. Create them first if any are new.</li>
           <li>Save as CSV, drop it below, review the preview, then click Import.</li>
@@ -294,7 +294,7 @@ export default function CatalogProductsImport() {
 
       {parsing && (
         <div className="hb__loading">
-          <Loader2 size={16} className="waq-spin" /> Parsing and validating\u2026
+          <Loader2 size={16} className="waq-spin" /> Parsing and validating…
         </div>
       )}
 
@@ -356,7 +356,7 @@ export default function CatalogProductsImport() {
                   />
                 </div>
                 <p>
-                  Importing\u2026 {progress.done} / {progress.total}
+                  Importing… {progress.done} / {progress.total}
                 </p>
               </>
             ) : (

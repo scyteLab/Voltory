@@ -9,17 +9,17 @@ import { supabase, supabaseConfigured } from "./supabaseClient.js";
  * checkout (customer was offline, RLS blip, whatever).
  *
  * Design contract:
- *   \u00B7 The storefront never blocks the customer on Supabase. Cart
+ *   · The storefront never blocks the customer on Supabase. Cart
  *     clears immediately after localStorage write.
- *   \u00B7 A failed sync is silent to the customer; retry happens later.
- *   \u00B7 Once synced, we mark the local record with `syncedAt` \u2014 the
+ *   · A failed sync is silent to the customer; retry happens later.
+ *   · Once synced, we mark the local record with `syncedAt` — the
  *     sweeper skips already-synced orders on subsequent runs.
  *
  * Status enum reconciliation:
  *   Storefront historically wrote status="out_for_delivery" for the
  *   stage between processing and delivered. Admin schema and CHECK
  *   constraint call it "shipped". We treat "shipped" as canonical
- *   \u2014 that's the wire value \u2014 and the storefront's STATUS_LABEL
+ *   — that's the wire value — and the storefront's STATUS_LABEL
  *   maps it back to "Out for Delivery" for the customer view.
  */
 
@@ -75,7 +75,7 @@ function toSupabaseShape(order) {
  * Map storefront payment.method values to the admin enum.
  * Storefront currently emits: "card" | "transfer" | "pod" | "ussd"
  * Admin enum accepts the same set. We defensively coerce anything
- * unknown to "transfer" \u2014 the safest default.
+ * unknown to "transfer" — the safest default.
  */
 function mapPaymentMethod(m) {
   const allowed = new Set(["card", "transfer", "pod", "ussd"]);
@@ -83,7 +83,7 @@ function mapPaymentMethod(m) {
 }
 
 /**
- * Storefront's legacy "out_for_delivery" \u2192 admin's "shipped".
+ * Storefront's legacy "out_for_delivery" → admin's "shipped".
  * Anything else passes through if it's a valid admin status.
  */
 function normaliseOutgoingStatus(s) {
@@ -105,7 +105,7 @@ export async function insertOrderToSupabase(order) {
   try {
     const { orderRow, itemRows } = toSupabaseShape(order);
 
-    // Insert the order first \u2014 order_items has an FK to orders.id.
+    // Insert the order first — order_items has an FK to orders.id.
     // Use upsert on id so retries after a partial success don't blow up.
     const orderRes = await supabase
       .from("orders")
@@ -128,7 +128,7 @@ export async function insertOrderToSupabase(order) {
  * Background retry sweep. Called on app boot and after every checkout.
  * Walks the local orders list, retries any order without `syncedAt`,
  * and updates the local record on success. Bounded to a handful per
- * sweep to keep it polite \u2014 unlikely to have huge backlogs anyway.
+ * sweep to keep it polite — unlikely to have huge backlogs anyway.
  *
  * markSyncedFn(orderId) is passed in so we don't have to import from
  * utils/orders.js here (avoids circular dep since utils/orders.js will

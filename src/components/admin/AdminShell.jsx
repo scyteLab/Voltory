@@ -8,7 +8,7 @@ import CommandPalette from "./CommandPalette.jsx";
 
 /**
  * The primary admin layout. Replaces the older AdminLayout.jsx
- * (which we keep around unused for now \u2014 nothing imports it after
+ * (which we keep around unused for now — nothing imports it after
  * App.jsx is updated).
  *
  * Structure:
@@ -49,7 +49,7 @@ function Breadcrumbs() {
   const location = useLocation();
   const segments = location.pathname.split("/").filter(Boolean);
 
-  // No crumbs on the bare dashboard \u2014 the H1 is enough.
+  // No crumbs on the bare dashboard — the H1 is enough.
   if (segments.length <= 1) return null;
 
   const parts = segments.map((seg, i) => {
@@ -81,7 +81,7 @@ function ShellInner() {
 
   const style = useMemo(() => themeVars, [themeVars]);
 
-  // Global \u2318K / Ctrl-K to open the palette
+  // Global ⌘K / Ctrl-K to open the palette
   useEffect(() => {
     function onKey(e) {
       const isCmdK = (e.metaKey || e.ctrlKey) && (e.key === "k" || e.key === "K");

@@ -1,0 +1,115 @@
+/* ============================================================
+   SITE BACKGROUND TEXTURE
+   ============================================================
+
+   Subtle animated dot pattern on the storefront body background.
+   Reads as a barely-perceptible woven surface. Slow diagonal
+   drift (~60s per cycle) suggests the texture is a fabric being
+   pulled under the page rather than the page itself moving.
+
+   Design constraints held throughout:
+     · Opacity around 3\u20134% \u2014 dots register only in negative space
+     · GPU-accelerated via transform (never background-position)
+     · Seamless loop \u2014 translates by exactly one grid cell
+     · Storefront only \u2014 admin has its own background system
+     · Respects prefers-reduced-motion \u2014 holds still for users
+       with vestibular sensitivity
+
+   Why a pseudo-element instead of body::before directly:
+     · Isolates the animation from body's own paint layer
+     · Fixed positioning so the texture stays put as content
+       scrolls \u2014 the page floats above it
+     · pointer-events: none so it never blocks interaction
+
+   ============================================================ */
+
+/* The texture layer.
+
+   Sits behind everything but above the base body color.
+   `position: fixed` locks it to the viewport; when the user
+   scrolls, the texture stays put and the content moves over
+   it \u2014 subtle depth cue.
+
+   The dot pattern is encoded as an inline SVG data URL, so it
+   ships in the CSS bundle with zero extra HTTP request. Grid
+   spacing is 24px; each dot is 1px, ink-colored, at 4% opacity.
+
+   The layer is deliberately made 200% wide/tall and offset by
+   -50% so the diagonal drift animation has room to translate
+   without exposing an edge. */
+
+body::before {
+  content: "";
+  position: fixed;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  z-index: 0;
+  pointer-events: none;
+
+  background-image: url("data:image/svg+xml;utf8,\
+<svg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'>\
+<circle cx='12' cy='12' r='1' fill='%230f172a' fill-opacity='0.04'/>\
+</svg>");
+  background-repeat: repeat;
+  background-size: 24px 24px;
+
+  animation: site-bg-drift 60s linear infinite;
+  will-change: transform;
+}
+
+/* Ensure app content sits above the texture layer.
+
+   Without this, elements that don't establish their own
+   stacking context would be underneath ::before. The wrap
+   container and any positioned element get z-index: 1 by
+   default via this rule; explicit z-index on children still
+   wins where needed. */
+
+body > #root {
+  position: relative;
+  z-index: 1;
+}
+
+/* The drift animation.
+
+   Translates the texture layer by exactly 24px (one grid cell)
+   diagonally over 60 seconds, then loops. Because the pattern
+   repeats every 24px, ending at (24, 24) is visually identical
+   to starting at (0, 0) \u2014 seamless loop, no jump.
+
+   translate3d instead of translate to force GPU compositing;
+   the browser paints the texture once to a bitmap, then just
+   translates it, keeping CPU cost near zero. */
+
+@keyframes site-bg-drift {
+  from { transform: translate3d(0, 0, 0); }
+  to   { transform: translate3d(24px, 24px, 0); }
+}
+
+/* Accessibility: respect the user's reduced-motion preference.
+
+   Vestibular disorders can make ambient motion nauseating.
+   Users who set "reduce motion" in their OS get the same
+   texture, held still. */
+
+@media (prefers-reduced-motion: reduce) {
+  body::before {
+    animation: none;
+  }
+}
+
+/* Admin exemption.
+
+   The admin console has its own light background system and a
+   texture would fight it. Any page rendered inside .adm-page
+   or the admin shell hides the body texture. The texture is
+   still generated \u2014 we just make it invisible \u2014 which keeps
+   the CSS uniform across routes and avoids conditional
+   loading logic in JS. */
+
+body:has(.adm-page)::before,
+body:has(.adm-shell)::before {
+  display: none;
+}

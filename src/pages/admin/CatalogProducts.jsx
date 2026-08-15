@@ -8,7 +8,7 @@ import ProductEditPanel from "../../components/admin/ProductEditPanel.jsx";
 import BulkActionBar from "../../components/admin/BulkActionBar.jsx";
 
 /**
- * Catalog Products page \u2014 the operator's primary workhorse.
+ * Catalog Products page — the operator's primary workhorse.
  *
  * Layout:
  *   [ header row: title + Refresh + Add Product ]
@@ -16,8 +16,8 @@ import BulkActionBar from "../../components/admin/BulkActionBar.jsx";
  *   [ table col | edit panel col ]
  *
  * Query-string protocol:
- *   ?new=1        \u2014 open a blank edit panel
- *   ?focus=SKU    \u2014 open the given product (from \u2318K palette)
+ *   ?new=1        — open a blank edit panel
+ *   ?focus=SKU    — open the given product (from ⌘K palette)
  *
  * Selection: bulk-select checkboxes populate a Set<sku>. Bulk
  * actions themselves come in a follow-up session; scaffolding is

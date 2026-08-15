@@ -79,7 +79,7 @@ export function useOrders(filters) {
 
 /**
  * Fetch a single order with its line items. Used by the detail
- * page. Line items are looked up in a separate query \u2014 kept as
+ * page. Line items are looked up in a separate query — kept as
  * two roundtrips instead of a join because Supabase's postgrest
  * embed syntax gets awkward for a one-to-many with additional
  * ordering, and separate queries are just as fast at this scale.

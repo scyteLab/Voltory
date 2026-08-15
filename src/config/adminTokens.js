@@ -11,12 +11,12 @@
  */
 
 /**
- * Brand colors \u2014 the primary navy family. Six presets that all
+ * Brand colors — the primary navy family. Six presets that all
  * work as an "admin console" chrome. Each preset also declares the
  * text color that reads well on it, so we don't guess at runtime.
  */
 export const BRAND_PRESETS = {
-  navy:    { label: "Voltory Navy",   hex: "#0B1F3A", deep: "#081428", soft: "#E8EEF7", line: "#C7D2E4", ink: "#FFFFFF" },
+  navy:    { label: "NAVEN Navy",   hex: "#0B1F3A", deep: "#081428", soft: "#E8EEF7", line: "#C7D2E4", ink: "#FFFFFF" },
   indigo:  { label: "Indigo",         hex: "#312E81", deep: "#1E1B4B", soft: "#EEF2FF", line: "#C7D2FE", ink: "#FFFFFF" },
   emerald: { label: "Emerald",        hex: "#065F46", deep: "#064E3B", soft: "#ECFDF5", line: "#A7F3D0", ink: "#FFFFFF" },
   rose:    { label: "Rose",           hex: "#9F1239", deep: "#831843", soft: "#FFF1F2", line: "#FECDD3", ink: "#FFFFFF" },
@@ -25,7 +25,7 @@ export const BRAND_PRESETS = {
 };
 
 /**
- * Accent colors \u2014 what CTAs, active states, and highlights use.
+ * Accent colors — what CTAs, active states, and highlights use.
  * The mockup uses amber; we default to it but let admins pick.
  */
 export const ACCENT_PRESETS = {
@@ -38,7 +38,7 @@ export const ACCENT_PRESETS = {
 };
 
 /**
- * Font families \u2014 the sans-serif used across the admin. All are
+ * Font families — the sans-serif used across the admin. All are
  * safe system stacks or already-loaded Google Fonts.
  */
 export const FONT_PRESETS = {
@@ -50,7 +50,7 @@ export const FONT_PRESETS = {
 };
 
 /**
- * Radius scale \u2014 how rounded every corner is. Compact = sharp
+ * Radius scale — how rounded every corner is. Compact = sharp
  * corporate feel. Generous = friendly modern feel.
  */
 export const RADIUS_PRESETS = {
@@ -60,7 +60,7 @@ export const RADIUS_PRESETS = {
 };
 
 /**
- * Density \u2014 how much air the layout breathes. Compact suits data-
+ * Density — how much air the layout breathes. Compact suits data-
  * heavy views; Spacious suits fewer-items-per-page workflows.
  */
 export const DENSITY_PRESETS = {
@@ -70,7 +70,7 @@ export const DENSITY_PRESETS = {
 };
 
 /**
- * Mode \u2014 light vs dark. Only the content area recolors; the sidebar
+ * Mode — light vs dark. Only the content area recolors; the sidebar
  * uses the brand color regardless (matches Zoho/Notion behavior).
  */
 export const MODES = {

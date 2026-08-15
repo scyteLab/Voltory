@@ -2,13 +2,13 @@ import { AlertCircle, Ban, CheckCircle2, RotateCcw } from "lucide-react";
 import { ORDER_STATUSES, TIMELINE_ORDER } from "../../config/orderStatus.js";
 
 /**
- * Renders a horizontal progression: confirmed \u2192 processing \u2192 shipped \u2192 delivered.
+ * Renders a horizontal progression: confirmed → processing → shipped → delivered.
  * The current status shows filled + emphasized; previous stages show a
  * completed check. Branch states (cancelled, refunded) render as a
  * separate banner at the top instead of trying to sit on the timeline.
  */
 export default function OrderStatusTimeline({ status }) {
-  // Special branch states \u2014 not on the linear timeline
+  // Special branch states — not on the linear timeline
   if (status === "cancelled") {
     return (
       <div className="adm-timeline adm-timeline--branch adm-timeline--cancelled">

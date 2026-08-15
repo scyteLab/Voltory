@@ -4,7 +4,7 @@ import { supabase } from "./supabaseClient.js";
  * siteSectionsAdmin
  *
  * Write layer for the /admin/homepage page. Every function assumes
- * the caller is an authenticated admin \u2014 the RLS policy
+ * the caller is an authenticated admin — the RLS policy
  * "admin write site_sections" enforces this at the DB layer, so
  * anonymous callers get a permission error.
  *

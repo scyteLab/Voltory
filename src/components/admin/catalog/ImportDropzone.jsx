@@ -2,7 +2,7 @@ import { useRef, useState } from "react";
 import { FileText, Upload } from "lucide-react";
 
 /**
- * ImportDropzone \u2014 drag-drop / click-browse for a single CSV file.
+ * ImportDropzone — drag-drop / click-browse for a single CSV file.
  * Calls onFile(file) once a valid .csv is picked. Rejects non-CSVs
  * with a small inline error.
  */
@@ -19,7 +19,7 @@ export default function ImportDropzone({ onFile, disabled = false }) {
       file.type === "application/vnd.ms-excel" ||
       file.type === "";
     if (!isCsv) {
-      setError("Please upload a .csv file (Excel: File \u2192 Save As \u2192 CSV)");
+      setError("Please upload a .csv file (Excel: File → Save As → CSV)");
       return;
     }
     setError(null);
@@ -58,7 +58,7 @@ export default function ImportDropzone({ onFile, disabled = false }) {
       >
         <Upload size={36} strokeWidth={1.4} className="adm-import__drop-icon" />
         <b>Drop your CSV here, or click to browse</b>
-        <small>Only .csv files. Excel: File \u2192 Save As \u2192 CSV</small>
+        <small>Only .csv files. Excel: File → Save As → CSV</small>
         <input
           ref={inputRef}
           type="file"

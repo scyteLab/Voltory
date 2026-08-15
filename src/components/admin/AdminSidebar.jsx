@@ -3,17 +3,18 @@ import { Link, NavLink } from "react-router-dom";
 import {
   Boxes, ChevronDown, LayoutDashboard, LayoutGrid, LifeBuoy, Megaphone,
   MessageCircle, Package, Settings as SettingsIcon, ShieldCheck, ShoppingCart,
-  Star, Tags, Users,
+  Star, Tags, UserCog, Users,
 } from "lucide-react";
 import Logo from "../layout/Logo.jsx";
 import { useAdminCounters } from "../../hooks/useAdminCounters.js";
+import { useAdmin } from "../../context/AdminContext.jsx";
 
 /**
  * The deep-navy sidebar. Split out of the old AdminLayout so the
  * shell composition (AdminShell) stays clean and each piece can
  * grow independently.
  *
- * Nav is data-driven \u2014 add a new section by editing CATALOG_ITEMS
+ * Nav is data-driven — add a new section by editing CATALOG_ITEMS
  * or TOP_LINKS. "Soon" tags render as disabled hints.
  */
 const CATALOG_ITEMS = [
@@ -29,8 +30,9 @@ const TOP_LINKS = [
   { label: "WA Quotes",  icon: MessageCircle,live: true,  to: "/admin/whatsapp-quotes", badgeKey: "newQuotes" },
   { label: "Homepage",   icon: LayoutGrid,   live: true,  to: "/admin/homepage" },
   { label: "Customers",  icon: Users,        live: true,  to: "/admin/customers" },
-  { label: "Inventory",  icon: Boxes,        live: false },
-  { label: "Marketing",  icon: Megaphone,    live: false },
+  { label: "Team",       icon: UserCog,      live: true,  to: "/admin/team" },
+  { label: "Inventory",  icon: Boxes,        live: true,  to: "/admin/inventory", badgeKey: "lowStock" },
+  { label: "Marketing",  icon: Megaphone,    live: true,  to: "/admin/marketing" },
   { label: "Reports",    icon: Tags,         live: true,  to: "/admin/reports" },
   { label: "Warranty",   icon: ShieldCheck,  live: true,  to: "/admin/warranty",  badgeKey: "openWarranty" },
   { label: "Reviews",    icon: Star,         live: true,  to: "/admin/reviews",   badgeKey: "pendingReviews" },
@@ -41,6 +43,7 @@ const CHANNELS = ["Website", "Mobile App", "POS"];
 export default function AdminSidebar({ open, onNavigate }) {
   const [catalogOpen, setCatalogOpen] = useState(true);
   const counters = useAdminCounters();
+  const { isGM } = useAdmin();
 
   return (
     <aside className={"adm-sidebar" + (open ? " adm-sidebar--open" : "")}>
@@ -133,7 +136,16 @@ export default function AdminSidebar({ open, onNavigate }) {
         ))}
       </div>
 
-      <a href="mailto:support@voltory.ng" className="adm-sidebar__help">
+      {isGM && (
+        <div className="adm-sidebar__channels">
+          <p className="adm-nav__section-label">Governance</p>
+          <Link to="/admin/gm-portal" className="adm-nav__link" onClick={onNavigate}>
+            <span><ShieldCheck size={16} /> GM Approvals</span>
+          </Link>
+        </div>
+      )}
+
+      <a href="mailto:support@mynaven.com" className="adm-sidebar__help">
         <b><LifeBuoy size={13} /> Need Help?</b>
         <small>Contact support</small>
       </a>

@@ -3,13 +3,13 @@ import { supabase } from "../lib/supabaseClient.js";
 
 /**
  * Reports data hook. Reads:
- *   \u00B7 orders in the date range (for revenue chart + totals)
- *   \u00B7 top_products_by_units (view)
- *   \u00B7 orders_status_breakdown (view)
+ *   · orders in the date range (for revenue chart + totals)
+ *   · top_products_by_units (view)
+ *   · orders_status_breakdown (view)
  *
  * `rangeDays` accepts 30 / 90 / 365. The chart aggregates orders
  * to daily buckets client-side (Supabase has no built-in date_trunc
- * on client). This scales fine into the low thousands of orders \u2014
+ * on client). This scales fine into the low thousands of orders —
  * beyond that we'd move to a server-side view.
  */
 export function useReports(rangeDays = 30, refreshTick = 0) {
@@ -93,7 +93,7 @@ export function useReports(rangeDays = 30, refreshTick = 0) {
  * blob. Used by both orders and customers export buttons.
  *
  * Uses the "Export as CSV" pattern rather than server-side generation
- * because we want it to just work \u2014 no edge function needed yet.
+ * because we want it to just work — no edge function needed yet.
  */
 export async function exportTableToCsv({ table, columns, filename, orderBy }) {
   const q = supabase.from(table).select(columns.join(","));

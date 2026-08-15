@@ -37,7 +37,7 @@ export default function Contact() {
 
   useEffect(() => {
     const prev = document.title;
-    document.title = `Contact Us \u2014 ${SITE.name}`;
+    document.title = `Contact Us — ${SITE.name}`;
     return () => { document.title = prev; };
   }, []);
 

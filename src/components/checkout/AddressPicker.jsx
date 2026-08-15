@@ -39,7 +39,7 @@ export default function AddressPicker({ addresses, selectedId, onSelect, onNew }
                       <span className="ck-addropt__default"><Star size={10} /> Default</span>
                     )}
                   </span>
-                  <b className="ck-addropt__name">{a.name || "\u2014"}</b>
+                  <b className="ck-addropt__name">{a.name || "—"}</b>
                   <span className="ck-addropt__addr">
                     {a.street}, {a.lga}, {a.state}
                   </span>

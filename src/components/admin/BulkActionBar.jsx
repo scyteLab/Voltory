@@ -6,7 +6,7 @@ import { AlertTriangle, Check, CircleSlash, Trash2, X } from "lucide-react";
  *
  * Appears above the table when at least one row is selected.
  * Actions: Set Active / Set Inactive / Delete / Clear selection.
- * Delete uses inline "Are you sure?" pattern \u2014 no browser confirm().
+ * Delete uses inline "Are you sure?" pattern — no browser confirm().
  *
  * The parent owns the actual mutations and passes async callbacks.
  * We just display state and gate on confirmation.
@@ -54,7 +54,7 @@ export default function BulkActionBar({
               disabled={busy != null}
               onClick={() => run("active", () => onSetStatus("active"))}
             >
-              {busy === "active" ? "Working\u2026" : <><Check size={13} /> Set Active</>}
+              {busy === "active" ? "Working…" : <><Check size={13} /> Set Active</>}
             </button>
             <button
               type="button"
@@ -62,7 +62,7 @@ export default function BulkActionBar({
               disabled={busy != null}
               onClick={() => run("inactive", () => onSetStatus("inactive"))}
             >
-              {busy === "inactive" ? "Working\u2026" : <><CircleSlash size={13} /> Set Inactive</>}
+              {busy === "inactive" ? "Working…" : <><CircleSlash size={13} /> Set Inactive</>}
             </button>
             <button
               type="button"
@@ -92,7 +92,7 @@ export default function BulkActionBar({
               disabled={busy === "delete"}
               onClick={() => run("delete", onDelete)}
             >
-              {busy === "delete" ? "Deleting\u2026" : "Yes, delete"}
+              {busy === "delete" ? "Deleting…" : "Yes, delete"}
             </button>
           </>
         )}

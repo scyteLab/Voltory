@@ -1,23 +1,23 @@
 import { ArrowDown, ArrowUp, ChevronLeft, ChevronRight, ImageOff, MoreVertical } from "lucide-react";
 
 /**
- * Product table \u2014 the left column of the catalog page.
+ * Product table — the left column of the catalog page.
  *
  * Row clicks: open the product in the edit panel.
  * Column headers: click to change sort. Click again to flip direction.
  * Pagination: prev / page numbers / next along the bottom.
  *
  * Selection (bulk actions) is scaffolded via the checkbox column but
- * not fully wired \u2014 the parent gets `selectedSkus` state and can act
+ * not fully wired — the parent gets `selectedSkus` state and can act
  * on it when we add bulk actions in a follow-up session.
  */
 
-function naira(n) { return "\u20A6" + Number(n || 0).toLocaleString("en-NG"); }
+function naira(n) { return "₦" + Number(n || 0).toLocaleString("en-NG"); }
 
 function stockBand(stock) {
   if (stock === 0) return { label: "Out of Stock", cls: "adm-chip--err", tone: "err" };
-  if (stock <= 10) return { label: `Low \u00B7 ${stock} left`, cls: "adm-chip--warn", tone: "warn" };
-  return { label: `In Stock \u00B7 ${stock} units`, cls: "adm-chip--ok", tone: "ok" };
+  if (stock <= 10) return { label: `Low · ${stock} left`, cls: "adm-chip--warn", tone: "warn" };
+  return { label: `In Stock · ${stock} units`, cls: "adm-chip--ok", tone: "ok" };
 }
 
 const COLUMNS = [
@@ -127,7 +127,7 @@ export default function ProductTable({
                   </span>
                   <div className="adm-ptbl__product-meta">
                     <b>{row.name}</b>
-                    <small>SKU: <span className="adm-mono">{row.sku}</span>{row.model ? ` \u00B7 ${row.model}` : ""}</small>
+                    <small>SKU: <span className="adm-mono">{row.sku}</span>{row.model ? ` · ${row.model}` : ""}</small>
                   </div>
                 </div>
 

@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Star } from "lucide-react";
 
 /**
- * ReviewForm \u2014 write or edit a review.
+ * ReviewForm — write or edit a review.
  * Interactive star picker + title + body. Body is required, title
  * optional. Body auto-focuses when the form opens.
  *
@@ -116,7 +116,7 @@ export default function ReviewForm({ existingReview, onSubmit, onCancel }) {
           <button type="button" className="btn-ghost" onClick={onCancel}>Cancel</button>
         )}
         <button type="submit" className="btn-shop" disabled={submitting}>
-          {submitting ? "Submitting\u2026" : isEdit ? "Update review" : "Post review"}
+          {submitting ? "Submitting…" : isEdit ? "Update review" : "Post review"}
         </button>
       </div>
     </form>
