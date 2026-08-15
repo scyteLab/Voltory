@@ -1,0 +1,108 @@
+/* ============================================================
+   SpecsTabs additions \u2014 Q&A CTA + Reviews small tweaks
+   Prefix: .qa-cta, .reviews__write-*
+   ============================================================ */
+
+/* -----------------------------------------------------------
+   Q&A tab \u2014 WhatsApp CTA panel
+   ----------------------------------------------------------- */
+
+.qa-cta {
+  display: flex;
+  gap: 20px;
+  padding: 24px;
+  background: #f0fdf4;
+  border: 1.5px solid #bbf7d0;
+  border-radius: 12px;
+}
+
+.qa-cta__icon {
+  flex-shrink: 0;
+  width: 48px;
+  height: 48px;
+  display: grid;
+  place-items: center;
+  background: #dcfce7;
+  color: #15803d;
+  border-radius: 12px;
+}
+
+.qa-cta__body {
+  flex: 1;
+  min-width: 0;
+}
+
+.qa-cta__body h3 {
+  margin: 0 0 8px;
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--ink);
+  letter-spacing: -0.01em;
+}
+
+.qa-cta__body p {
+  margin: 0 0 16px;
+  font-size: 14px;
+  line-height: 1.55;
+  color: var(--mut);
+}
+
+.qa-cta__count {
+  display: inline;
+  color: var(--ink);
+  font-weight: 500;
+}
+
+.qa-cta__btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 20px;
+  background: #16a34a;
+  color: #ffffff;
+  border: none;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 700;
+  text-decoration: none;
+  transition: background 140ms, transform 60ms;
+  cursor: pointer;
+}
+.qa-cta__btn:hover  { background: #15803d; }
+.qa-cta__btn:active { transform: translateY(1px); }
+.qa-cta__btn svg    { flex-shrink: 0; }
+
+/* -----------------------------------------------------------
+   Write-a-Review button \u2014 now an anchor, needs anchor styles
+   plus a small hint line beneath it explaining the WhatsApp
+   flow so customers know what happens when they click.
+   ----------------------------------------------------------- */
+
+a.reviews__write-btn {
+  display: inline-block;
+  text-decoration: none;
+  text-align: center;
+}
+
+.reviews__write-hint {
+  display: block;
+  margin-top: 8px;
+  font-size: 12.5px;
+  color: var(--mut);
+  line-height: 1.5;
+  max-width: 400px;
+}
+
+/* -----------------------------------------------------------
+   Responsive
+   ----------------------------------------------------------- */
+
+@media (max-width: 560px) {
+  .qa-cta {
+    flex-direction: column;
+    gap: 14px;
+    padding: 20px;
+  }
+  .qa-cta__body h3 { font-size: 16px; }
+  .qa-cta__body p  { font-size: 13.5px; }
+}

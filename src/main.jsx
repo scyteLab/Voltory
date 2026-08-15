@@ -9,6 +9,7 @@ import "./styles/components.css";
 import "./styles/home.css";
 import "./styles/product.css";
 import "./styles/product-specs.css";
+import "./styles/specs-tabs-extras.css";
 import "./styles/cart-checkout.css";
 import "./styles/category.css";
 import "./styles/search.css";

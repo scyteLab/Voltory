@@ -1,5 +1,8 @@
 import { useState } from "react";
-import { ChevronRight, Star, Truck, Wrench, ShieldCheck, MessageSquareText, BadgeCheck, ThumbsUp } from "lucide-react";
+import {
+  BadgeCheck, ChevronRight, MessageSquareText, ShieldCheck,
+  Star, ThumbsUp, Truck, Wrench,
+} from "lucide-react";
 import { naira } from "../../utils/format.js";
 import { SITE } from "../../config/site.js";
 import RatingStars from "./RatingStars.jsx";
@@ -8,6 +11,23 @@ import RatingStars from "./RatingStars.jsx";
  * The tab strip + panels under the buy box. Reads everything from
  * the product record; missing sections render a graceful placeholder
  * so the page never has a "broken" tab.
+ *
+ * Session updates:
+ *   \u00B7 SpecsPanel: now handles BOTH the legacy [key, value] tuple
+ *     shape AND the new {label, value} object shape written by the
+ *     admin's Specifications editor. Products with either shape
+ *     render correctly. Empty rows are filtered.
+ *   \u00B7 QAPanel: replaced the "coming soon" stub with a real
+ *     WhatsApp CTA. Customers can now ask questions via the same
+ *     channel that already works (WhatsApp Business), instead of
+ *     staring at a broken feature.
+ *   \u00B7 ReviewsPanel "Write a Review" button: also switched from
+ *     alert() to a WhatsApp CTA. Same principle \u2014 stop pretending
+ *     a form exists when it doesn't, use the channel that works.
+ *
+ * Not changed: Reviews list rendering (mock reviews still render as
+ * before, that's a separate future project), Delivery / Warranty /
+ * Description panels.
  */
 export default function SpecsTabs({ product: p }) {
   const tabs = [
@@ -47,17 +67,52 @@ export default function SpecsTabs({ product: p }) {
   );
 }
 
+/* ============================================================
+   Specs shape normalizer
+   ============================================================
+
+   The DB stores specs as JSONB \u2014 historically some code wrote
+   two-element [label, value] arrays, the new admin UI writes
+   {label, value} objects. This normalizer accepts either and
+   returns a consistent [{label, value}] array. Empty rows are
+   filtered so a stray blank entry doesn't render as ` \u2014 | \u2014 `.
+*/
+function normalizeSpecs(specs) {
+  if (!Array.isArray(specs)) return [];
+  return specs
+    .map((row) => {
+      // Object shape: { label, value }
+      if (row && typeof row === "object" && !Array.isArray(row)) {
+        return {
+          label: String(row.label ?? "").trim(),
+          value: String(row.value ?? "").trim(),
+        };
+      }
+      // Tuple shape: [label, value]
+      if (Array.isArray(row) && row.length >= 2) {
+        return {
+          label: String(row[0] ?? "").trim(),
+          value: String(row[1] ?? "").trim(),
+        };
+      }
+      // Anything else \u2014 skip
+      return { label: "", value: "" };
+    })
+    .filter((r) => r.label || r.value);
+}
+
 function SpecsPanel({ product }) {
-  if (!product.specs?.length) {
+  const rows = normalizeSpecs(product.specs);
+  if (!rows.length) {
     return <Placeholder text="Full specifications coming soon. Contact our experts for details." />;
   }
   return (
     <table className="spec-table">
       <tbody>
-        {product.specs.map(([k, v]) => (
-          <tr key={k}>
-            <th>{k}</th>
-            <td>{v}</td>
+        {rows.map((row, i) => (
+          <tr key={`${row.label}-${i}`}>
+            <th>{row.label || "\u2014"}</th>
+            <td>{row.value || "\u2014"}</td>
           </tr>
         ))}
       </tbody>
@@ -85,7 +140,7 @@ function DeliveryPanel() {
       <div className="info-card">
         <Truck size={20} />
         <b>Nationwide Delivery</b>
-        <p>1–3 working days within Lagos, Abuja, and Port Harcourt. 3–7 days to other states.</p>
+        <p>1\u20133 working days within Lagos, Abuja, and Port Harcourt. 3\u20137 days to other states.</p>
       </div>
       <div className="info-card">
         <Wrench size={20} />
@@ -118,10 +173,39 @@ function WarrantyPanel({ product }) {
       <div className="info-card">
         <MessageSquareText size={20} />
         <b>After-sales Support</b>
-        <p>Reach our support team by phone or WhatsApp — we’re here before and after your purchase.</p>
+        <p>Reach our support team by phone or WhatsApp \u2014 we\u2019re here before and after your purchase.</p>
       </div>
     </div>
   );
+}
+
+/* ============================================================
+   WhatsApp CTA helpers
+   ============================================================
+   Builds a wa.me link with a product-aware pre-filled message.
+   Uses SITE.whatsappLink as the base so if the number ever
+   changes, one config edit ripples everywhere.
+*/
+function whatsappUrl(topic, product) {
+  // If SITE.whatsappLink is a full wa.me URL, we append &text=...
+  // If it's just a phone number, we build the URL from scratch.
+  const base = SITE.whatsappLink || "";
+  const message = topic === "question"
+    ? `Hi NAVEN, I have a question about "${product.name}" (SKU: ${product.sku}). Could you help?`
+    : `Hi NAVEN, I recently bought "${product.name}" (SKU: ${product.sku}) and I'd like to share a review.`;
+
+  const encoded = encodeURIComponent(message);
+
+  // Check if base already has a query string
+  if (base.includes("?")) {
+    return `${base}&text=${encoded}`;
+  }
+  if (base.startsWith("https://wa.me/") || base.startsWith("http://wa.me/")) {
+    return `${base}?text=${encoded}`;
+  }
+  // Fallback: treat as phone number, build a fresh wa.me
+  const phone = String(base).replace(/[^0-9]/g, "");
+  return phone ? `https://wa.me/${phone}?text=${encoded}` : base;
 }
 
 /* ---------- deterministic mock review generator ---------- */
@@ -174,7 +258,7 @@ const REVIEW_TEMPLATES = [
   },
 ];
 
-/** Simple seeded hash from a string — keeps reviews stable per product. */
+/** Simple seeded hash from a string \u2014 keeps reviews stable per product. */
 function hashSku(sku) {
   let h = 0;
   for (let i = 0; i < (sku || "PROD").length; i++) {
@@ -184,13 +268,11 @@ function hashSku(sku) {
 }
 
 function generateRatingBreakdown(rating, total) {
-  // Distribute reviews across 5-1 stars weighted toward the average
-  const raw = [0, 0, 0, 0, 0]; // index 0 = 5 stars, index 4 = 1 star
+  const raw = [0, 0, 0, 0, 0];
   const weights = [0, 0, 0, 0, 0];
 
   for (let i = 0; i < 5; i++) {
     const starVal = 5 - i;
-    // Gaussian-ish weighting centered on the rating
     weights[i] = Math.exp(-0.8 * Math.pow(starVal - rating, 2));
   }
   const wSum = weights.reduce((a, b) => a + b, 0);
@@ -199,7 +281,6 @@ function generateRatingBreakdown(rating, total) {
     raw[i] = Math.round((weights[i] / wSum) * total);
     assigned += raw[i];
   }
-  // Fix rounding drift
   raw[0] += total - assigned;
 
   return [5, 4, 3, 2, 1].map((star, idx) => ({
@@ -218,7 +299,6 @@ function generateMockReviews(sku, rating, total) {
     const idx = (seed + i * 37) % REVIEWER_POOL.length;
     const reviewer = REVIEWER_POOL[idx];
 
-    // Pick a rating band: mostly 4-5 for high-rated products
     let rBand;
     const r = ((seed + i * 73) % 100);
     if (rating >= 4.5) rBand = r < 70 ? 5 : r < 90 ? 4 : 3;
@@ -229,12 +309,11 @@ function generateMockReviews(sku, rating, total) {
     const tpl = REVIEW_TEMPLATES.find((t) => t.rating === rBand) || REVIEW_TEMPLATES[0];
     const textIdx = (seed + i * 19) % tpl.texts.length;
 
-    // Deterministic date in the last 6 months
     const daysAgo = ((seed + i * 53) % 180) + 1;
     const d = new Date();
     d.setDate(d.getDate() - daysAgo);
 
-    const verified = ((seed + i * 11) % 100) < 85; // 85% verified
+    const verified = ((seed + i * 11) % 100) < 85;
     const helpful = ((seed + i * 41) % 24);
 
     reviews.push({
@@ -256,14 +335,14 @@ function ReviewsPanel({ product }) {
   const rating = product.rating ?? 0;
   const total = product.reviews ?? 0;
 
-  if (!total) return <Placeholder text="No reviews yet — be the first to share your experience after purchase." />;
+  if (!total) return <Placeholder text="No reviews yet \u2014 be the first to share your experience after purchase." />;
 
   const breakdown = generateRatingBreakdown(rating, total);
   const mockReviews = generateMockReviews(product.sku, rating, total);
+  const reviewLink = whatsappUrl("review", product);
 
   return (
     <div className="reviews">
-      {/* ---- Summary header ---- */}
       <div className="reviews__summary">
         <span className="reviews__big">{rating.toFixed(1)}</span>
         <div className="reviews__summary-right">
@@ -272,7 +351,6 @@ function ReviewsPanel({ product }) {
         </div>
       </div>
 
-      {/* ---- Rating breakdown bars ---- */}
       <div className="rating-bars">
         {breakdown.map((b) => (
           <div className="rating-bars__row" key={b.star}>
@@ -288,17 +366,22 @@ function ReviewsPanel({ product }) {
         ))}
       </div>
 
-      {/* ---- Write a review button ---- */}
+      {/* Write a Review \u2014 now routes to WhatsApp instead of an
+          alert() promising a form that doesn't exist. */}
       <div className="reviews__actions">
-        <button
+        <a
           className="reviews__write-btn"
-          onClick={() => alert("Thank you for your interest! The review submission form will be available soon.")}
+          href={reviewLink}
+          target="_blank"
+          rel="noreferrer"
         >
           Write a Review
-        </button>
+        </a>
+        <small className="reviews__write-hint">
+          Share your experience with our team on WhatsApp \u2014 we'll add verified reviews to the site.
+        </small>
       </div>
 
-      {/* ---- Individual review cards ---- */}
       <div className="reviews__list">
         {mockReviews.map((rev) => (
           <div className="review-card" key={rev.id}>
@@ -329,7 +412,10 @@ function ReviewsPanel({ product }) {
             </div>
             <p className="review-card__text">{rev.text}</p>
             <div className="review-card__footer">
-              <button className="review-card__helpful" onClick={() => alert("Thanks for your feedback!")}>
+              <button
+                className="review-card__helpful"
+                onClick={(e) => { e.preventDefault(); /* Silent no-op for now \u2014 helpful count is display-only */ }}
+              >
                 <ThumbsUp size={13} /> Helpful ({rev.helpful})
               </button>
             </div>
@@ -340,9 +426,38 @@ function ReviewsPanel({ product }) {
   );
 }
 
+/* ---------- Q&A panel \u2014 real WhatsApp CTA ---------- */
 function QAPanel({ product }) {
-  if (!product.questions) return <Placeholder text="No questions yet. Have one? Tap below to ask." />;
-  return <Placeholder text={`${product.questions} answered question${product.questions === 1 ? "" : "s"}. Full Q&A panel coming soon.`} />;
+  const questionLink = whatsappUrl("question", product);
+  const count = product.questions ?? 0;
+
+  return (
+    <div className="qa-cta">
+      <div className="qa-cta__icon">
+        <MessageSquareText size={24} />
+      </div>
+      <div className="qa-cta__body">
+        <h3>Have a question about this product?</h3>
+        <p>
+          Chat with our product experts on WhatsApp for personalized advice, availability,
+          delivery timelines, or anything else you need to know before buying.
+          {count > 0 && (
+            <span className="qa-cta__count">
+              &nbsp;{count} customer{count === 1 ? " has" : "s have"} asked us about this product so far.
+            </span>
+          )}
+        </p>
+        <a
+          className="qa-cta__btn"
+          href={questionLink}
+          target="_blank"
+          rel="noreferrer"
+        >
+          <MessageSquareText size={16} /> Ask on WhatsApp
+        </a>
+      </div>
+    </div>
+  );
 }
 
 function Placeholder({ text }) {
