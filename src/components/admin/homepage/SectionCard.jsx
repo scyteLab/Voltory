@@ -31,6 +31,7 @@ const KIND_LABELS = {
   category_strip:    "Category Strip",
   featured_row:      "Featured Products Row",
   last_viewed:       "Recently Viewed",
+  last_searched:     "Last Searched",
   service_cards:     "Service Cards",
   app_promo:         "App Promo Banner",
   bottom_benefits:   "Bottom Benefits Strip",

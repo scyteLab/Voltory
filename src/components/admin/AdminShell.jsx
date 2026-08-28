@@ -5,6 +5,7 @@ import { AdminThemeProvider, useAdminTheme } from "../../context/AdminThemeConte
 import AdminSidebar from "./AdminSidebar.jsx";
 import AdminTopbar from "./AdminTopbar.jsx";
 import CommandPalette from "./CommandPalette.jsx";
+import AdminToastHost from "./AdminToastHost.jsx";
 
 /**
  * The primary admin layout. Replaces the older AdminLayout.jsx
@@ -121,6 +122,7 @@ function ShellInner() {
       </div>
 
       <CommandPalette open={paletteOpen} onClose={() => setPaletteOpen(false)} />
+      <AdminToastHost />
     </div>
   );
 }

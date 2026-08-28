@@ -34,6 +34,7 @@ const NO_EDIT_KINDS = new Set([
   "anniversary_deals",
   "category_strip",
   "last_viewed",
+  "last_searched",
   "service_cards",
   "app_promo",
   "bottom_benefits",

@@ -16,6 +16,18 @@ import {
  * Falls back to the hardcoded arrays whenever Supabase isn't
  * configured or a query fails — the storefront must never go blank
  * just because the DB is unreachable.
+ *
+ * Session 2 fix: mapProduct now includes warranty_months and
+ * energy_class, which had been silently dropped despite the admin
+ * saving them. Without this fix, the warranty badge and energy
+ * badge components never render on customer product pages.
+ *
+ * 2026-08-28 fix: mapProduct now includes gallery, which had been
+ * silently dropped despite the admin uploading multiple images per
+ * product. Without this fix, only the main image ever reached the
+ * storefront PDP — all extra gallery URLs saved to DB were invisible
+ * to customers, and the PDP fell back to sibling images (which was
+ * itself a separate bug fixed the same session in Product.jsx).
  */
 
 function mapCategory(row) {
@@ -64,6 +76,15 @@ function mapProduct(row) {
     highlights: row.highlights || [],
     specs: row.specs || [],
     description: row.description,
+    /* Session-1a fields — restored in Session 2 (were previously
+       silently dropped here, hiding warranty badges + energy class
+       on the customer product page) */
+    warranty_months: row.warranty_months ?? null,
+    energy_class:    row.energy_class    ?? null,
+    /* Gallery — restored 2026-08-28. Admin's uploaded gallery URLs
+       had been landing in DB correctly but never surfacing on the
+       PDP because this mapper dropped the column. */
+    gallery:         Array.isArray(row.gallery) ? row.gallery : [],
   };
 }
 

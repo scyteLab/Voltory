@@ -52,6 +52,7 @@ const FALLBACK_SECTIONS = [
     config: { title: "Recommended products", source: "auto", limit: 10 },
   },
   { kind: "last_viewed",        position: 100, is_visible: true, config: {} },
+  { kind: "last_searched",      position: 105, is_visible: true, config: {} },
   { kind: "service_cards",      position: 110, is_visible: true, config: {} },
   { kind: "app_promo",          position: 120, is_visible: true, config: {} },
   { kind: "bottom_benefits",    position: 130, is_visible: true, config: {} },

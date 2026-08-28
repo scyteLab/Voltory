@@ -1,9 +1,9 @@
 import { useState } from "react";
 import { Link, NavLink } from "react-router-dom";
 import {
-  Boxes, ChevronDown, LayoutDashboard, LayoutGrid, LifeBuoy, Megaphone,
-  MessageCircle, Package, Settings as SettingsIcon, ShieldCheck, ShoppingCart,
-  Star, Tags, UserCog, Users,
+  Boxes, ChevronDown, Gift, LayoutDashboard, LayoutGrid, LifeBuoy, Megaphone,
+  MessageCircle, Package, Receipt, Settings as SettingsIcon, ShieldCheck,
+  ShoppingCart, Star, Tags, UserCog, Users,
 } from "lucide-react";
 import Logo from "../layout/Logo.jsx";
 import { useAdminCounters } from "../../hooks/useAdminCounters.js";
@@ -21,12 +21,14 @@ const CATALOG_ITEMS = [
   { label: "Products", to: "/admin/products", live: true },
   { label: "Categories", to: "/admin/catalog/categories", live: true },
   { label: "Brands", to: "/admin/catalog/brands", live: true },
-  { label: "Attributes", live: false },
-  { label: "Collections", live: false },
+  { label: "Attributes", to: "/admin/attributes", live: true },
+  { label: "Collections", to: "/admin/collections", live: true },
+  { label: "Offers", to: "/admin/offers", live: true },
 ];
 
 const TOP_LINKS = [
   { label: "Orders",     icon: ShoppingCart, live: true,  to: "/admin/orders",    badgeKey: "pendingOrders" },
+  { label: "Receipts",   icon: Receipt,      live: true,  to: "/admin/receipts" },
   { label: "WA Quotes",  icon: MessageCircle,live: true,  to: "/admin/whatsapp-quotes", badgeKey: "newQuotes" },
   { label: "Homepage",   icon: LayoutGrid,   live: true,  to: "/admin/homepage" },
   { label: "Customers",  icon: Users,        live: true,  to: "/admin/customers" },

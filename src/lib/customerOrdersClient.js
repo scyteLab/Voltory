@@ -15,18 +15,22 @@ import { listOrders as listLocalOrders, getOrder as getLocalOrder } from "../uti
  *     customer.
  *   - Supabase is the source of truth on any id that appears in
  *     both places (the admin may have updated status server-side).
+ *
+ * Public API:
+ *   fetchCustomerOrders({ customerId, phone })
+ *       \u2014 signed-in customer's full history
+ *   fetchOrderById(id)
+ *       \u2014 lookup by id alone (used by OrderConfirmation right
+ *         after checkout, where re-verification would be silly)
+ *   fetchOrderByIdAndPhone({ orderId, phone })
+ *       \u2014 GUEST TRACKING: requires both, rate-limited. Used by
+ *         the public /track-order page.
  */
 
 /* ============================================================
-   Shape adapter: Supabase row → storefront order shape
+   Shape adapter: Supabase row \u2192 storefront order shape
    ============================================================ */
 
-/**
- * Turn a Supabase orders row (with its order_items joined) back
- * into the storefront's nested shape. Every page consuming orders
- * expects this shape, so we absorb the difference here rather than
- * touching every consumer.
- */
 function toStorefrontShape(row) {
   if (!row) return null;
   const items = Array.isArray(row.order_items) ? row.order_items : [];
@@ -59,22 +63,14 @@ function toStorefrontShape(row) {
     account: { phone: row.customer_phone, name: row.customer_name },
     accountCreated: false,
     customer_id: row.customer_id || null,
-    syncedAt: row.created_at, // if it came from Supabase, it's synced
+    syncedAt: row.created_at,
   };
 }
 
 /* ============================================================
-   Merge helper
+   Merge helper (unchanged)
    ============================================================ */
 
-/**
- * Given remote orders (from Supabase) and local orders (from
- * localStorage), produce the customer-facing list:
- *   · Deduped by id
- *   · Supabase wins on any overlap (its status is fresher)
- *   · Local-only orders are included after remote ones
- *   · Sorted by createdAt desc
- */
 function mergeOrders(remoteList, localList) {
   const byId = new Map();
   for (const r of remoteList || []) byId.set(r.id, r);
@@ -89,21 +85,9 @@ function mergeOrders(remoteList, localList) {
 }
 
 /* ============================================================
-   Public API
+   Existing: fetchCustomerOrders (UNCHANGED)
    ============================================================ */
 
-/**
- * Fetch every order belonging to a customer.
- *
- * We match on customer_id first (the clean linkage established at
- * checkout via upsertFromCheckout). We also match on customer_phone
- * as a fallback — legacy orders (before customer_id was populated)
- * still work.
- *
- * Returns the merged storefront-shape list. Never throws; on any
- * Supabase failure returns localStorage-filtered orders so the page
- * still shows something honest.
- */
 export async function fetchCustomerOrders({ customerId, phone }) {
   const localPhone = phone || "";
   const local = listLocalOrders().filter(
@@ -114,14 +98,11 @@ export async function fetchCustomerOrders({ customerId, phone }) {
   if (!supabaseConfigured) return { orders: local, error: null, source: "local" };
 
   try {
-    // Build the .or() clause safely — both filters as fallback for
-    // legacy orders (no customer_id) and clean links (customer_id set).
     let query = supabase
       .from("orders")
       .select("*, order_items(*)")
       .order("created_at", { ascending: false });
 
-    // If we have both, use OR. Otherwise pick whichever is available.
     if (customerId && phone) {
       query = query.or(`customer_id.eq.${customerId},customer_phone.eq.${phone}`);
     } else if (customerId) {
@@ -143,12 +124,12 @@ export async function fetchCustomerOrders({ customerId, phone }) {
   }
 }
 
-/**
- * Fetch one order by id. Used by OrderConfirmation and TrackOrder.
- * Falls back to localStorage on any Supabase miss/failure —
- * important for the confirmation page immediately after checkout
- * (Supabase sync may not have completed yet).
- */
+/* ============================================================
+   Existing: fetchOrderById (UNCHANGED)
+   Used by OrderConfirmation right after checkout \u2014 no phone
+   re-verification needed in that context.
+   ============================================================ */
+
 export async function fetchOrderById(id) {
   if (!id) return { order: null, error: "No order id", source: null };
 
@@ -167,8 +148,6 @@ export async function fetchOrderById(id) {
     if (!data)  return { order: local, error: null,         source: local ? "local" : null };
 
     const remote = toStorefrontShape(data);
-    // If we have both, remote wins for status (admin may have updated)
-    // but preserve any local-only fields we care about (syncedAt).
     if (local) {
       return {
         order: { ...local, ...remote, syncedAt: local.syncedAt || remote.syncedAt },
@@ -179,5 +158,193 @@ export async function fetchOrderById(id) {
     return { order: remote, error: null, source: "supabase" };
   } catch (err) {
     return { order: local, error: err?.message || String(err), source: local ? "local" : null };
+  }
+}
+
+/* ============================================================
+   NEW: fetchOrderByIdAndPhone \u2014 guest tracking with rate limit
+   ============================================================
+   Used by the public /track-order page. Requires BOTH order id
+   and phone to succeed. Rate-limited per client to prevent
+   enumeration.
+
+   Local-first strategy is preserved: if the order is in the
+   caller's localStorage (they placed it on this device), we
+   still confirm the phone matches before returning it. That way
+   the security bar is the same whether the data comes from
+   local or remote.
+*/
+
+const MAX_ATTEMPTS_PER_HOUR = 10;
+
+function normalizePhone(phone) {
+  if (!phone) return "";
+  const digits = String(phone).replace(/[^\d]/g, "");
+  if (digits.startsWith("234") && digits.length === 13) return "0" + digits.slice(3);
+  if (digits.startsWith("0")   && digits.length === 11) return digits;
+  if (digits.length === 10 && /^[7-9]/.test(digits))    return "0" + digits;
+  return digits;
+}
+
+function normalizeOrderId(id) {
+  if (!id) return "";
+  return String(id).trim().toUpperCase();
+}
+
+/**
+ * Best-effort client identifier for rate limiting. Tries public
+ * IP first, falls back to a stable browser fingerprint hash.
+ */
+async function getClientId() {
+  try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 2000);
+    const res = await fetch("https://api.ipify.org?format=json", { signal: controller.signal });
+    clearTimeout(timeoutId);
+    const data = await res.json();
+    if (data?.ip) return data.ip;
+  } catch { /* fall through */ }
+
+  const raw = [
+    typeof navigator !== "undefined" ? navigator.userAgent : "",
+    typeof navigator !== "undefined" ? navigator.language : "",
+    typeof screen !== "undefined" ? screen.width : 0,
+    typeof screen !== "undefined" ? screen.height : 0,
+    new Date().getTimezoneOffset(),
+  ].join("|");
+
+  try {
+    const enc = new TextEncoder().encode(raw);
+    const buf = await crypto.subtle.digest("SHA-256", enc);
+    return "fp:" + Array.from(new Uint8Array(buf))
+      .slice(0, 8)
+      .map((b) => b.toString(16).padStart(2, "0"))
+      .join("");
+  } catch {
+    return "fp:unknown";
+  }
+}
+
+function logAttempt(clientId, success) {
+  if (!supabaseConfigured) return;
+  supabase
+    .from("order_tracking_attempts")
+    .insert({ ip_address: clientId, success })
+    .then(() => {}, () => {});
+}
+
+async function checkRateLimit(clientId) {
+  if (!supabaseConfigured) return { limited: false };
+  const cutoff = new Date(Date.now() - 60 * 60 * 1000).toISOString();
+  try {
+    const { count } = await supabase
+      .from("order_tracking_attempts")
+      .select("id", { count: "exact", head: true })
+      .eq("ip_address", clientId)
+      .gt("created_at", cutoff);
+
+    if (count != null && count >= MAX_ATTEMPTS_PER_HOUR) {
+      return { limited: true };
+    }
+    return { limited: false };
+  } catch {
+    return { limited: false }; // fail open
+  }
+}
+
+function phonesMatch(a, b) {
+  return normalizePhone(a) === normalizePhone(b);
+}
+
+/**
+ * Guest order lookup. Requires (orderId + phone) to succeed.
+ * Rate-limited per client. Returns generic error messages so
+ * attackers can't distinguish "wrong phone" from "wrong id".
+ *
+ * Return shape mirrors fetchOrderById:
+ *   { order: {...} | null, error: string | null, source: "supabase" | "local" | null }
+ */
+export async function fetchOrderByIdAndPhone({ orderId, phone }) {
+  const cleanId    = normalizeOrderId(orderId);
+  const cleanPhone = normalizePhone(phone);
+
+  if (!cleanId) return { order: null, error: "Please enter your order number.", source: null };
+  if (!cleanPhone) return { order: null, error: "Please enter your phone number.", source: null };
+
+  const clientId = await getClientId();
+
+  /* Rate-limit check */
+  const rate = await checkRateLimit(clientId);
+  if (rate.limited) {
+    return {
+      order: null,
+      error: "Too many lookup attempts. Please try again in about an hour.",
+      source: null,
+    };
+  }
+
+  /* Local check first \u2014 verify phone matches the stored order */
+  const local = getLocalOrder(cleanId);
+  if (local && phonesMatch(local.contact?.phone, cleanPhone)) {
+    /* Still try remote for freshest status \u2014 but don't block */
+    if (supabaseConfigured) {
+      try {
+        const { data } = await supabase
+          .from("orders")
+          .select("*, order_items(*)")
+          .eq("id", cleanId)
+          .eq("customer_phone", cleanPhone)
+          .maybeSingle();
+        if (data) {
+          logAttempt(clientId, true);
+          const remote = toStorefrontShape(data);
+          return {
+            order: { ...local, ...remote, syncedAt: local.syncedAt || remote.syncedAt },
+            error: null,
+            source: "supabase",
+          };
+        }
+      } catch { /* fall back to local */ }
+    }
+    logAttempt(clientId, true);
+    return { order: local, error: null, source: "local" };
+  }
+
+  /* No local match \u2014 must query Supabase */
+  if (!supabaseConfigured) {
+    logAttempt(clientId, false);
+    return {
+      order: null,
+      error: "No order found with that order number and phone. Please check both and try again.",
+      source: null,
+    };
+  }
+
+  try {
+    const { data, error } = await supabase
+      .from("orders")
+      .select("*, order_items(*)")
+      .eq("id", cleanId)
+      .eq("customer_phone", cleanPhone)
+      .maybeSingle();
+
+    if (error) {
+      logAttempt(clientId, false);
+      return { order: null, error: "Couldn't look up that order. Please try again.", source: null };
+    }
+    if (!data) {
+      logAttempt(clientId, false);
+      return {
+        order: null,
+        error: "No order found with that order number and phone. Please check both and try again.",
+        source: null,
+      };
+    }
+
+    logAttempt(clientId, true);
+    return { order: toStorefrontShape(data), error: null, source: "supabase" };
+  } catch (err) {
+    logAttempt(clientId, false);
+    return { order: null, error: err?.message || "Something went wrong. Please try again.", source: null };
   }
 }

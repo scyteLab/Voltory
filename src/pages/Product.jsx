@@ -6,7 +6,7 @@ import {
 } from "lucide-react";
 import { RECOMMENDED_ADDON } from "../data/products.js";
 import { useCatalog } from "../context/CatalogContext.jsx";
-import { snapshotByCategory, snapshotCategoryById } from "../lib/catalogSnapshot.js";
+import { snapshotCategoryById } from "../lib/catalogSnapshot.js";
 import { naira, discountPct, stockState } from "../utils/format.js";
 import { addRecentlyViewed } from "../utils/recentlyViewed.js";
 import { useStore } from "../context/StoreContext.jsx";
@@ -20,6 +20,7 @@ import ReviewsSection from "../components/product/ReviewsSection.jsx";
 import AddToCartBar from "../components/product/AddToCartBar.jsx";
 import ProductCard from "../components/product/ProductCard.jsx";
 import LastViewed from "../components/home/LastViewed.jsx";
+import OfferBadge from "../components/product/OfferBadge.jsx";
 
 function NotFound({ slug }) {
   return (
@@ -66,7 +67,7 @@ function ProductJsonLd({ product }) {
 
 export default function Product() {
   const { slug } = useParams();
-  const { bySlug, bySku, byCategory } = useCatalog();
+  const { bySlug, bySku, byCategory, getOfferBySku } = useCatalog();
   const navigate = useNavigate();
   const product = bySlug(slug);
   const {
@@ -94,6 +95,8 @@ export default function Product() {
   const related = byCategory(product.category).filter((p) => p.sku !== product.sku).slice(0, 5);
   const addon = product.sku === RECOMMENDED_ADDON ? null : bySku(RECOMMENDED_ADDON);
   const bundlePrice = addon ? product.price + addon.price : null;
+  /* Promotional offer for this product (null if none active) */
+  const offer = getOfferBySku ? getOfferBySku(product.sku) : null;
 
   const handleAdd = () => addToCart(product.sku, qty);
   const handleAddBundle = () => {
@@ -149,6 +152,10 @@ export default function Product() {
           {saved > 0 && (
             <p className="pdp__saved">You save {naira(saved)} on this product</p>
           )}
+
+          {/* PROMOTIONAL OFFER — shown between price and stock indicator.
+              Only rendered if the product has an active, non-expired offer. */}
+          {offer && <OfferBadge offer={offer} variant="large" />}
 
           <p className={`pdp__stock pdp__stock--${st}`}>
             {st === "ok" && <>● In Stock · Ships within 24 hours</>}
@@ -281,13 +288,30 @@ function categoryLabel(id) {
   return cat ? cat.label : id;
 }
 
+/**
+ * productImages — assemble the gallery image list for the PDP.
+ *
+ * Order:
+ *   1. Main product image (product.image)
+ *   2. The product's own uploaded gallery (product.gallery)
+ *
+ * Sibling fallback removed (2026-08-28): earlier versions filled empty
+ * gallery slots with sibling products' main images from the same
+ * category. Real problem: customers saw Inverter AC images on the
+ * Non-Inverter product page — wrong products masquerading as
+ * gallery filler. Now the customer sees exactly what admin uploaded,
+ * nothing more.
+ */
 function productImages(product) {
-  const imgs = [product.image];
-  const siblings = snapshotByCategory(product.category)
-    .filter((p) => p.sku !== product.sku && p.image && p.image !== product.image);
-  for (const s of siblings) {
-    if (!imgs.includes(s.image)) imgs.push(s.image);
-    if (imgs.length >= 4) break;
+  const imgs = [];
+
+  if (product.image) imgs.push(product.image);
+
+  if (Array.isArray(product.gallery)) {
+    for (const url of product.gallery) {
+      if (url && !imgs.includes(url)) imgs.push(url);
+    }
   }
+
   return imgs;
 }

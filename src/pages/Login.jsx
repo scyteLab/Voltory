@@ -1,70 +1,55 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Phone } from "lucide-react";
+import { Eye, EyeOff, KeyRound, Phone } from "lucide-react";
 import { useCustomerAuth } from "../context/AuthContext.jsx";
 import AuthShell from "../components/auth/AuthShell.jsx";
 
 /**
- * Login  —  /login
+ * Login  \u2014  /login
  *
- * REDESIGN: dropped the orbital-bubble character showcase in
- * favor of a Termii-style animated brand panel. Now uses the
- * shared AuthShell + AuthShowcase components so the visual
- * language stays consistent with SignUp forever.
+ * Password-based sign-in with phone as the identifier.
  *
- * Form logic unchanged from the previous version — clean phone
- * number, call requestOtp, surface errors, navigate to /verify-otp
- * on success.
+ * If the user's phone exists in customers but they have no
+ * password (legacy row from guest checkout), the API returns
+ * needsSignup: true so we can nudge them to the signup page.
  */
 export default function Login() {
   const navigate = useNavigate();
-  const { requestOtp } = useCustomerAuth();
+  const { signIn } = useCustomerAuth();
 
   const [phone, setPhone]           = useState("");
+  const [password, setPassword]     = useState("");
+  const [showPw, setShowPw]         = useState(false);
   const [error, setError]           = useState(null);
+  const [needsSignup, setNeedsSignup] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
     const prev = document.title;
-    document.title = "Sign in — NAVEN";
+    document.title = "Sign in \u2014 NAVEN";
     return () => { document.title = prev; };
   }, []);
 
   async function onSubmit(e) {
     e.preventDefault();
     setError(null);
-
-    /* Clean the phone: strip non-digits, coerce +234 or missing
-       leading 0 to canonical 11-digit local form. Server does
-       the final validation. */
-    const digits = phone.replace(/\D/g, "");
-    let cleaned = digits;
-    if (cleaned.startsWith("234")) cleaned = "0" + cleaned.slice(3);
-    if (cleaned.length === 10 && !cleaned.startsWith("0")) cleaned = "0" + cleaned;
-
-    if (!/^0[7-9][01]\d{8}$/.test(cleaned)) {
-      setError("Please enter a valid Nigerian phone number.");
-      return;
-    }
-
+    setNeedsSignup(false);
     setSubmitting(true);
-    const res = await requestOtp({ phone: cleaned, purpose: "login" });
+
+    const res = await signIn({ phone, password });
     setSubmitting(false);
 
     if (!res.ok) {
-      setError(res.error || "Couldn't send code. Please try again.");
+      setError(res.error || "Sign-in failed. Please try again.");
+      if (res.needsSignup) setNeedsSignup(true);
       return;
     }
-    navigate("/verify-otp", { state: { phone: cleaned, purpose: "login" } });
+    navigate("/account", { replace: true });
   }
 
   return (
     <AuthShell>
       <div className="ashell-form__inner">
-        {/* Segmented control that visually shows Sign in / Sign up
-            as tabs. Links to real routes; keeps the pages separate
-            per your design decision, but presents them as a
-            connected pair like Termii. */}
         <div className="ashell-form__tabs" role="tablist">
           <Link
             to="/login"
@@ -86,7 +71,7 @@ export default function Login() {
 
         <h2 className="ashell-form__title">Welcome back</h2>
         <p className="ashell-form__sub">
-          Enter your phone number to sign in. We'll send you a 4-digit code to verify.
+          Enter your phone number and password to sign in.
         </p>
 
         <form onSubmit={onSubmit}>
@@ -107,24 +92,60 @@ export default function Login() {
             </div>
           </div>
 
-          {error && <div className="ashell-error">{error}</div>}
+          <div className="ashell-field">
+            <label htmlFor="password">Password</label>
+            <div className="ashell-field__input">
+              <KeyRound size={16} />
+              <input
+                id="password"
+                type={showPw ? "text" : "password"}
+                autoComplete="current-password"
+                placeholder="At least 6 characters"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                disabled={submitting}
+              />
+              <button
+                type="button"
+                className="ashell-field__toggle"
+                onClick={() => setShowPw((v) => !v)}
+                aria-label={showPw ? "Hide password" : "Show password"}
+              >
+                {showPw ? <EyeOff size={16} /> : <Eye size={16} />}
+              </button>
+            </div>
+          </div>
+
+          {error && (
+            <div className="ashell-error">
+              {error}
+              {needsSignup && (
+                <>
+                  {" "}
+                  <Link to="/signup" style={{ textDecoration: "underline", fontWeight: 600 }}>
+                    Sign up here
+                  </Link>
+                </>
+              )}
+            </div>
+          )}
 
           <button
             type="submit"
             className="ashell-btn ashell-btn--primary"
-            disabled={submitting || !phone.trim()}
+            disabled={submitting || !phone.trim() || !password}
           >
-            {submitting ? "Sending…" : "Continue →"}
+            {submitting ? "Signing in\u2026" : "Sign in \u2192"}
           </button>
         </form>
 
-        <div className="ashell-form__note">
-          <b>Already shopped with us?</b>
-          <p>
-            Your account was created automatically the first time you checked out.
-            Just enter the phone number you used and we'll sign you straight in.
-          </p>
-        </div>
+        <p className="ashell-form__legal" style={{ marginTop: 24 }}>
+          Forgot your password?{" "}
+          <a href={`https://wa.me/2348000000000?text=${encodeURIComponent("Hi NAVEN, I forgot my password. My registered phone is: ")}`}
+             target="_blank" rel="noreferrer">
+            Contact support on WhatsApp
+          </a>
+        </p>
 
         <p className="ashell-form__legal">
           By continuing you agree to NAVEN's{" "}

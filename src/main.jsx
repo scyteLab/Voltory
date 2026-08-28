@@ -45,6 +45,14 @@ import "./styles/admin-gm.css";
 import "./styles/admin-team.css";
 import "./styles/brands-directory.css";
 import "./styles/admin.css";
+import "./styles/auth-password-toggle.css";
+import "./styles/receipt.css";
+import "./styles/collections.css";
+import "./styles/attributes.css";
+import "./styles/product-attributes.css";
+import "./styles/attribute-filters.css";
+import "./styles/offers.css";
+import "./styles/offers-storefront.css";
 
 ReactDOM.createRoot(document.getElementById("root")).render(
   <React.StrictMode>

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   BadgeCheck, ChevronRight, MessageSquareText, ShieldCheck,
   Star, ThumbsUp, Truck, Wrench,
@@ -6,28 +6,22 @@ import {
 import { naira } from "../../utils/format.js";
 import { SITE } from "../../config/site.js";
 import RatingStars from "./RatingStars.jsx";
+import { fetchProductAttributes, attributesToSpecRows } from "../../lib/productAttributesClient.js";
 
 /**
- * The tab strip + panels under the buy box. Reads everything from
- * the product record; missing sections render a graceful placeholder
- * so the page never has a "broken" tab.
+ * SpecsTabs — tab strip + panels below the buy box.
  *
- * Session updates:
- *   \u00B7 SpecsPanel: now handles BOTH the legacy [key, value] tuple
- *     shape AND the new {label, value} object shape written by the
- *     admin's Specifications editor. Products with either shape
- *     render correctly. Empty rows are filtered.
- *   \u00B7 QAPanel: replaced the "coming soon" stub with a real
- *     WhatsApp CTA. Customers can now ask questions via the same
- *     channel that already works (WhatsApp Business), instead of
- *     staring at a broken feature.
- *   \u00B7 ReviewsPanel "Write a Review" button: also switched from
- *     alert() to a WhatsApp CTA. Same principle \u2014 stop pretending
- *     a form exists when it doesn't, use the channel that works.
+ * Session 2 change: SpecsPanel now fetches structured attribute
+ * values for the product and merges them with the JSONB specs
+ * into a single unified table. Coexistence pattern C:
+ *   · Admin has two edit surfaces (Specifications section for
+ *     free-form specs; Attributes panel for structured attributes)
+ *   · Customer sees ONE table — attributes appear first
+ *     (ordered by attribute.position), then JSONB specs
+ *   · No visible distinction between the two sources
  *
- * Not changed: Reviews list rendering (mock reviews still render as
- * before, that's a separate future project), Delivery / Warranty /
- * Description panels.
+ * Not changed: DescPanel, DeliveryPanel, WarrantyPanel,
+ * ReviewsPanel, QAPanel — all preserved verbatim.
  */
 export default function SpecsTabs({ product: p }) {
   const tabs = [
@@ -71,48 +65,103 @@ export default function SpecsTabs({ product: p }) {
    Specs shape normalizer
    ============================================================
 
-   The DB stores specs as JSONB \u2014 historically some code wrote
-   two-element [label, value] arrays, the new admin UI writes
-   {label, value} objects. This normalizer accepts either and
-   returns a consistent [{label, value}] array. Empty rows are
-   filtered so a stray blank entry doesn't render as ` \u2014 | \u2014 `.
+   Accepts either the tuple shape [label, value] or object shape
+   {label, value}. Returns a consistent array. Blank rows dropped.
 */
 function normalizeSpecs(specs) {
   if (!Array.isArray(specs)) return [];
   return specs
     .map((row) => {
-      // Object shape: { label, value }
       if (row && typeof row === "object" && !Array.isArray(row)) {
         return {
           label: String(row.label ?? "").trim(),
           value: String(row.value ?? "").trim(),
         };
       }
-      // Tuple shape: [label, value]
       if (Array.isArray(row) && row.length >= 2) {
         return {
           label: String(row[0] ?? "").trim(),
           value: String(row[1] ?? "").trim(),
         };
       }
-      // Anything else \u2014 skip
       return { label: "", value: "" };
     })
     .filter((r) => r.label || r.value);
 }
 
+/* ============================================================
+   Specs panel — now async, merges attributes + JSONB specs
+   ============================================================ */
+
 function SpecsPanel({ product }) {
-  const rows = normalizeSpecs(product.specs);
-  if (!rows.length) {
+  const [attrRows, setAttrRows] = useState([]);
+  const [loading, setLoading]   = useState(true);
+
+  useEffect(() => {
+    let cancelled = false;
+    setLoading(true);
+    (async () => {
+      const res = await fetchProductAttributes(product.sku);
+      if (cancelled) return;
+      setLoading(false);
+      if (res.ok) {
+        setAttrRows(attributesToSpecRows(res.data));
+      } else {
+        /* Fail silently on the customer page — spec table just
+           renders JSONB specs alone, which is what it did before. */
+        setAttrRows([]);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [product.sku]);
+
+  const jsonSpecs = normalizeSpecs(product.specs);
+
+  /* Merge order: attributes first (they're the "structured" data
+     admins have curated with intent), then JSONB specs as free-form
+     additions below. Skip attribute rows whose label collides with
+     a JSONB spec label — attributes win, since they're the source
+     of truth going forward. */
+  const attrLabelsLower = new Set(
+    attrRows.map((r) => String(r.label).toLowerCase())
+  );
+  const dedupedJson = jsonSpecs.filter(
+    (r) => !attrLabelsLower.has(String(r.label).toLowerCase())
+  );
+
+  const merged = [...attrRows, ...dedupedJson];
+
+  if (loading && merged.length === 0) {
+    /* Show existing JSONB specs immediately if we have them, only
+       show loading if there's nothing at all to render yet. */
+    if (jsonSpecs.length > 0) {
+      return (
+        <table className="spec-table">
+          <tbody>
+            {jsonSpecs.map((row, i) => (
+              <tr key={`${row.label}-${i}`}>
+                <th>{row.label || "—"}</th>
+                <td>{row.value || "—"}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      );
+    }
+    return <Placeholder text="Loading specifications…" />;
+  }
+
+  if (merged.length === 0) {
     return <Placeholder text="Full specifications coming soon. Contact our experts for details." />;
   }
+
   return (
     <table className="spec-table">
       <tbody>
-        {rows.map((row, i) => (
+        {merged.map((row, i) => (
           <tr key={`${row.label}-${i}`}>
-            <th>{row.label || "\u2014"}</th>
-            <td>{row.value || "\u2014"}</td>
+            <th>{row.label || "—"}</th>
+            <td>{row.value || "—"}</td>
           </tr>
         ))}
       </tbody>
@@ -140,7 +189,7 @@ function DeliveryPanel() {
       <div className="info-card">
         <Truck size={20} />
         <b>Nationwide Delivery</b>
-        <p>1\u20133 working days within Lagos, Abuja, and Port Harcourt. 3\u20137 days to other states.</p>
+        <p>1–3 working days within Lagos, Abuja, and Port Harcourt. 3–7 days to other states.</p>
       </div>
       <div className="info-card">
         <Wrench size={20} />
@@ -173,7 +222,7 @@ function WarrantyPanel({ product }) {
       <div className="info-card">
         <MessageSquareText size={20} />
         <b>After-sales Support</b>
-        <p>Reach our support team by phone or WhatsApp \u2014 we\u2019re here before and after your purchase.</p>
+        <p>Reach our support team by phone or WhatsApp — we’re here before and after your purchase.</p>
       </div>
     </div>
   );
@@ -181,14 +230,8 @@ function WarrantyPanel({ product }) {
 
 /* ============================================================
    WhatsApp CTA helpers
-   ============================================================
-   Builds a wa.me link with a product-aware pre-filled message.
-   Uses SITE.whatsappLink as the base so if the number ever
-   changes, one config edit ripples everywhere.
-*/
+   ============================================================ */
 function whatsappUrl(topic, product) {
-  // If SITE.whatsappLink is a full wa.me URL, we append &text=...
-  // If it's just a phone number, we build the URL from scratch.
   const base = SITE.whatsappLink || "";
   const message = topic === "question"
     ? `Hi NAVEN, I have a question about "${product.name}" (SKU: ${product.sku}). Could you help?`
@@ -196,14 +239,12 @@ function whatsappUrl(topic, product) {
 
   const encoded = encodeURIComponent(message);
 
-  // Check if base already has a query string
   if (base.includes("?")) {
     return `${base}&text=${encoded}`;
   }
   if (base.startsWith("https://wa.me/") || base.startsWith("http://wa.me/")) {
     return `${base}?text=${encoded}`;
   }
-  // Fallback: treat as phone number, build a fresh wa.me
   const phone = String(base).replace(/[^0-9]/g, "");
   return phone ? `https://wa.me/${phone}?text=${encoded}` : base;
 }
@@ -258,7 +299,6 @@ const REVIEW_TEMPLATES = [
   },
 ];
 
-/** Simple seeded hash from a string \u2014 keeps reviews stable per product. */
 function hashSku(sku) {
   let h = 0;
   for (let i = 0; i < (sku || "PROD").length; i++) {
@@ -330,12 +370,11 @@ function generateMockReviews(sku, rating, total) {
   return reviews;
 }
 
-/* ---------- Reviews panel ---------- */
 function ReviewsPanel({ product }) {
   const rating = product.rating ?? 0;
   const total = product.reviews ?? 0;
 
-  if (!total) return <Placeholder text="No reviews yet \u2014 be the first to share your experience after purchase." />;
+  if (!total) return <Placeholder text="No reviews yet — be the first to share your experience after purchase." />;
 
   const breakdown = generateRatingBreakdown(rating, total);
   const mockReviews = generateMockReviews(product.sku, rating, total);
@@ -366,8 +405,6 @@ function ReviewsPanel({ product }) {
         ))}
       </div>
 
-      {/* Write a Review \u2014 now routes to WhatsApp instead of an
-          alert() promising a form that doesn't exist. */}
       <div className="reviews__actions">
         <a
           className="reviews__write-btn"
@@ -378,7 +415,7 @@ function ReviewsPanel({ product }) {
           Write a Review
         </a>
         <small className="reviews__write-hint">
-          Share your experience with our team on WhatsApp \u2014 we'll add verified reviews to the site.
+          Share your experience with our team on WhatsApp — we'll add verified reviews to the site.
         </small>
       </div>
 
@@ -414,7 +451,7 @@ function ReviewsPanel({ product }) {
             <div className="review-card__footer">
               <button
                 className="review-card__helpful"
-                onClick={(e) => { e.preventDefault(); /* Silent no-op for now \u2014 helpful count is display-only */ }}
+                onClick={(e) => { e.preventDefault(); }}
               >
                 <ThumbsUp size={13} /> Helpful ({rev.helpful})
               </button>
@@ -426,7 +463,6 @@ function ReviewsPanel({ product }) {
   );
 }
 
-/* ---------- Q&A panel \u2014 real WhatsApp CTA ---------- */
 function QAPanel({ product }) {
   const questionLink = whatsappUrl("question", product);
   const count = product.questions ?? 0;

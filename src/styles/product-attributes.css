@@ -1,0 +1,260 @@
+/* ============================================================
+   PRODUCT ATTRIBUTES PANEL  (Session 2)
+   Prefix: .adm-pav
+   Slotted inside .adm-editpanel below the Specifications section.
+   ============================================================ */
+
+.adm-pav {
+  margin-top: 24px;
+  padding-top: 20px;
+  border-top: 2px solid var(--adm-border);
+}
+
+.adm-pav__head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 6px;
+  flex-wrap: wrap;
+}
+
+.adm-pav__head h3 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--adm-ink);
+}
+
+.adm-pav__head h3 svg {
+  color: var(--adm-brand);
+}
+
+.adm-pav__dirty {
+  font-size: 11px;
+  font-weight: 600;
+  color: #b45309;
+  padding: 2px 8px;
+  background: #fef3c7;
+  border-radius: 99px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.adm-pav__head-actions {
+  display: flex;
+  gap: 6px;
+}
+
+.adm-pav__hint {
+  margin: 0 0 14px;
+  color: var(--adm-ink-3);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.adm-pav__notice {
+  display: flex;
+  gap: 10px;
+  padding: 12px 14px;
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  border-radius: 8px;
+  color: #1e3a8a;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.adm-pav__notice svg { flex-shrink: 0; margin-top: 2px; }
+
+.adm-pav__notice p {
+  margin: 0;
+}
+
+.adm-pav__empty {
+  padding: 20px;
+  background: #f8fafc;
+  border: 1px dashed var(--adm-border);
+  border-radius: 8px;
+  text-align: center;
+  color: var(--adm-ink-3);
+  font-size: 13px;
+  line-height: 1.5;
+}
+.adm-pav__empty p { margin: 0 0 8px; }
+.adm-pav__empty--err {
+  background: #fef2f2;
+  border-color: #fecaca;
+  color: #7f1d1d;
+}
+.adm-pav__empty--err b { display: block; margin-bottom: 4px; }
+
+.adm-pav__saveerr {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 12px;
+  margin-bottom: 12px;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: 6px;
+  color: #991b1b;
+  font-size: 12.5px;
+}
+
+/* ---- Fields grid ---- */
+
+.adm-pav__fields {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.adm-pav__row {
+  display: grid;
+  grid-template-columns: 180px 1fr;
+  gap: 12px;
+  align-items: flex-start;
+  padding: 10px 12px;
+  background: #f8fafc;
+  border: 1px solid var(--adm-border);
+  border-radius: 6px;
+}
+
+.adm-pav__row-label {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding-top: 6px;
+}
+
+.adm-pav__row-label b {
+  font-size: 13px;
+  color: var(--adm-ink);
+  font-weight: 600;
+}
+
+.adm-pav__row-label small {
+  font-size: 11px;
+  color: var(--adm-ink-3);
+}
+
+.adm-pav__row-input {
+  min-width: 0;
+}
+
+.adm-pav__row-input input[type="text"],
+.adm-pav__row-input input[type="number"],
+.adm-pav__row-input select {
+  width: 100%;
+  padding: 8px 10px;
+  border: 1px solid var(--adm-border);
+  border-radius: 4px;
+  background: #ffffff;
+  font: inherit;
+  font-size: 13px;
+  color: var(--adm-ink);
+}
+
+.adm-pav__row-input input:focus,
+.adm-pav__row-input select:focus {
+  outline: none;
+  border-color: var(--adm-brand);
+  box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.10);
+}
+
+/* ---- Number with unit ---- */
+
+.adm-pav__number {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+
+.adm-pav__number input { flex: 1; }
+
+.adm-pav__unit {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--adm-ink-3);
+  padding: 4px 10px;
+  background: #f1f5f9;
+  border-radius: 4px;
+}
+
+/* ---- Select with color swatch ---- */
+
+.adm-pav__select-wrap {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.adm-pav__select-wrap select { flex: 1; }
+
+.adm-pav__swatch {
+  width: 28px;
+  height: 28px;
+  border-radius: 4px;
+  border: 1px solid var(--adm-border);
+  flex-shrink: 0;
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.05);
+}
+
+/* ---- Multi-select chips ---- */
+
+.adm-pav__multi {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.adm-pav__chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 12px;
+  border: 1.5px solid var(--adm-border);
+  border-radius: 99px;
+  cursor: pointer;
+  font-size: 12.5px;
+  background: #ffffff;
+  color: var(--adm-ink-2);
+  transition: background 100ms, border-color 100ms;
+}
+
+.adm-pav__chip:hover {
+  background: #f8fafc;
+}
+
+.adm-pav__chip.on {
+  background: #eff6ff;
+  border-color: var(--adm-brand);
+  color: #1e40af;
+}
+
+.adm-pav__chip input {
+  width: 12px;
+  height: 12px;
+  cursor: pointer;
+  margin: 0;
+}
+
+.adm-pav__muted {
+  color: var(--adm-ink-3);
+  font-size: 12px;
+  font-style: italic;
+}
+
+/* ---- Responsive ---- */
+
+@media (max-width: 900px) {
+  .adm-pav__row {
+    grid-template-columns: 1fr;
+    gap: 6px;
+  }
+  .adm-pav__row-label { padding-top: 0; }
+}

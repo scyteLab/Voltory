@@ -14,15 +14,23 @@ import {
   getStoredComparison, saveComparison, MAX_COMPARE,
 } from "../utils/comparison.js";
 import { DEFAULT_SITE_SETTINGS, fetchSiteSettings, updateSiteSettings } from "../lib/siteSettings.js";
+import { fetchAllOffers } from "../lib/adminOffersClient.js";
 
 /**
- * Global store state: theme, cart, toast, account, wishlist, comparison.
- * All four persistent slices (cart, account, wishlist, comparison) survive
- * page refreshes via localStorage.
+ * StoreContext
  *
- * Account is keyed by phone number. Both signup paths (invisible
- * at checkout, explicit at /signup) hit the same record — the
- * second path simply merges its fields onto whatever exists.
+ * Global storefront state: theme, cart (with promotional gift lines),
+ * wishlist, comparison, account, toast, order placement.
+ *
+ * Session 3 (2026-08-28) added:
+ *   · productOffers state — loaded on mount
+ *   · Cart gift auto-management via reconcileGifts()
+ *   · Gift lines are marked with { isGift: true, giftFor: <parentSku>, offerId }
+ *   · Gifts have price 0 (free)
+ *   · Removing a parent product auto-removes its gift
+ *   · Changing qty updates gift qty (if multiply_by_qty=true)
+ *   · Cart-line count excludes gifts (so "2 items" counts only paid products)
+ *   · Totals calculation ignores gift lines (they're free)
  */
 const Ctx = createContext(null);
 const ACCOUNT_KEY = "voltory_account";
@@ -49,6 +57,62 @@ export function normalisePhone(p) {
   return (p || "").replace(/\D/g, "");
 }
 
+/* ============================================================
+   GIFT RECONCILIATION
+   ============================================================
+   Rebuilds the cart's gift lines from scratch based on:
+     · The current non-gift cart lines (paid products)
+     · The active offers table
+   
+   Rules:
+     · For each paid product with an active, non-expired offer:
+       - Add ONE gift line
+       - Qty = product qty (if multiply_by_qty) OR 1 (otherwise)
+     · Gift lines are always regenerated — never trust cached state
+     · Marker: isGift: true, giftFor: <parentSku>, offerId
+     · Price: 0 (free)
+   
+   Returns a NEW cart array. Non-gift lines preserved verbatim.
+*/
+function reconcileGifts(cart, offers) {
+  if (!Array.isArray(cart) || !Array.isArray(offers)) return cart;
+  const now = Date.now();
+
+  /* Strip existing gift lines — we rebuild fresh */
+  const nonGift = cart.filter((line) => !line.isGift);
+
+  /* Index active offers by product SKU */
+  const activeOffers = new Map();
+  for (const offer of offers) {
+    if (!offer.is_active) continue;
+    if (new Date(offer.ends_at).getTime() <= now) continue;
+    activeOffers.set(offer.product_sku, offer);
+  }
+
+  /* Build new gift lines */
+  const gifts = [];
+  for (const line of nonGift) {
+    const offer = activeOffers.get(line.sku);
+    if (!offer) continue;
+    gifts.push({
+      sku:         `gift:${offer.id}`,     // unique key, prefixed
+      qty:         offer.multiply_by_qty ? line.qty : 1,
+      isGift:      true,
+      giftFor:     line.sku,
+      offerId:     offer.id,
+      offerTitle:  offer.title,
+      giftDescription: offer.gift_description,
+      giftImage:   offer.gift_image || null,
+    });
+  }
+
+  return [...nonGift, ...gifts];
+}
+
+/* ============================================================
+   PROVIDER
+   ============================================================ */
+
 export function StoreProvider({ children }) {
   const [theme, setTheme] = useState(DEFAULT_SITE_SETTINGS.theme);
   const [fontPair, setFontPair] = useState(DEFAULT_SITE_SETTINGS.font_pair);
@@ -59,6 +123,7 @@ export function StoreProvider({ children }) {
   const [account, setAccount] = useState(() => loadAccount());
   const [wishlist, setWishlist] = useState(() => getStoredWishlist());
   const [compare, setCompare] = useState(() => getStoredComparison());
+  const [productOffers, setProductOffers] = useState([]);
 
   useEffect(() => { document.documentElement.dataset.theme = theme; }, [theme]);
   useEffect(() => { document.documentElement.dataset.fontPair = fontPair; }, [fontPair]);
@@ -72,6 +137,24 @@ export function StoreProvider({ children }) {
       .then((s) => { setTheme(s.theme); setFontPair(s.font_pair); })
       .catch(() => {});
   }, []);
+
+  /* Load promotional offers on mount. If it fails, the storefront
+     still works — just without gift auto-add. Silent failure. */
+  useEffect(() => {
+    fetchAllOffers()
+      .then((res) => {
+        if (res.ok) setProductOffers(res.data || []);
+      })
+      .catch(() => {});
+  }, []);
+
+  /* Reconcile gifts whenever offers load or change.
+     Runs once on initial offer load, then any time offers change. */
+  useEffect(() => {
+    if (productOffers.length === 0) return;
+    setCart((c) => reconcileGifts(c, productOffers));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [productOffers]);
 
   useEffect(() => { saveCart(cart); }, [cart]);
   useEffect(() => { saveWishlist(wishlist); }, [wishlist]);
@@ -112,12 +195,16 @@ export function StoreProvider({ children }) {
   };
 
   /* ---------- cart ---------- */
+
+  /* Add a paid product to cart. Gift lines regenerate automatically
+     via reconcileGifts based on the updated non-gift items. */
   const addToCart = (sku, qty = 1) => {
     setCart((c) => {
-      const hit = c.find((i) => i.sku === sku);
-      return hit
-        ? c.map((i) => (i.sku === sku ? { ...i, qty: i.qty + qty } : i))
+      const hit = c.find((i) => i.sku === sku && !i.isGift);
+      const next = hit
+        ? c.map((i) => (i.sku === sku && !i.isGift ? { ...i, qty: i.qty + qty } : i))
         : [...c, { sku, qty }];
+      return reconcileGifts(next, productOffers);
     });
     setToast({ sku, qty, ts: Date.now() });
   };
@@ -133,11 +220,33 @@ export function StoreProvider({ children }) {
     if (callConfirm) window.location.href = `tel:${callConfirm.phone.replace(/\s/g, "")}`;
     setCallConfirm(null);
   };
+
+  /* Change qty of a paid product. Blocks direct qty changes on gifts
+     (they're computed). If qty <= 0, remove the product; the gift line
+     will be dropped by reconcileGifts. */
   const setQty = (sku, qty) =>
-    setCart((c) =>
-      qty <= 0 ? c.filter((i) => i.sku !== sku) : c.map((i) => (i.sku === sku ? { ...i, qty } : i))
-    );
-  const removeFromCart = (sku) => setCart((c) => c.filter((i) => i.sku !== sku));
+    setCart((c) => {
+      /* If someone tries to setQty on a gift, ignore — gifts are computed */
+      const targetLine = c.find((i) => i.sku === sku);
+      if (targetLine?.isGift) return c;
+
+      const next = qty <= 0
+        ? c.filter((i) => i.sku !== sku)
+        : c.map((i) => (i.sku === sku && !i.isGift ? { ...i, qty } : i));
+      return reconcileGifts(next, productOffers);
+    });
+
+  /* Remove a paid product. Reconciliation drops any gift attached to it. */
+  const removeFromCart = (sku) =>
+    setCart((c) => {
+      /* Ignore direct removal of gifts — they're computed from paid products */
+      const targetLine = c.find((i) => i.sku === sku);
+      if (targetLine?.isGift) return c;
+
+      const next = c.filter((i) => i.sku !== sku);
+      return reconcileGifts(next, productOffers);
+    });
+
   const clearCart = () => {
     setCart([]);
     clearStoredCart();
@@ -175,9 +284,16 @@ export function StoreProvider({ children }) {
   const clearComparison = () => setCompare([]);
   const compareCount = compare.length;
 
-  /* ---------- totals ---------- */
+  /* ---------- totals ----------
+     Gift lines are excluded from all pricing calculations (they're free).
+     Only paid product lines contribute to subtotal.
+  */
   const totals = useMemo(() => {
-    const subtotal = cart.reduce((s, i) => s + (snapshotBySku(i.sku)?.price ?? 0) * i.qty, 0);
+    const paidLines = cart.filter((i) => !i.isGift);
+    const subtotal = paidLines.reduce(
+      (s, i) => s + (snapshotBySku(i.sku)?.price ?? 0) * i.qty,
+      0
+    );
     const discount = coupon === SITE.welcomeCoupon.code
       ? Math.round((subtotal * SITE.welcomeCoupon.percent) / 100)
       : 0;
@@ -187,7 +303,10 @@ export function StoreProvider({ children }) {
     return { subtotal, discount, deliveryFee, installationFee, grand };
   }, [cart, coupon]);
 
-  const count = cart.reduce((s, i) => s + i.qty, 0);
+  /* Count — EXCLUDES gifts. Shows "2 items" not "2 items + 2 free gifts" */
+  const count = cart
+    .filter((i) => !i.isGift)
+    .reduce((s, i) => s + i.qty, 0);
 
   /* ---------- auth ---------- */
   const signIn = (incoming) => {
@@ -207,13 +326,31 @@ export function StoreProvider({ children }) {
     // Cart, wishlist and comparison stay — a guest can keep all three after sign-out.
   };
 
-  /* ---------- checkout / invisible-signup ---------- */
+  /* ---------- checkout / invisible-signup ----------
+     Order items INCLUDE gift lines with price 0 and a giftFor field, so:
+       · The order record captures which gifts belong to which purchase
+       · Warehouse can see what to physically include with the order
+       · Receipt template can render gifts as separate FREE lines
+  */
   const placeOrder = ({
     contact, address, payment, installation, paystackRef = null, paymentStatus = null,
     deliveryFee: deliveryFeeOverride = null,
   }) => {
     const id = generateOrderId();
     const items = cart.map((i) => {
+      if (i.isGift) {
+        return {
+          sku: i.sku,
+          qty: i.qty,
+          price: 0,
+          name: i.offerTitle || "Promotional gift",
+          image: i.giftImage || null,
+          isGift: true,
+          giftFor: i.giftFor,
+          giftDescription: i.giftDescription,
+          offerId: i.offerId,
+        };
+      }
       const p = snapshotBySku(i.sku);
       return {
         sku: i.sku,
@@ -322,6 +459,7 @@ export function StoreProvider({ children }) {
         account, signIn, signOut, placeOrder,
         wishlist, toggleWishlist, isInWishlist, wishlistCount,
         compare, toggleCompare, isInComparison, removeFromComparison, clearComparison, compareCount,
+        productOffers,
       }}
     >
       {children}

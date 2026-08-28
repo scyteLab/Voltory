@@ -9,6 +9,11 @@ import ProductCard from "../components/product/ProductCard.jsx";
 import FilterSidebar from "../components/category/FilterSidebar.jsx";
 import BuyingGuide from "../components/category/BuyingGuide.jsx";
 import BrandLogo from "../components/brand/BrandLogo.jsx";
+import {
+  fetchFilterableAttributesForCategory,
+  fetchProductAttributesForCategory,
+  buildProductAttributeMap,
+} from "../lib/productAttributesClient.js";
 
 const SORTS = [
   { id: "popular", label: "Popularity" },
@@ -21,13 +26,50 @@ const SORTS = [
 
 const PAGE_SIZE = 12;
 
+/**
+ * URL prefix for attribute filters:
+ *   ?attr_color=silver,black
+ *   ?attr_capacity=300-500       (number range: min-max)
+ *   ?attr_inverter=true          (boolean)
+ *
+ * Prefix keeps attribute filters cleanly separated from the
+ * hardcoded ones (brand, hp, price, etc.), avoids name collisions,
+ * and makes them obvious in the URL bar.
+ */
+const ATTR_PREFIX = "attr_";
+
 export default function Category() {
   const { id: categoryId } = useParams();
   const { products, brands, byCategory, byId } = useCatalog();
   const category = byId(categoryId);
   const [searchParams, setSearchParams] = useSearchParams();
 
+  /* ---- Attribute definitions + assigned values for this category ---- */
+  const [attributes, setAttributes] = useState([]);      // filterable attribute defs
+  const [productAttrMap, setProductAttrMap] = useState(new Map()); // sku → slug → value(s)
+  const [attrLoading, setAttrLoading] = useState(false);
+
+  useEffect(() => {
+    if (!categoryId) return;
+    let cancelled = false;
+    setAttrLoading(true);
+    (async () => {
+      const [attrsRes, pavRes] = await Promise.all([
+        fetchFilterableAttributesForCategory(categoryId),
+        fetchProductAttributesForCategory(categoryId),
+      ]);
+      if (cancelled) return;
+      setAttrLoading(false);
+      if (attrsRes.ok) setAttributes(attrsRes.data);
+      if (pavRes.ok)   setProductAttrMap(buildProductAttributeMap(pavRes.data));
+    })();
+    return () => { cancelled = true; };
+  }, [categoryId]);
+
+  /* ---- Filter state (hardcoded + attribute) ---- */
   const filters = useMemo(() => readFiltersFromUrl(searchParams), [searchParams]);
+  const attrFilters = useMemo(() => readAttrFiltersFromUrl(searchParams, attributes), [searchParams, attributes]);
+
   const sort = searchParams.get("sort") || "popular";
   const page = Math.max(1, parseInt(searchParams.get("page") || "1", 10));
   const [drawerOpen, setDrawerOpen] = useState(false);
@@ -41,16 +83,31 @@ export default function Category() {
   }, [category]);
 
   const baseProducts = byCategory(categoryId);
-  const filtered = applyFilters(baseProducts, filters);
+  const filtered = applyAllFilters(baseProducts, filters, attrFilters, attributes, productAttrMap);
   const sorted = applySort(filtered, sort);
   const totalPages = Math.max(1, Math.ceil(sorted.length / PAGE_SIZE));
   const currentPage = Math.min(page, totalPages);
   const pageItems = sorted.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
 
+  /* Compute attribute filter counts based on the CURRENT filtered set
+     (so counts update as user narrows). "Silver (12)" → "Silver (7)"
+     after another filter is added. */
+  const attributeCounts = useMemo(
+    () => computeAttributeCounts(filtered, attributes, productAttrMap),
+    [filtered, attributes, productAttrMap]
+  );
+
   function setFilters(updater) {
     const next = typeof updater === "function" ? updater(filters) : updater;
     const sp = new URLSearchParams(searchParams);
     writeFiltersToUrl(sp, next);
+    sp.delete("page");
+    setSearchParams(sp, { replace: false });
+  }
+
+  function setAttrFilter(slug, value) {
+    const sp = new URLSearchParams(searchParams);
+    writeAttrFilterToUrl(sp, slug, value);
     sp.delete("page");
     setSearchParams(sp, { replace: false });
   }
@@ -71,23 +128,16 @@ export default function Category() {
 
   function clearFilters() { setSearchParams({}); }
 
-  const activeChips = buildActiveChips(filters);
+  const activeChips = buildActiveChips(filters, attrFilters, attributes);
 
-  // Top deals — scoped to the CURRENT filter state, not the whole
-  // category. Otherwise a URL like ?brand=LG shows Scanfrost/Midea/
-  // Samsung deals up top, contradicting the filter chip and making
-  // the page look broken. When the filter narrows to something with
-  // no discounts, the entire section hides gracefully.
+  /* Top deals — scoped to CURRENT filter state (hardcoded + attribute),
+     same as before */
   const topDeals = filtered
     .filter((p) => p.was && p.was > p.price)
     .sort((a, b) => discountPct(b.price, b.was) - discountPct(a.price, a.was))
     .slice(0, 8);
 
-  // Brands in this category. Once the user has ALREADY picked a
-  // brand, the whole point of a "Shop by Brand" discovery strip is
-  // spent — we hide it. Same principle if any active filter has
-  // clearly narrowed intent (rating, price band): the discovery row
-  // stays useful even then, so we only hide it for brand filters.
+  /* Brands strip — hides once brand filter is active, same as before */
   const brandFilterActive = filters.brand && filters.brand.length > 0;
   const categoryBrands = useMemo(() => {
     if (brandFilterActive) return [];
@@ -95,13 +145,8 @@ export default function Category() {
     return names.map((n) => brands.find((b) => b.name === n)).filter(Boolean);
   }, [baseProducts, brands, brandFilterActive]);
 
-  // Every hook above must run on every render (Rules of Hooks) — the
-  // "category not found" bail-out has to come after all of them, not
-  // before. It also has to come before this point, since everything
-  // below dereferences `category` directly.
   if (!category) return <CategoryNotFound id={categoryId} />;
 
-  // Sub-categories from megamenu
   const subCats = category.megamenu?.find((g) => g.heading === "By Type")?.items || [];
 
   return (
@@ -191,7 +236,6 @@ export default function Category() {
       <div className="cbody">
         {/* sidebar */}
         <div className={"cfilter__shell" + (drawerOpen ? " cfilter__shell--open" : "")}>
-          {/* Sub-categories */}
           {subCats.length > 0 && (
             <div className="csub">
               <h3>CATEGORY</h3>
@@ -201,9 +245,7 @@ export default function Category() {
                   <li key={s}>
                     <button
                       className="csub__link"
-                      onClick={() => {
-                        /* sub-cat filtering could scope further — for now it's visual */
-                      }}
+                      onClick={() => { /* sub-cat filtering visual-only for now */ }}
                     >
                       {s}
                     </button>
@@ -219,18 +261,21 @@ export default function Category() {
             setFilters={setFilters}
             onClear={clearFilters}
             onClose={drawerOpen ? () => setDrawerOpen(false) : null}
+            /* Session 3 additions */
+            attributes={attributes}
+            attrFilters={attrFilters}
+            setAttrFilter={setAttrFilter}
+            attributeCounts={attributeCounts}
           />
         </div>
         {drawerOpen && <div className="cfilter__backdrop" onClick={() => setDrawerOpen(false)} />}
 
         <section className="cmain">
-          {/* heading + count */}
           <div className="cmain__heading">
             <h2>{category.label} in Nigeria</h2>
             <span className="cmain__found">({baseProducts.length} products found)</span>
           </div>
 
-          {/* sort + count + active chips */}
           <div className="ctoolbar">
             <p className="ctoolbar__count">
               <b>{sorted.length}</b> product{sorted.length === 1 ? "" : "s"}
@@ -299,7 +344,9 @@ export default function Category() {
   );
 }
 
-/* ---------------- URL ↔ filter state ---------------- */
+/* ============================================================
+   URL ↔ filter state (HARDCODED filters, unchanged from before)
+   ============================================================ */
 function readFiltersFromUrl(sp) {
   const list = (k) => (sp.get(k) ? sp.get(k).split(",") : []);
   const num = (k) => (sp.get(k) ? Number(sp.get(k)) : "");
@@ -310,7 +357,7 @@ function readFiltersFromUrl(sp) {
     litres: list("litres"),
     doors: list("doors").map((d) => Number(d)),
     availability: list("availability"),
-    rating: num("rating"), // minimum stars, integer 1-5
+    rating: num("rating"),
     priceMin: num("priceMin"),
     priceMax: num("priceMax"),
   };
@@ -332,8 +379,85 @@ function writeFiltersToUrl(sp, f) {
   if (f.priceMax) sp.set("priceMax", String(f.priceMax)); else sp.delete("priceMax");
 }
 
-function applyFilters(products, f) {
+/* ============================================================
+   URL ↔ filter state (ATTRIBUTE filters, new in Session 3)
+   ============================================================ */
+
+/**
+ * Parse attribute filters out of the URL search params.
+ * Shape returned depends on attribute type:
+ *   select/multi_select/color → array of value strings
+ *   number                    → { min, max }  (either can be null)
+ *   boolean                   → true | false | null
+ *
+ * Requires the attribute definitions to know how to parse each
+ * value — we can't tell "300-500" is a number range vs a
+ * literal string without type info.
+ */
+function readAttrFiltersFromUrl(sp, attributes) {
+  const out = {};
+  for (const attr of attributes || []) {
+    const raw = sp.get(ATTR_PREFIX + attr.slug);
+    if (!raw) continue;
+
+    if (attr.type === "number") {
+      const [minStr, maxStr] = raw.split("-");
+      const min = minStr ? Number(minStr) : null;
+      const max = maxStr ? Number(maxStr) : null;
+      if (Number.isFinite(min) || Number.isFinite(max)) {
+        out[attr.slug] = {
+          min: Number.isFinite(min) ? min : null,
+          max: Number.isFinite(max) ? max : null,
+        };
+      }
+    } else if (attr.type === "boolean") {
+      if (raw === "true")  out[attr.slug] = true;
+      if (raw === "false") out[attr.slug] = false;
+    } else {
+      /* select, multi_select, color — comma-separated values */
+      out[attr.slug] = raw.split(",").filter(Boolean);
+    }
+  }
+  return out;
+}
+
+function writeAttrFilterToUrl(sp, slug, value) {
+  const key = ATTR_PREFIX + slug;
+
+  if (value == null) {
+    sp.delete(key);
+    return;
+  }
+  if (Array.isArray(value)) {
+    if (value.length === 0) sp.delete(key);
+    else sp.set(key, value.join(","));
+    return;
+  }
+  if (typeof value === "object") {
+    /* number range */
+    const min = value.min ?? "";
+    const max = value.max ?? "";
+    if (min === "" && max === "") sp.delete(key);
+    else sp.set(key, `${min}-${max}`);
+    return;
+  }
+  if (typeof value === "boolean") {
+    sp.set(key, String(value));
+    return;
+  }
+  /* string fallback */
+  sp.set(key, String(value));
+}
+
+/* ============================================================
+   FILTER APPLICATION
+   ============================================================ */
+
+function applyAllFilters(products, f, attrF, attributes, productAttrMap) {
+  const attrBySlug = new Map((attributes || []).map((a) => [a.slug, a]));
+
   return products.filter((p) => {
+    /* ---- Hardcoded filters (unchanged) ---- */
     if (f.brand.length && !f.brand.includes(p.brand)) return false;
     if (f.hp.length && (p.hp == null || !f.hp.includes(String(p.hp)))) return false;
     if (f.inverter.length) {
@@ -351,14 +475,57 @@ function applyFilters(products, f) {
       const flag = p.stock > 0 ? "In Stock" : "Out of Stock";
       if (!f.availability.includes(flag)) return false;
     }
-    // Minimum rating filter — excludes products with fewer stars OR no reviews.
-    // A "4 stars & up" filter should show 4.x-star products but hide 3.5-stars and unreviewed ones.
     if (f.rating) {
       const stars = Number(p.rating) || 0;
       if (stars < f.rating) return false;
     }
     if (f.priceMin !== "" && p.price < f.priceMin) return false;
     if (f.priceMax !== "" && p.price > f.priceMax) return false;
+
+    /* ---- Attribute filters (Session 3) ---- */
+    const productAttrs = productAttrMap.get(p.sku);
+    for (const [slug, filterValue] of Object.entries(attrF)) {
+      const attr = attrBySlug.get(slug);
+      if (!attr) continue;
+
+      const productValue = productAttrs?.get(slug);
+
+      /* If product has no value for this attribute, it fails any
+         non-empty filter for it. */
+      if (productValue == null) return false;
+
+      switch (attr.type) {
+        case "select":
+        case "color": {
+          /* Product has one value; filter is a list — must include */
+          if (!Array.isArray(filterValue) || filterValue.length === 0) break;
+          if (!filterValue.includes(productValue)) return false;
+          break;
+        }
+        case "multi_select": {
+          /* Product has an array; filter is a list — must intersect */
+          if (!Array.isArray(filterValue) || filterValue.length === 0) break;
+          if (!Array.isArray(productValue)) return false;
+          const matches = productValue.some((v) => filterValue.includes(v));
+          if (!matches) return false;
+          break;
+        }
+        case "number": {
+          const n = Number(productValue);
+          if (!Number.isFinite(n)) return false;
+          if (filterValue.min != null && n < filterValue.min) return false;
+          if (filterValue.max != null && n > filterValue.max) return false;
+          break;
+        }
+        case "boolean": {
+          if (filterValue !== productValue) return false;
+          break;
+        }
+        default:
+          break;
+      }
+    }
+
     return true;
   });
 }
@@ -381,8 +548,68 @@ function applySort(items, sort) {
   return arr;
 }
 
-function buildActiveChips(f) {
+/* ============================================================
+   ATTRIBUTE COUNTS (per filter option, based on current filter set)
+   ============================================================
+   Returns shape:
+     {
+       [slug]: {
+         [value]: count,          // for select/multi_select/color
+         min: N, max: N,          // for number attributes
+         true: N, false: N,       // for boolean attributes
+       }
+     }
+*/
+function computeAttributeCounts(filteredProducts, attributes, productAttrMap) {
+  const counts = {};
+  for (const attr of attributes || []) counts[attr.slug] = {};
+
+  for (const p of filteredProducts) {
+    const productAttrs = productAttrMap.get(p.sku);
+    if (!productAttrs) continue;
+
+    for (const attr of attributes) {
+      const val = productAttrs.get(attr.slug);
+      if (val == null) continue;
+      const bucket = counts[attr.slug];
+
+      switch (attr.type) {
+        case "select":
+        case "color":
+          bucket[val] = (bucket[val] || 0) + 1;
+          break;
+        case "multi_select":
+          if (Array.isArray(val)) {
+            for (const v of val) bucket[v] = (bucket[v] || 0) + 1;
+          }
+          break;
+        case "number": {
+          const n = Number(val);
+          if (!Number.isFinite(n)) break;
+          if (bucket.min == null || n < bucket.min) bucket.min = n;
+          if (bucket.max == null || n > bucket.max) bucket.max = n;
+          break;
+        }
+        case "boolean":
+          if (val === true)  bucket.true  = (bucket.true  || 0) + 1;
+          if (val === false) bucket.false = (bucket.false || 0) + 1;
+          break;
+        default:
+          break;
+      }
+    }
+  }
+
+  return counts;
+}
+
+/* ============================================================
+   ACTIVE FILTER CHIPS
+   ============================================================ */
+function buildActiveChips(f, attrF, attributes) {
   const chips = [];
+
+  /* Hardcoded chips (unchanged) */
   for (const v of f.brand) chips.push({ key: `brand:${v}`, type: "brand", value: v, label: v });
   for (const v of f.hp) chips.push({ key: `hp:${v}`, type: "hp", value: v, label: `${v} HP` });
   for (const v of f.inverter) chips.push({ key: `inverter:${v}`, type: "inverter", value: v, label: v });
@@ -397,11 +624,66 @@ function buildActiveChips(f) {
     const b = f.priceMax !== "" ? `₦${f.priceMax.toLocaleString()}` : "Any";
     chips.push({ key: "price", type: "price", value: null, label: `Price: ${a} – ${b}` });
   }
+
+  /* Attribute chips (Session 3) */
+  const attrBySlug = new Map((attributes || []).map((a) => [a.slug, a]));
+  for (const [slug, value] of Object.entries(attrF)) {
+    const attr = attrBySlug.get(slug);
+    if (!attr) continue;
+
+    if (Array.isArray(value)) {
+      for (const v of value) {
+        const av = (attr.allowed_values || []).find((x) => x.value === v);
+        chips.push({
+          key: `attr:${slug}:${v}`,
+          type: `attr:${slug}`,
+          value: v,
+          label: `${attr.name}: ${av?.label || v}`,
+        });
+      }
+    } else if (typeof value === "object" && value != null) {
+      const min = value.min != null ? value.min : "";
+      const max = value.max != null ? value.max : "";
+      if (min === "" && max === "") continue;
+      const unit = attr.unit ? ` ${attr.unit}` : "";
+      const label = `${attr.name}: ${min || "Any"}${unit} – ${max || "Any"}${unit}`;
+      chips.push({ key: `attr:${slug}`, type: `attr:${slug}`, value: null, label });
+    } else if (typeof value === "boolean") {
+      chips.push({
+        key: `attr:${slug}`,
+        type: `attr:${slug}`,
+        value: null,
+        label: `${attr.name}: ${value ? "Yes" : "No"}`,
+      });
+    }
+  }
+
   return chips;
 }
 
 function clearOne(searchParams, setSearchParams, chip) {
   const sp = new URLSearchParams(searchParams);
+
+  /* Attribute chip — type starts with "attr:" */
+  if (chip.type.startsWith("attr:")) {
+    const slug = chip.type.slice(5);
+    const key = ATTR_PREFIX + slug;
+    if (chip.value == null) {
+      /* Whole-attribute clear (number range, boolean) */
+      sp.delete(key);
+    } else {
+      /* Single value from multi-value attribute */
+      const list = (sp.get(key) || "").split(",").filter(Boolean);
+      const remaining = list.filter((v) => v !== String(chip.value));
+      if (remaining.length) sp.set(key, remaining.join(","));
+      else sp.delete(key);
+    }
+    sp.delete("page");
+    setSearchParams(sp);
+    return;
+  }
+
+  /* Hardcoded chip clearing (unchanged) */
   if (chip.type === "price") {
     sp.delete("priceMin");
     sp.delete("priceMax");

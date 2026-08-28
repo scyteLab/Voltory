@@ -1,0 +1,731 @@
+/* ============================================================
+   PROMOTIONAL OFFERS \u2014 Admin styling
+   
+   Class prefixes:
+     .adm-offers-*   \u2014 list page grid and cards
+     .adm-form-*     \u2014 shared form elements (also used by other admin pages)
+     .adm-modal-*    \u2014 confirmation modals
+     .adm-filter-*   \u2014 filter bar (search + status select)
+   
+   Consumers:
+     AdminOffers.jsx      \u2014 list page (grid, cards, filter bar, modal)
+     AdminOfferEdit.jsx   \u2014 form (fields, picker, upload, modal)
+   ============================================================ */
+
+
+/* ---- Offers list grid ---- */
+
+.adm-offers-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 16px;
+  margin-top: 20px;
+}
+
+
+/* ---- Offer card ---- */
+
+.adm-offers-card {
+  display: flex;
+  flex-direction: column;
+  background: var(--adm-surface, #fff);
+  border: 1px solid var(--adm-border, #e4e6ea);
+  border-radius: 10px;
+  overflow: hidden;
+  transition: box-shadow 0.15s ease;
+}
+
+.adm-offers-card:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+}
+
+.adm-offers-card--dim {
+  opacity: 0.7;
+}
+
+
+/* Product header inside card */
+
+.adm-offers-card__product {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px;
+  background: var(--adm-surface-alt, #f7f8fa);
+  border-bottom: 1px solid var(--adm-border, #e4e6ea);
+}
+
+.adm-offers-card__product img {
+  width: 44px;
+  height: 44px;
+  object-fit: contain;
+  background: #fff;
+  border-radius: 6px;
+  border: 1px solid var(--adm-border, #e4e6ea);
+}
+
+.adm-offers-card__product-noimg {
+  width: 44px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #fff;
+  border-radius: 6px;
+  border: 1px dashed var(--adm-border, #e4e6ea);
+  color: var(--adm-muted, #8a8f98);
+  font-size: 10px;
+  text-align: center;
+}
+
+.adm-offers-card__product-info {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  flex: 1;
+}
+
+.adm-offers-card__product-info b {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--adm-text, #1a1d20);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.adm-offers-card__product-info small {
+  font-size: 11px;
+  color: var(--adm-muted, #8a8f98);
+}
+
+
+/* Card body */
+
+.adm-offers-card__body {
+  padding: 14px 12px;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.adm-offers-card__title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--adm-text, #1a1d20);
+  margin: 0;
+  line-height: 1.3;
+}
+
+.adm-offers-card__gift {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  padding: 8px 10px;
+  background: var(--adm-accent-soft, #fff8ec);
+  border: 1px solid var(--adm-accent-border, #ffe8b8);
+  border-radius: 6px;
+  font-size: 12px;
+  color: var(--adm-text, #1a1d20);
+  line-height: 1.4;
+}
+
+.adm-offers-card__gift svg {
+  flex-shrink: 0;
+  color: var(--adm-accent, #d4941f);
+  margin-top: 1px;
+}
+
+.adm-offers-card__gift-img {
+  width: 100%;
+  max-height: 100px;
+  object-fit: contain;
+  background: var(--adm-surface-alt, #f7f8fa);
+  border-radius: 6px;
+  border: 1px solid var(--adm-border, #e4e6ea);
+}
+
+.adm-offers-card__meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.adm-offers-card__badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  background: var(--adm-info-soft, #eef4ff);
+  color: var(--adm-info, #2b5fd9);
+  border-radius: 999px;
+}
+
+.adm-offers-card__status {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  border-radius: 999px;
+}
+
+.adm-offers-card__status--active {
+  background: var(--adm-success-soft, #e8f5ea);
+  color: var(--adm-success, #157a3c);
+}
+
+.adm-offers-card__status--paused {
+  background: var(--adm-warn-soft, #fef3d5);
+  color: var(--adm-warn, #a66900);
+}
+
+.adm-offers-card__status--expired {
+  background: var(--adm-muted-soft, #eef0f2);
+  color: var(--adm-muted, #6a6f78);
+}
+
+.adm-offers-card__timer {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  color: var(--adm-muted, #8a8f98);
+  margin-top: auto;
+}
+
+
+/* Card actions */
+
+.adm-offers-card__actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 12px;
+  background: var(--adm-surface-alt, #f7f8fa);
+  border-top: 1px solid var(--adm-border, #e4e6ea);
+}
+
+.adm-offers-card__actions > *:first-child {
+  flex: 1;
+}
+
+
+/* ---- Filter bar ---- */
+
+.adm-filter-bar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 20px 0 0;
+  padding: 12px;
+  background: var(--adm-surface, #fff);
+  border: 1px solid var(--adm-border, #e4e6ea);
+  border-radius: 8px;
+}
+
+.adm-filter-bar__search {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 10px;
+  background: var(--adm-surface-alt, #f7f8fa);
+  border: 1px solid var(--adm-border, #e4e6ea);
+  border-radius: 6px;
+}
+
+.adm-filter-bar__search svg {
+  color: var(--adm-muted, #8a8f98);
+  flex-shrink: 0;
+}
+
+.adm-filter-bar__search input {
+  flex: 1;
+  padding: 8px 0;
+  background: transparent;
+  border: 0;
+  outline: 0;
+  font-size: 13px;
+  color: var(--adm-text, #1a1d20);
+}
+
+.adm-filter-bar__filters select {
+  padding: 8px 10px;
+  background: var(--adm-surface, #fff);
+  border: 1px solid var(--adm-border, #e4e6ea);
+  border-radius: 6px;
+  font-size: 13px;
+  color: var(--adm-text, #1a1d20);
+  cursor: pointer;
+}
+
+
+/* ---- Page head actions row ---- */
+
+.adm-page__head-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+
+/* ---- Back link ---- */
+
+.adm-back-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  color: var(--adm-muted, #8a8f98);
+  text-decoration: none;
+  margin-bottom: 6px;
+}
+
+.adm-back-link:hover {
+  color: var(--adm-primary, #2b5fd9);
+}
+
+
+/* ---- Form (shared) ---- */
+
+.adm-form--wide {
+  max-width: 720px;
+}
+
+.adm-form-section {
+  margin-top: 24px;
+  padding: 20px;
+  background: var(--adm-surface, #fff);
+  border: 1px solid var(--adm-border, #e4e6ea);
+  border-radius: 8px;
+}
+
+.adm-form-section h2 {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--adm-text, #1a1d20);
+  margin: 0 0 16px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--adm-border, #e4e6ea);
+}
+
+.adm-form-field {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  margin-bottom: 16px;
+}
+
+.adm-form-field > span {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--adm-text, #1a1d20);
+}
+
+.adm-form-field input,
+.adm-form-field textarea {
+  padding: 8px 10px;
+  background: var(--adm-surface, #fff);
+  border: 1px solid var(--adm-border, #e4e6ea);
+  border-radius: 6px;
+  font-size: 13px;
+  color: var(--adm-text, #1a1d20);
+  font-family: inherit;
+}
+
+.adm-form-field input:focus,
+.adm-form-field textarea:focus {
+  outline: 2px solid var(--adm-primary, #2b5fd9);
+  outline-offset: -1px;
+}
+
+.adm-form-field input:disabled,
+.adm-form-field textarea:disabled {
+  background: var(--adm-surface-alt, #f7f8fa);
+  color: var(--adm-muted, #8a8f98);
+  cursor: not-allowed;
+}
+
+.adm-form-hint {
+  font-size: 11px;
+  color: var(--adm-muted, #8a8f98);
+  margin-top: 3px;
+}
+
+.adm-form-readonly {
+  padding: 12px;
+  background: var(--adm-surface-alt, #f7f8fa);
+  border: 1px solid var(--adm-border, #e4e6ea);
+  border-radius: 6px;
+}
+
+.adm-form-readonly b {
+  display: block;
+  font-size: 13px;
+  color: var(--adm-text, #1a1d20);
+}
+
+.adm-form-readonly small {
+  display: block;
+  font-size: 11px;
+  color: var(--adm-muted, #8a8f98);
+  margin-top: 2px;
+}
+
+
+/* Product picker */
+
+.adm-form-search {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 10px;
+  background: var(--adm-surface-alt, #f7f8fa);
+  border: 1px solid var(--adm-border, #e4e6ea);
+  border-radius: 6px;
+  margin-bottom: 10px;
+}
+
+.adm-form-search svg { color: var(--adm-muted, #8a8f98); flex-shrink: 0; }
+
+.adm-form-search input {
+  flex: 1;
+  padding: 8px 0;
+  background: transparent;
+  border: 0;
+  outline: 0;
+  font-size: 13px;
+}
+
+.adm-form-picker {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  max-height: 320px;
+  overflow-y: auto;
+  padding: 4px;
+  background: var(--adm-surface-alt, #f7f8fa);
+  border-radius: 6px;
+}
+
+.adm-form-picker__empty {
+  padding: 20px;
+  text-align: center;
+  font-size: 12px;
+  color: var(--adm-muted, #8a8f98);
+}
+
+.adm-form-picker__item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  background: var(--adm-surface, #fff);
+  border: 1px solid transparent;
+  border-radius: 6px;
+  cursor: pointer;
+  text-align: left;
+  width: 100%;
+  font-family: inherit;
+}
+
+.adm-form-picker__item:hover {
+  border-color: var(--adm-border, #e4e6ea);
+}
+
+.adm-form-picker__item--selected {
+  border-color: var(--adm-primary, #2b5fd9);
+  background: var(--adm-info-soft, #eef4ff);
+}
+
+.adm-form-picker__item img {
+  width: 32px;
+  height: 32px;
+  object-fit: contain;
+  background: var(--adm-surface-alt, #f7f8fa);
+  border-radius: 4px;
+  flex-shrink: 0;
+}
+
+.adm-form-picker__noimg {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--adm-surface-alt, #f7f8fa);
+  border-radius: 4px;
+  color: var(--adm-muted, #8a8f98);
+  flex-shrink: 0;
+}
+
+.adm-form-picker__item > div {
+  flex: 1;
+  min-width: 0;
+}
+
+.adm-form-picker__item > div b {
+  display: block;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--adm-text, #1a1d20);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.adm-form-picker__item > div small {
+  font-size: 10px;
+  color: var(--adm-muted, #8a8f98);
+}
+
+.adm-form-picker__check {
+  color: var(--adm-primary, #2b5fd9);
+  flex-shrink: 0;
+}
+
+
+/* Image upload */
+
+.adm-form-upload {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 24px;
+  background: var(--adm-surface-alt, #f7f8fa);
+  border: 2px dashed var(--adm-border, #e4e6ea);
+  border-radius: 6px;
+  font-size: 13px;
+  color: var(--adm-muted, #6a6f78);
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+}
+
+.adm-form-upload:hover {
+  border-color: var(--adm-primary, #2b5fd9);
+  background: var(--adm-info-soft, #eef4ff);
+}
+
+.adm-form-upload input[type="file"] {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.adm-form-upload--busy {
+  cursor: wait;
+  opacity: 0.7;
+}
+
+.adm-form-image-preview {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 10px;
+  background: var(--adm-surface-alt, #f7f8fa);
+  border: 1px solid var(--adm-border, #e4e6ea);
+  border-radius: 6px;
+}
+
+.adm-form-image-preview img {
+  max-width: 140px;
+  max-height: 100px;
+  object-fit: contain;
+  background: #fff;
+  border-radius: 4px;
+}
+
+
+/* Toggle */
+
+.adm-form-toggle {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 12px;
+  background: var(--adm-surface-alt, #f7f8fa);
+  border-radius: 6px;
+  margin-bottom: 10px;
+  cursor: pointer;
+}
+
+.adm-form-toggle input[type="checkbox"] {
+  margin-top: 2px;
+  flex-shrink: 0;
+  cursor: pointer;
+}
+
+.adm-form-toggle > div b {
+  display: block;
+  font-size: 13px;
+  color: var(--adm-text, #1a1d20);
+}
+
+.adm-form-toggle > div small {
+  display: block;
+  font-size: 11px;
+  color: var(--adm-muted, #8a8f98);
+  margin-top: 2px;
+}
+
+
+/* Form error + actions */
+
+.adm-form-error {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  background: var(--adm-danger-soft, #fdeaea);
+  border: 1px solid var(--adm-danger-border, #f5c5c5);
+  border-radius: 6px;
+  color: var(--adm-danger, #b81919);
+  font-size: 12px;
+  margin-top: 16px;
+}
+
+.adm-form-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 24px;
+  padding-top: 16px;
+  border-top: 1px solid var(--adm-border, #e4e6ea);
+}
+
+
+/* ---- List empty state ---- */
+
+.adm-list-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 60px 20px;
+  text-align: center;
+  color: var(--adm-muted, #8a8f98);
+  background: var(--adm-surface, #fff);
+  border: 1px solid var(--adm-border, #e4e6ea);
+  border-radius: 8px;
+  margin-top: 20px;
+}
+
+.adm-list-empty svg {
+  color: var(--adm-muted, #b5b9be);
+}
+
+.adm-list-empty b {
+  font-size: 14px;
+  color: var(--adm-text, #1a1d20);
+  margin-top: 6px;
+}
+
+.adm-list-empty p {
+  font-size: 12px;
+  color: var(--adm-muted, #8a8f98);
+  max-width: 360px;
+  margin: 0;
+}
+
+
+/* ---- Modal (backdrop + centered card) ---- */
+
+.adm-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 20px;
+}
+
+.adm-modal {
+  background: var(--adm-surface, #fff);
+  border-radius: 10px;
+  max-width: 480px;
+  width: 100%;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+  overflow: hidden;
+}
+
+.adm-modal__head {
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--adm-border, #e4e6ea);
+}
+
+.adm-modal__head h3 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--adm-text, #1a1d20);
+  margin: 0;
+}
+
+.adm-modal__body {
+  padding: 20px;
+  font-size: 13px;
+  color: var(--adm-text, #1a1d20);
+  line-height: 1.5;
+}
+
+.adm-modal__body p { margin: 0 0 10px; }
+.adm-modal__body p:last-child { margin-bottom: 0; }
+
+.adm-modal__foot {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  padding: 12px 20px;
+  background: var(--adm-surface-alt, #f7f8fa);
+  border-top: 1px solid var(--adm-border, #e4e6ea);
+}
+
+
+/* ---- Spinner ---- */
+
+.adm-spinner {
+  animation: adm-spin 1s linear infinite;
+}
+
+@keyframes adm-spin {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+
+
+/* ---- Responsive ---- */
+
+@media (max-width: 640px) {
+  .adm-offers-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .adm-filter-bar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .adm-form-section {
+    padding: 14px;
+  }
+}

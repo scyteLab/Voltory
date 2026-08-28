@@ -7,8 +7,14 @@ import { naira } from "../../utils/format.js";
  * only the filter groups that apply. State lives in the parent
  * Category page; this component is pure UI.
  *
- * Adding a new filter type = add a renderer in RENDERERS below
- * and reference its key in a category's filterConfig.
+ * Adding a new HARDCODED filter type = add a renderer in RENDERERS
+ * below and reference its key in a category's filterConfig.
+ *
+ * Session 3: also renders DYNAMIC attribute filters below the
+ * hardcoded ones. Attributes come from the parent via the new
+ * `attributes` prop (fetched with values already assigned) and
+ * their filter state comes via `attrFilters` / `setAttrFilter`.
+ * See Category.jsx for how these are wired.
  */
 export default function FilterSidebar({
   category,
@@ -16,12 +22,17 @@ export default function FilterSidebar({
   filters,
   setFilters,
   onClear,
-  onClose, // mobile drawer dismiss
+  onClose,
+  /* Session 3 additions — all optional so this component still
+     works without attribute wiring */
+  attributes = [],           // [{ id, slug, name, type, unit, allowed_values }]
+  attrFilters = {},          // { [slug]: value | [values] | { min, max } }
+  setAttrFilter,             // (slug, value) => void
+  attributeCounts = {},      // { [slug]: { [value]: count } | { min, max } }
 }) {
   const config = category?.filterConfig ?? ["brand", "rating", "price", "availability"];
   const counts = useFacetCounts(products);
 
-  // Set / unset individual filter values
   const toggleArray = (key, value) =>
     setFilters((f) => {
       const set = new Set(f[key] || []);
@@ -32,7 +43,7 @@ export default function FilterSidebar({
   const setValue = (key, value) =>
     setFilters((f) => ({ ...f, [key]: value }));
 
-  const hasActive =
+  const hardcodedActive =
     (filters.brand?.length || 0) +
     (filters.hp?.length || 0) +
     (filters.inverter?.length || 0) +
@@ -40,8 +51,31 @@ export default function FilterSidebar({
     (filters.doors?.length || 0) +
     (filters.availability?.length || 0) +
     (filters.rating ? 1 : 0) +
-    (filters.priceMin || filters.priceMax ? 1 : 0) >
-    0;
+    (filters.priceMin || filters.priceMax ? 1 : 0);
+
+  const attrActive = Object.values(attrFilters).filter((v) => {
+    if (v == null) return false;
+    if (Array.isArray(v)) return v.length > 0;
+    if (typeof v === "object") return v.min != null || v.max != null;
+    return String(v).length > 0;
+  }).length;
+
+  const hasActive = hardcodedActive + attrActive > 0;
+
+  /* Only render attribute filters that have at least one product
+     with a value — otherwise the filter is dead weight. */
+  const usefulAttributes = attributes.filter((attr) => {
+    const c = attributeCounts[attr.slug];
+    if (!c) return false;
+    if (attr.type === "number") {
+      return c.min != null && c.max != null;
+    }
+    if (attr.type === "boolean") {
+      return (c.true || 0) + (c.false || 0) > 0;
+    }
+    /* select, multi_select, color, text: at least one non-empty bucket */
+    return Object.values(c).some((n) => (typeof n === "number" ? n > 0 : false));
+  });
 
   return (
     <aside className="cfilter" aria-label="Filters">
@@ -57,16 +91,261 @@ export default function FilterSidebar({
         )}
       </div>
 
+      {/* Hardcoded filters (config-driven) */}
       {config.map((key) => {
         const R = RENDERERS[key];
         if (!R) return null;
         return <R key={key} counts={counts} filters={filters} toggleArray={toggleArray} setValue={setValue} />;
       })}
+
+      {/* Dynamic attribute filters (Session 3) */}
+      {usefulAttributes.map((attr) => (
+        <AttributeFilter
+          key={attr.id}
+          attribute={attr}
+          value={attrFilters[attr.slug]}
+          counts={attributeCounts[attr.slug] || {}}
+          onChange={(v) => setAttrFilter && setAttrFilter(attr.slug, v)}
+        />
+      ))}
     </aside>
   );
 }
 
-/* ---------- count facets from the *unfiltered* category list ---------- */
+/* ============================================================
+   ATTRIBUTE FILTER — dispatches on attribute type
+   ============================================================ */
+
+function AttributeFilter({ attribute, value, counts, onChange }) {
+  const { type, name, unit, allowed_values = [] } = attribute;
+
+  switch (type) {
+    case "select":
+    case "multi_select":
+      return (
+        <SelectAttrFilter
+          title={name}
+          allowedValues={allowed_values}
+          counts={counts}
+          value={value}
+          onChange={onChange}
+          multi={type === "multi_select"}
+        />
+      );
+    case "color":
+      return (
+        <ColorAttrFilter
+          title={name}
+          allowedValues={allowed_values}
+          counts={counts}
+          value={value}
+          onChange={onChange}
+        />
+      );
+    case "number":
+      return (
+        <NumberAttrFilter
+          title={name}
+          unit={unit}
+          counts={counts}
+          value={value || {}}
+          onChange={onChange}
+        />
+      );
+    case "boolean":
+      return (
+        <BooleanAttrFilter
+          title={name}
+          counts={counts}
+          value={value}
+          onChange={onChange}
+        />
+      );
+    case "text":
+    default:
+      return null; /* Text attributes aren't filterable in Session 3 */
+  }
+}
+
+/* Select / multi_select — checkbox list */
+function SelectAttrFilter({ title, allowedValues, counts, value, onChange, multi }) {
+  const active = Array.isArray(value) ? value : (value ? [value] : []);
+
+  const toggle = (v) => {
+    if (multi) {
+      const set = new Set(active);
+      set.has(v) ? set.delete(v) : set.add(v);
+      onChange(Array.from(set));
+    } else {
+      /* single select: clicking selected value clears it */
+      onChange(active.includes(v) ? [] : [v]);
+    }
+  };
+
+  const rows = allowedValues
+    .map((av) => [av.value, av.label, counts[av.value] || 0])
+    .filter(([, , c]) => c > 0);
+
+  if (rows.length === 0) return null;
+
+  return (
+    <div className="cfilter__group">
+      <h4>{title}</h4>
+      <ul>
+        {rows.map(([val, label, count]) => {
+          const id = `attr-${title}-${val}`;
+          return (
+            <li key={val}>
+              <input
+                id={id}
+                type="checkbox"
+                checked={active.includes(val)}
+                onChange={() => toggle(val)}
+              />
+              <label htmlFor={id}>
+                {label}
+                <em>({count})</em>
+              </label>
+            </li>
+          );
+        })}
+      </ul>
+    </div>
+  );
+}
+
+/* Color — swatch chips (single select) */
+function ColorAttrFilter({ title, allowedValues, counts, value, onChange }) {
+  const active = Array.isArray(value) ? value : (value ? [value] : []);
+
+  const toggle = (v) => {
+    const set = new Set(active);
+    set.has(v) ? set.delete(v) : set.add(v);
+    onChange(Array.from(set));
+  };
+
+  const rows = allowedValues
+    .map((av) => ({ ...av, count: counts[av.value] || 0 }))
+    .filter((av) => av.count > 0);
+
+  if (rows.length === 0) return null;
+
+  return (
+    <div className="cfilter__group">
+      <h4>{title}</h4>
+      <ul className="cfilter__swatches">
+        {rows.map((av) => {
+          const on = active.includes(av.value);
+          return (
+            <li key={av.value}>
+              <button
+                type="button"
+                className={"cfilter__swatch" + (on ? " cfilter__swatch--on" : "")}
+                onClick={() => toggle(av.value)}
+                title={`${av.label} (${av.count})`}
+                aria-pressed={on}
+                aria-label={`${av.label}, ${av.count} product${av.count === 1 ? "" : "s"}`}
+              >
+                <span
+                  className="cfilter__swatch-color"
+                  style={{ background: av.hex_color || "#e5e7eb" }}
+                />
+                <span className="cfilter__swatch-lbl">{av.label}</span>
+                <em>({av.count})</em>
+              </button>
+            </li>
+          );
+        })}
+      </ul>
+    </div>
+  );
+}
+
+/* Number — min/max range with dynamic bounds */
+function NumberAttrFilter({ title, unit, counts, value, onChange }) {
+  const min = counts.min;
+  const max = counts.max;
+  if (min == null || max == null) return null;
+
+  const hint = unit
+    ? `Range: ${min}${unit} – ${max}${unit}`
+    : `Range: ${min} – ${max}`;
+
+  return (
+    <div className="cfilter__group">
+      <h4>{title}{unit ? ` (${unit})` : ""}</h4>
+      <div className="cfilter__price">
+        <input
+          type="text"
+          inputMode="numeric"
+          placeholder="Min"
+          value={value.min ?? ""}
+          onChange={(e) => {
+            const v = e.target.value.replace(/[^0-9.]/g, "");
+            onChange({ ...value, min: v ? Number(v) : null });
+          }}
+        />
+        <span>—</span>
+        <input
+          type="text"
+          inputMode="numeric"
+          placeholder="Max"
+          value={value.max ?? ""}
+          onChange={(e) => {
+            const v = e.target.value.replace(/[^0-9.]/g, "");
+            onChange({ ...value, max: v ? Number(v) : null });
+          }}
+        />
+      </div>
+      <small className="cfilter__hint">{hint}</small>
+    </div>
+  );
+}
+
+/* Boolean — Yes / No pills */
+function BooleanAttrFilter({ title, counts, value, onChange }) {
+  const trueCount = counts.true || 0;
+  const falseCount = counts.false || 0;
+  if (trueCount + falseCount === 0) return null;
+
+  return (
+    <div className="cfilter__group">
+      <h4>{title}</h4>
+      <ul>
+        {trueCount > 0 && (
+          <li>
+            <input
+              id={`attr-bool-${title}-yes`}
+              type="checkbox"
+              checked={value === true}
+              onChange={() => onChange(value === true ? null : true)}
+            />
+            <label htmlFor={`attr-bool-${title}-yes`}>
+              Yes <em>({trueCount})</em>
+            </label>
+          </li>
+        )}
+        {falseCount > 0 && (
+          <li>
+            <input
+              id={`attr-bool-${title}-no`}
+              type="checkbox"
+              checked={value === false}
+              onChange={() => onChange(value === false ? null : false)}
+            />
+            <label htmlFor={`attr-bool-${title}-no`}>
+              No <em>({falseCount})</em>
+            </label>
+          </li>
+        )}
+      </ul>
+    </div>
+  );
+}
+
+/* ============================================================
+   HARDCODED FILTER FACET COUNTS (existing, unchanged)
+   ============================================================ */
 function useFacetCounts(products) {
   return useMemo(() => {
     const brand = {}, hp = {}, inverter = {}, litres = {}, doors = {};

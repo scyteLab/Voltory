@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import {
-  ChevronRight, Flame, Home as HomeIcon, SlidersHorizontal, Tag, X,
+  ChevronRight, Flame, Gift, Home as HomeIcon, LayoutGrid,
+  SlidersHorizontal, Tag, X,
 } from "lucide-react";
 import { useCatalog } from "../context/CatalogContext.jsx";
 import { naira, discountPct } from "../utils/format.js";
@@ -20,28 +21,92 @@ const SORTS = [
 const PAGE_SIZE = 12;
 const FILTER_CONFIG = ["brand", "price", "availability"];
 
+/** Tab keys — also used as URL param values. */
+const TAB_ALL      = "all";
+const TAB_DISCOUNT = "discount";
+const TAB_OFFERS   = "offers";
+
+/**
+ * Deals — unified deals page with 3 tabs:
+ *   · All          — products with either a discount OR a promotional offer
+ *   · Discount    — products where `was > price`
+ *   · Offers      — products with an active promotional offer (buy-X-get-Y)
+ *
+ * Filter + sort + pagination preserved from previous version.
+ * Tab selection sync'd to URL as ?tab=all|discount|offers.
+ */
 export default function Deals() {
   const [searchParams, setSearchParams] = useSearchParams();
   const [drawerOpen, setDrawerOpen] = useState(false);
-  const { products } = useCatalog();
+  const { products, productOffers } = useCatalog();
 
   useEffect(() => {
     const prev = document.title;
-    document.title = `Deals of the Day — ${SITE.name}`;
+    document.title = `Deals & Offers — ${SITE.name}`;
     return () => { document.title = prev; };
   }, []);
 
-  const all = useMemo(() => products.filter((p) => p.was), [products]);
+  const activeTab = searchParams.get("tab") || TAB_ALL;
+
+  /* ---- Build the 3 candidate lists ---- */
+
+  const discountProducts = useMemo(
+    () => products.filter((p) => p.was && p.was > p.price),
+    [products]
+  );
+
+  const offerSkuSet = useMemo(() => {
+    /* Only include active, non-expired offers. */
+    const now = Date.now();
+    return new Set(
+      (productOffers || [])
+        .filter((o) => o.is_active && new Date(o.ends_at).getTime() > now)
+        .map((o) => o.product_sku)
+    );
+  }, [productOffers]);
+
+  const offerProducts = useMemo(
+    () => products.filter((p) => offerSkuSet.has(p.sku)),
+    [products, offerSkuSet]
+  );
+
+  const allProducts = useMemo(() => {
+    /* Union: any product that has either a discount OR an offer. */
+    const seen = new Set();
+    const combined = [];
+    for (const p of discountProducts) {
+      if (!seen.has(p.sku)) { seen.add(p.sku); combined.push(p); }
+    }
+    for (const p of offerProducts) {
+      if (!seen.has(p.sku)) { seen.add(p.sku); combined.push(p); }
+    }
+    return combined;
+  }, [discountProducts, offerProducts]);
+
+  /* Pick the source list based on the active tab. */
+  const sourceList =
+    activeTab === TAB_DISCOUNT ? discountProducts :
+    activeTab === TAB_OFFERS   ? offerProducts   :
+                                 allProducts;
+
+  /* ---- Existing filter/sort/pagination ---- */
+
   const filters = useMemo(() => readFiltersFromUrl(searchParams), [searchParams]);
   const sort = searchParams.get("sort") || "discount";
   const page = Math.max(1, parseInt(searchParams.get("page") || "1", 10));
 
-  const filtered = applyFilters(all, filters);
+  const filtered = applyFilters(sourceList, filters);
   const sorted = applySort(filtered, sort);
   const totalPages = Math.max(1, Math.ceil(sorted.length / PAGE_SIZE));
   const currentPage = Math.min(page, totalPages);
   const pageItems = sorted.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
 
+  function setTab(tab) {
+    const sp = new URLSearchParams(searchParams);
+    if (tab === TAB_ALL) sp.delete("tab"); else sp.set("tab", tab);
+    sp.delete("page");
+    setSearchParams(sp);
+  }
   function setFilters(updater) {
     const next = typeof updater === "function" ? updater(filters) : updater;
     const sp = new URLSearchParams(searchParams);
@@ -61,17 +126,25 @@ export default function Deals() {
     setSearchParams(sp);
     window.scrollTo({ top: 220, behavior: "smooth" });
   }
-  function clearFilters() { setSearchParams({}); }
+  function clearFilters() {
+    /* Preserve tab when clearing filters. */
+    const sp = new URLSearchParams();
+    if (activeTab !== TAB_ALL) sp.set("tab", activeTab);
+    setSearchParams(sp);
+  }
 
   const activeChips = buildActiveChips(filters);
-  const biggestDiscount = all.reduce((max, p) => Math.max(max, discountPct(p.price, p.was)), 0);
+  const biggestDiscount = discountProducts.reduce(
+    (max, p) => Math.max(max, discountPct(p.price, p.was)),
+    0
+  );
 
   return (
     <main className="wrap">
       <nav className="crumb" aria-label="Breadcrumb">
         <Link to="/"><HomeIcon size={13} /> Home</Link>
         <ChevronRight size={12} />
-        <span>Deals of the Day</span>
+        <span>Deals & Offers</span>
       </nav>
 
       <section className="lhero lhero--deals">
@@ -79,9 +152,11 @@ export default function Deals() {
           <span className="lhero__pill">
             <Flame size={13} /> LIMITED TIME
           </span>
-          <h1>Deals of the Day</h1>
+          <h1>Deals & Offers</h1>
           <p>
-            Up to {biggestDiscount}% off original electronics — every deal verified, every product authentic.
+            {activeTab === TAB_OFFERS
+              ? "Promotional offers — buy qualifying products, get free gifts."
+              : `Up to ${biggestDiscount}% off original electronics — every deal verified, every product authentic.`}
           </p>
           <div className="lhero__cdown">
             <span>Offers refresh in:</span>
@@ -90,6 +165,40 @@ export default function Deals() {
         </div>
         <img className="lhero__img" src="/banners/hero-deals.png" alt="" />
       </section>
+
+      {/* Tabs bar — select which deal type to browse */}
+      <div className="deals-tabs" role="tablist" aria-label="Deal type">
+        <button
+          role="tab"
+          aria-selected={activeTab === TAB_ALL}
+          className={"deals-tabs__tab" + (activeTab === TAB_ALL ? " deals-tabs__tab--on" : "")}
+          onClick={() => setTab(TAB_ALL)}
+        >
+          <LayoutGrid size={13} />
+          <span>All Deals</span>
+          <em>{allProducts.length}</em>
+        </button>
+        <button
+          role="tab"
+          aria-selected={activeTab === TAB_DISCOUNT}
+          className={"deals-tabs__tab" + (activeTab === TAB_DISCOUNT ? " deals-tabs__tab--on" : "")}
+          onClick={() => setTab(TAB_DISCOUNT)}
+        >
+          <Tag size={13} />
+          <span>Discount Deals</span>
+          <em>{discountProducts.length}</em>
+        </button>
+        <button
+          role="tab"
+          aria-selected={activeTab === TAB_OFFERS}
+          className={"deals-tabs__tab" + (activeTab === TAB_OFFERS ? " deals-tabs__tab--on" : "")}
+          onClick={() => setTab(TAB_OFFERS)}
+        >
+          <Gift size={13} />
+          <span>Promotional Offers</span>
+          <em>{offerProducts.length}</em>
+        </button>
+      </div>
 
       <button className="cmob-trigger" onClick={() => setDrawerOpen(true)}>
         <SlidersHorizontal size={15} />
@@ -101,7 +210,7 @@ export default function Deals() {
         <div className={"cfilter__shell" + (drawerOpen ? " cfilter__shell--open" : "")}>
           <FilterSidebar
             category={{ filterConfig: FILTER_CONFIG }}
-            products={all}
+            products={sourceList}
             filters={filters}
             setFilters={setFilters}
             onClear={clearFilters}
@@ -113,9 +222,10 @@ export default function Deals() {
         <section className="cmain">
           <div className="ctoolbar">
             <p className="ctoolbar__count">
-              <b>{sorted.length}</b> deal{sorted.length === 1 ? "" : "s"}
-              {sorted.length !== all.length && (
-                <span className="ctoolbar__total"> of {all.length}</span>
+              <b>{sorted.length}</b>{" "}
+              {activeTab === TAB_OFFERS ? "offer" : "deal"}{sorted.length === 1 ? "" : "s"}
+              {sorted.length !== sourceList.length && (
+                <span className="ctoolbar__total"> of {sourceList.length}</span>
               )}
             </p>
             <label className="ctoolbar__sort">
@@ -147,9 +257,23 @@ export default function Deals() {
             </div>
           ) : (
             <div className="cempty">
-              <h3>No deals match these filters</h3>
-              <p>Try removing a filter to see more offers.</p>
-              <button className="btn-shop" onClick={clearFilters}>Clear filters</button>
+              <h3>
+                {sourceList.length === 0
+                  ? (activeTab === TAB_OFFERS
+                      ? "No promotional offers right now"
+                      : activeTab === TAB_DISCOUNT
+                        ? "No discount deals right now"
+                        : "No deals right now")
+                  : "No deals match these filters"}
+              </h3>
+              <p>
+                {sourceList.length === 0
+                  ? "Check back soon — new deals and offers are added regularly."
+                  : "Try removing a filter to see more."}
+              </p>
+              {sourceList.length > 0 && (
+                <button className="btn-shop" onClick={clearFilters}>Clear filters</button>
+              )}
             </div>
           )}
 
@@ -173,7 +297,7 @@ export default function Deals() {
   );
 }
 
-/* ---------- URL <-> filters (same shape as Category/Search/Brand) ---------- */
+/* ---------- URL <-> filters (unchanged from previous version) ---------- */
 function readFiltersFromUrl(sp) {
   const list = (k) => (sp.get(k) ? sp.get(k).split(",") : []);
   const num = (k) => (sp.get(k) ? Number(sp.get(k)) : "");
@@ -211,7 +335,6 @@ function applySort(items, sort) {
     case "price-desc": arr.sort((a, b) => b.price - a.price); break;
     case "rating": arr.sort((a, b) => (b.rating || 0) - (a.rating || 0)); break;
     default:
-      // discount: deepest discount first
       arr.sort((a, b) => discountPct(b.price, b.was) - discountPct(a.price, a.was));
   }
   return arr;

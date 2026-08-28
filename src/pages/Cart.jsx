@@ -1,8 +1,8 @@
 import { Link, useNavigate } from "react-router-dom";
-import { useState } from "react";
+import { Fragment, useState } from "react";
 import {
-  ChevronRight, Home as HomeIcon, MessageCircle, Minus, Plus, ShoppingBag, Tag,
-  Trash2, Truck, X,
+  ChevronRight, Gift, Home as HomeIcon, MessageCircle, Minus, Plus,
+  ShoppingBag, Tag, Trash2, Truck, X,
 } from "lucide-react";
 import { useStore } from "../context/StoreContext.jsx";
 import { useCatalog } from "../context/CatalogContext.jsx";
@@ -21,6 +21,13 @@ export default function Cart() {
 
   const freeDeliveryGap = Math.max(0, SITE.freeDeliveryOver - totals.subtotal);
   const freeDeliveryProgress = Math.min(100, (totals.subtotal / SITE.freeDeliveryOver) * 100);
+
+  /* Split cart into paid products and gift lines for rendering.
+     We render paid product first, then its associated gift (if any)
+     right beneath it, so customers see the relationship visually. */
+  const paidLines = cart.filter((i) => !i.isGift);
+  const giftLines = cart.filter((i) => i.isGift);
+  const giftBySku = new Map(giftLines.map((g) => [g.giftFor, g]));
 
   return (
     <main className="wrap">
@@ -61,46 +68,84 @@ export default function Cart() {
 
           {/* Line items */}
           <ul className="cart-lines">
-            {cart.map((item) => {
+            {paidLines.map((item) => {
               const p = bySku(item.sku);
               if (!p) return null;
+              const gift = giftBySku.get(item.sku);
               return (
-                <li className="cart-line" key={item.sku}>
-                  <Link to={`/product/${p.slug}`} className="cart-line__img">
-                    {p.image && <img src={p.image} alt={p.name} />}
-                  </Link>
-                  <div className="cart-line__info">
-                    <Link to={`/product/${p.slug}`} className="cart-line__name">
-                      {p.name}
+                <Fragment key={item.sku}>
+                  {/* Paid product line */}
+                  <li className="cart-line">
+                    <Link to={`/product/${p.slug}`} className="cart-line__img">
+                      {p.image && <img src={p.image} alt={p.name} />}
                     </Link>
-                    <p className="cart-line__meta">
-                      SKU <span className="mono">{p.sku}</span>
-                    </p>
-                    {p.stock > 0 && p.stock <= 10 && (
-                      <p className="cart-line__stock">Only {p.stock} left in stock</p>
-                    )}
-                    <button
-                      className="cart-line__remove"
-                      onClick={() => removeFromCart(item.sku)}
-                      aria-label={`Remove ${p.name} from cart`}
-                    >
-                      <Trash2 size={13} /> Remove
-                    </button>
-                  </div>
-                  <div className="cart-line__qty">
-                    <button onClick={() => setQty(item.sku, item.qty - 1)} aria-label="Decrease">
-                      <Minus size={13} />
-                    </button>
-                    <span>{item.qty}</span>
-                    <button onClick={() => setQty(item.sku, item.qty + 1)} aria-label="Increase">
-                      <Plus size={13} />
-                    </button>
-                  </div>
-                  <div className="cart-line__price">
-                    <b>{naira(p.price * item.qty)}</b>
-                    {item.qty > 1 && <small>{naira(p.price)} each</small>}
-                  </div>
-                </li>
+                    <div className="cart-line__info">
+                      <Link to={`/product/${p.slug}`} className="cart-line__name">
+                        {p.name}
+                      </Link>
+                      <p className="cart-line__meta">
+                        SKU <span className="mono">{p.sku}</span>
+                      </p>
+                      {p.stock > 0 && p.stock <= 10 && (
+                        <p className="cart-line__stock">Only {p.stock} left in stock</p>
+                      )}
+                      <button
+                        className="cart-line__remove"
+                        onClick={() => removeFromCart(item.sku)}
+                        aria-label={`Remove ${p.name} from cart`}
+                      >
+                        <Trash2 size={13} /> Remove
+                      </button>
+                    </div>
+                    <div className="cart-line__qty">
+                      <button onClick={() => setQty(item.sku, item.qty - 1)} aria-label="Decrease">
+                        <Minus size={13} />
+                      </button>
+                      <span>{item.qty}</span>
+                      <button onClick={() => setQty(item.sku, item.qty + 1)} aria-label="Increase">
+                        <Plus size={13} />
+                      </button>
+                    </div>
+                    <div className="cart-line__price">
+                      <b>{naira(p.price * item.qty)}</b>
+                      {item.qty > 1 && <small>{naira(p.price)} each</small>}
+                    </div>
+                  </li>
+
+                  {/* Associated gift line (if any) — rendered directly
+                      beneath its parent product so customers see the
+                      pairing at a glance. */}
+                  {gift && (
+                    <li className="cart-line cart-gift">
+                      <div className="cart-line__img">
+                        {gift.giftImage ? (
+                          <img src={gift.giftImage} alt="Gift" />
+                        ) : (
+                          <div className="cart-line__img-placeholder">
+                            <Gift size={20} />
+                          </div>
+                        )}
+                      </div>
+                      <div className="cart-line__info">
+                        <div className="cart-line__name">
+                          <span className="cart-gift__label">
+                            <Gift size={11} /> FREE GIFT
+                          </span>
+                          <div>{gift.giftDescription}</div>
+                        </div>
+                        <p className="cart-gift__note">
+                          With your {p.name}
+                        </p>
+                      </div>
+                      <div className="cart-line__qty">
+                        <span title="Gift qty is managed automatically">{gift.qty}</span>
+                      </div>
+                      <div className="cart-line__price">
+                        <b>FREE</b>
+                      </div>
+                    </li>
+                  )}
+                </Fragment>
               );
             })}
           </ul>
@@ -125,6 +170,12 @@ export default function Cart() {
               <div className="cart-totals__discount">
                 <dt>Discount ({SITE.welcomeCoupon.percent}%)</dt>
                 <dd>−{naira(totals.discount)}</dd>
+              </div>
+            )}
+            {giftLines.length > 0 && (
+              <div className="cart-totals__gifts">
+                <dt><Gift size={12} /> Free gift{giftLines.length === 1 ? "" : "s"}</dt>
+                <dd>FREE</dd>
               </div>
             )}
             <div>
@@ -161,7 +212,7 @@ export default function Cart() {
         <SendToWhatsappModal onClose={() => setWaModalOpen(false)} />
       )}
 
-      {/* Cross-sell rail */}
+      {/* Cross-sell rail — excludes items already in cart AND gifts */}
       <div className="section-head" style={{ marginTop: 40 }}>
         <h2>You Might Also Like</h2>
         <Link to="/">View more <ChevronRight size={14} style={{ verticalAlign: "middle" }} /></Link>

@@ -1,30 +1,33 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Phone, User } from "lucide-react";
+import { Eye, EyeOff, KeyRound, Mail, Phone, User } from "lucide-react";
 import { useCustomerAuth } from "../context/AuthContext.jsx";
 import AuthShell from "../components/auth/AuthShell.jsx";
 
 /**
- * SignUp  —  /signup
+ * SignUp  \u2014  /signup
  *
- * REDESIGN: matches the new Login page visually via the shared
- * AuthShell. Tab strip flips "Create account" to active.
- *
- * Form logic unchanged — collect name + phone, requestOtp with
- * purpose 'signup', navigate to /verify-otp on success.
+ * Password-based account creation. Email is OPTIONAL \u2014
+ * collected for future password-reset via email but not
+ * required today (would block sign-up for Nigerian customers
+ * without an active email).
  */
 export default function SignUp() {
   const navigate = useNavigate();
-  const { requestOtp } = useCustomerAuth();
+  const { signUp } = useCustomerAuth();
 
   const [name, setName]             = useState("");
   const [phone, setPhone]           = useState("");
+  const [email, setEmail]           = useState("");
+  const [password, setPassword]     = useState("");
+  const [confirm, setConfirm]       = useState("");
+  const [showPw, setShowPw]         = useState(false);
   const [error, setError]           = useState(null);
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
     const prev = document.title;
-    document.title = "Create account — NAVEN";
+    document.title = "Create account \u2014 NAVEN";
     return () => { document.title = prev; };
   }, []);
 
@@ -32,38 +35,20 @@ export default function SignUp() {
     e.preventDefault();
     setError(null);
 
-    const cleanedName = name.trim();
-    if (cleanedName.length < 2) {
-      setError("Please enter your name.");
-      return;
-    }
-
-    /* Same phone cleanup pattern as Login. */
-    const digits = phone.replace(/\D/g, "");
-    let cleaned = digits;
-    if (cleaned.startsWith("234")) cleaned = "0" + cleaned.slice(3);
-    if (cleaned.length === 10 && !cleaned.startsWith("0")) cleaned = "0" + cleaned;
-
-    if (!/^0[7-9][01]\d{8}$/.test(cleaned)) {
-      setError("Please enter a valid Nigerian phone number.");
+    if (password !== confirm) {
+      setError("Passwords don't match.");
       return;
     }
 
     setSubmitting(true);
-    const res = await requestOtp({
-      phone: cleaned,
-      purpose: "signup",
-      name:   cleanedName,
-    });
+    const res = await signUp({ phone, password, name, email: email || null });
     setSubmitting(false);
 
     if (!res.ok) {
-      setError(res.error || "Couldn't send code. Please try again.");
+      setError(res.error || "Couldn't create account. Please try again.");
       return;
     }
-    navigate("/verify-otp", {
-      state: { phone: cleaned, purpose: "signup", name: cleanedName },
-    });
+    navigate("/account", { replace: true });
   }
 
   return (
@@ -90,7 +75,7 @@ export default function SignUp() {
 
         <h2 className="ashell-form__title">Create your account</h2>
         <p className="ashell-form__sub">
-          Two quick fields and you're in. We'll send a code to your phone to confirm.
+          Quick setup. Your phone is your login \u2014 email is optional for password recovery.
         </p>
 
         <form onSubmit={onSubmit}>
@@ -99,9 +84,7 @@ export default function SignUp() {
             <div className="ashell-field__input">
               <User size={16} />
               <input
-                id="name"
-                type="text"
-                autoComplete="name"
+                id="name" type="text" autoComplete="name"
                 placeholder="Adaeze Okoye"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
@@ -115,13 +98,64 @@ export default function SignUp() {
             <div className="ashell-field__input">
               <Phone size={16} />
               <input
-                id="phone"
-                type="tel"
-                inputMode="numeric"
-                autoComplete="tel"
+                id="phone" type="tel" inputMode="numeric" autoComplete="tel"
                 placeholder="0803 123 4567"
                 value={phone}
                 onChange={(e) => setPhone(e.target.value)}
+                disabled={submitting}
+              />
+            </div>
+          </div>
+
+          <div className="ashell-field">
+            <label htmlFor="email">Email (optional)</label>
+            <div className="ashell-field__input">
+              <Mail size={16} />
+              <input
+                id="email" type="email" autoComplete="email"
+                placeholder="you@example.com"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                disabled={submitting}
+              />
+            </div>
+          </div>
+
+          <div className="ashell-field">
+            <label htmlFor="password">Password</label>
+            <div className="ashell-field__input">
+              <KeyRound size={16} />
+              <input
+                id="password"
+                type={showPw ? "text" : "password"}
+                autoComplete="new-password"
+                placeholder="At least 6 characters"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                disabled={submitting}
+              />
+              <button
+                type="button"
+                className="ashell-field__toggle"
+                onClick={() => setShowPw((v) => !v)}
+                aria-label={showPw ? "Hide password" : "Show password"}
+              >
+                {showPw ? <EyeOff size={16} /> : <Eye size={16} />}
+              </button>
+            </div>
+          </div>
+
+          <div className="ashell-field">
+            <label htmlFor="confirm">Confirm password</label>
+            <div className="ashell-field__input">
+              <KeyRound size={16} />
+              <input
+                id="confirm"
+                type={showPw ? "text" : "password"}
+                autoComplete="new-password"
+                placeholder="Type it again"
+                value={confirm}
+                onChange={(e) => setConfirm(e.target.value)}
                 disabled={submitting}
               />
             </div>
@@ -132,9 +166,9 @@ export default function SignUp() {
           <button
             type="submit"
             className="ashell-btn ashell-btn--primary"
-            disabled={submitting || !phone.trim() || !name.trim()}
+            disabled={submitting || !phone.trim() || !name.trim() || !password || !confirm}
           >
-            {submitting ? "Sending…" : "Continue →"}
+            {submitting ? "Creating account\u2026" : "Create account \u2192"}
           </button>
         </form>
 

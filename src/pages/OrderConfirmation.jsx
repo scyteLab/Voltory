@@ -2,7 +2,8 @@ import { useEffect, useState } from "react";
 import { Link, Navigate, useParams } from "react-router-dom";
 import {
   BadgeCheck, Check, ChevronRight, CircleCheck, Cloud, CloudOff,
-  Home as HomeIcon, Mail, MapPin, MessageCircle, Phone, Receipt, ShieldCheck, Truck,
+  Home as HomeIcon, Mail, MapPin, MessageCircle, Phone, Printer,
+  Receipt, ShieldCheck, Truck,
 } from "lucide-react";
 import { getOrder, STATUS_FLOW, STATUS_LABEL, ORDER_STATUS } from "../utils/orders.js";
 import { fetchOrderById } from "../lib/customerOrdersClient.js";
@@ -21,10 +22,6 @@ export default function OrderConfirmation() {
   const [order, setOrder] = useState(() => getOrder(id));
   const [remoteChecked, setRemoteChecked] = useState(false);
 
-  // If we didn't find the order locally (customer opened this URL on a
-  // different device from where they placed the order), fetch from
-  // Supabase. Only run once — the polling effect below handles the
-  // syncedAt refresh for the local-first case.
   useEffect(() => {
     if (order || remoteChecked) return;
     let cancelled = false;
@@ -37,8 +34,6 @@ export default function OrderConfirmation() {
     return () => { cancelled = true; };
   }, [id, order, remoteChecked]);
 
-  // Poll every 4 seconds until the order shows syncedAt — keeps the
-  // sync pill honest without hammering localStorage. Stops once synced.
   useEffect(() => {
     if (!order || order.syncedAt) return;
     const t = setInterval(() => {
@@ -51,14 +46,11 @@ export default function OrderConfirmation() {
     return () => clearInterval(t);
   }, [id, order]);
 
-  // Wait for the remote check before deciding the order doesn't exist —
-  // otherwise a customer opening this URL on a fresh device would flash
-  // a redirect to home before Supabase has had a chance to respond.
   if (!order && !remoteChecked) {
     return (
       <main className="wrap">
         <div style={{ padding: "60px 20px", textAlign: "center", color: "var(--ink-3)" }}>
-          Loading your order…
+          Loading your order\u2026
         </div>
       </main>
     );
@@ -67,6 +59,12 @@ export default function OrderConfirmation() {
 
   const currentIndex = STATUS_FLOW.indexOf(order.status);
   const created = new Date(order.createdAt);
+
+  /* Build the deep link that lets the customer view the
+     receipt without re-entering phone. The Receipt page is
+     smart enough to skip the phone challenge if the order is
+     already in local storage on the same device. */
+  const receiptUrl = `/receipt/${id}?phone=${encodeURIComponent(order.contact.phone)}`;
 
   return (
     <main className="wrap">
@@ -79,9 +77,21 @@ export default function OrderConfirmation() {
           <Receipt size={14} /> Order ID: <b className="mono">{order.id}</b>
           <SyncPill synced={!!order.syncedAt} />
         </div>
+
+        {/* NEW: Receipt actions right below the hero \u2014 most
+            visible spot for the primary "get my receipt" action
+            since customers land here immediately after paying. */}
+        <div className="conf-hero__actions">
+          <Link to={receiptUrl} className="conf-hero__actionbtn conf-hero__actionbtn--primary">
+            <Receipt size={16} /> View Official Receipt
+          </Link>
+          <Link to={receiptUrl} className="conf-hero__actionbtn" target="_blank">
+            <Printer size={16} /> Print / Save PDF
+          </Link>
+        </div>
       </section>
 
-      {/* Invisible-signup banner — the headline moment */}
+      {/* Invisible-signup banner */}
       {order.accountCreated && (
         <section className="acct-banner">
           <span className="acct-banner__icon"><BadgeCheck size={28} /></span>
@@ -90,7 +100,7 @@ export default function OrderConfirmation() {
             <p>
               We've created your account automatically using your phone number
               <b className="mono"> {order.contact.phone}</b>. Next time you shop,
-              just enter your phone — we'll handle the rest. No password needed.
+              just enter your phone \u2014 we'll handle the rest. No password needed.
             </p>
           </div>
         </section>
@@ -149,7 +159,7 @@ export default function OrderConfirmation() {
             <div><dt>Subtotal</dt><dd>{naira(order.totals.subtotal)}</dd></div>
             {order.totals.discount > 0 && (
               <div className="conf-totals__discount">
-                <dt>Discount</dt><dd>−{naira(order.totals.discount)}</dd>
+                <dt>Discount</dt><dd>\u2212{naira(order.totals.discount)}</dd>
               </div>
             )}
             <div><dt>Delivery</dt><dd>{order.totals.deliveryFee === 0 ? "FREE" : naira(order.totals.deliveryFee)}</dd></div>
@@ -160,6 +170,9 @@ export default function OrderConfirmation() {
               <dt>Total Paid</dt><dd>{naira(order.totals.grand)}</dd>
             </div>
           </dl>
+          <p className="conf-card__note" style={{ marginTop: 12 }}>
+            <Link to={receiptUrl}>View full receipt with VAT breakdown \u2192</Link>
+          </p>
         </section>
 
         {/* Delivery & contact */}
@@ -171,7 +184,7 @@ export default function OrderConfirmation() {
             {order.address.lga}, {order.address.state}<br />
             {order.address.landmark && <><small>{order.address.landmark}</small><br /></>}
             <Phone size={12} /> {order.contact.phone}
-            {order.contact.email && <> · <Mail size={12} /> {order.contact.email}</>}
+            {order.contact.email && <> \u00B7 <Mail size={12} /> {order.contact.email}</>}
           </p>
         </section>
 
@@ -179,9 +192,9 @@ export default function OrderConfirmation() {
         <section className="conf-card">
           <h2><ShieldCheck size={18} /> Payment</h2>
           <p className="conf-payment">
-            <b>{PAYMENT_LABEL[order.payment] || order.payment}</b><br />
+            <b>{PAYMENT_LABEL[order.payment?.method || order.payment] || order.payment}</b><br />
             <small>
-              {order.payment === "pod"
+              {(order.payment?.method || order.payment) === "pod"
                 ? "You'll pay when your order arrives. Have the exact amount ready."
                 : "Payment confirmed. Transaction secured."}
             </small>
@@ -195,7 +208,7 @@ export default function OrderConfirmation() {
           <MessageCircle size={20} />
           <span>
             <b>Need help with your order?</b>
-            <small>Chat with us on WhatsApp — {SITE.whatsapp}</small>
+            <small>Chat with us on WhatsApp \u2014 {SITE.whatsapp}</small>
           </span>
           <ChevronRight size={16} />
         </a>
@@ -207,16 +220,6 @@ export default function OrderConfirmation() {
   );
 }
 
-/**
- * A tiny pill next to the Order ID showing sync state.
- *
- * We deliberately soft-pedal the un-synced state:
- *   "Saved locally" — not "Failed" or "Error"
- *
- * The customer's order IS placed (localStorage source of truth) and
- * WILL sync once connectivity is available. Alarming language would
- * scare a customer who just paid.
- */
 function SyncPill({ synced }) {
   if (synced) {
     return (
@@ -231,7 +234,7 @@ function SyncPill({ synced }) {
   return (
     <span
       className="conf-hero__syncpill conf-hero__syncpill--pending"
-      title="Order saved locally — finishing sync in the background"
+      title="Order saved locally \u2014 finishing sync in the background"
     >
       <CloudOff size={12} /> Saved locally
     </span>

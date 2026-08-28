@@ -4,34 +4,36 @@ import {
   Trash2, X,
 } from "lucide-react";
 import ImageUploader from "./ImageUploader.jsx";
+import ProductAttributesPanel from "./ProductAttributesPanel.jsx";
 import {
   specSuggestionsFor, ENERGY_CLASSES,
 } from "../../config/categorySpecSuggestions.js";
 
 /**
- * Product edit panel \u2014 right column of the catalog page.
+ * Product edit panel — right column of the catalog page.
  *
  * Modes:
- *   \u00B7 "new"    \u2014 empty form for a brand-new product
- *   \u00B7 "edit"   \u2014 pre-filled with the selected product's data
- *   \u00B7 "closed" \u2014 empty state, prompts user to select or add
+ *   · "new"    — empty form for a brand-new product
+ *   · "edit"   — pre-filled with the selected product's data
+ *   · "closed" — empty state, prompts user to select or add
  *
- * Session-1a additions:
- *   \u00B7 New Specifications section: Warranty (months), Energy
- *     Class (dropdown), and a dynamic Specs repeater
- *     ({label, value}[] shape, matching the existing DB
- *     convention where specs is a JSONB array).
- *   \u00B7 Category-aware label suggestions via categorySpec-
- *     Suggestions \u2014 admin sees hints appropriate to whatever
- *     category is currently picked in the Brand/Category row.
+ * Session 1a: added Specifications block (warranty months + energy
+ * class + specs repeater).
+ *
+ * Session 2 (this): adds ProductAttributesPanel below Specifications.
+ * The attribute panel has its OWN Save button, independent of "Save
+ * Product". Basic info + specs save with the main button; attributes
+ * save separately. Reasons:
+ *   · Attributes are meaningless for new products until the SKU
+ *     exists (panel disables itself in "new" mode)
+ *   · Independent save keeps the useCatalog upsertProduct flow
+ *     untouched — no risk to catalog rendering
+ *   · Admin gets clear feedback that attribute changes persisted
  *
  * NOT changed:
- *   \u00B7 The appliance-specific columns (hp, litres, doors,
- *     inverter) are still in the DB but not surfaced in this
- *     form. Preserved verbatim on save. Future session adds a
- *     category-conditional UI for them.
- *   \u00B7 Highlights repeater, image uploader, delete flow, all
- *     other fields \u2014 unchanged.
+ *   · Basic fields, image uploader, highlights, specs, delete
+ *     flow, save/validation logic — all preserved verbatim
+ *   · Legacy hp/litres/doors/inverter still round-trip on save
  */
 
 function emptyProduct() {
@@ -41,7 +43,6 @@ function emptyProduct() {
     status: "active", rating: null, reviews: 0, questions: 0,
     hp: null, inverter: null, litres: null, doors: null,
     tags: [], highlights: [], specs: [], description: "",
-    // Session-1a additions
     warranty_months: null,
     energy_class:    null,
   };
@@ -106,7 +107,7 @@ export default function ProductEditPanel({
     setErrors((er) => ({ ...er, [k]: undefined }));
   }
 
-  /* ---- Highlights repeater (existing, unchanged) ---- */
+  /* ---- Highlights repeater ---- */
 
   function addHighlight() {
     setForm((f) => ({ ...f, highlights: [...(f.highlights || []), ""] }));
@@ -124,7 +125,7 @@ export default function ProductEditPanel({
     }));
   }
 
-  /* ---- Specs repeater (new this session) ---- */
+  /* ---- Specs repeater ---- */
 
   function addSpec() {
     setForm((f) => ({
@@ -162,9 +163,6 @@ export default function ProductEditPanel({
     if (!Number.isFinite(stock) || stock < 0)  errs.stock = "Stock must be zero or higher";
     if (form.was && Number(form.was) <= price) errs.was = "Compare-at price must be higher than the selling price";
 
-    // Session-1a: warranty is optional but if provided must be a
-    // positive integer number of months (0 = "no warranty" is
-    // also valid, but nulling it is cleaner \u2014 discourage 0)
     if (form.warranty_months !== "" && form.warranty_months != null) {
       const w = Number(form.warranty_months);
       if (!Number.isInteger(w) || w < 0) {
@@ -181,9 +179,6 @@ export default function ProductEditPanel({
     setErrors(errs);
     if (Object.keys(errs).length) return;
 
-    /* Strip empty specs (both label and value blank). Trim
-       label/value so accidental whitespace doesn't render as
-       phantom rows on the product page. */
     const cleanedSpecs = (form.specs || [])
       .map((s) => ({
         label: (s.label || "").trim(),
@@ -228,10 +223,6 @@ export default function ProductEditPanel({
     }
   }
 
-  /* Suggestions for the specs label datalist, based on the
-     currently-selected category. Datalist gives autocomplete
-     without forcing a value \u2014 admin can pick a suggestion or
-     type their own. */
   const specLabelSuggestions = specSuggestionsFor(form.category);
 
   return (
@@ -278,20 +269,20 @@ export default function ProductEditPanel({
         <FormRow cols={2}>
           <Field label="Brand" error={errors.brand} required>
             <select value={form.brand || ""} onChange={(e) => field("brand", e.target.value)}>
-              <option value="">Choose brand\u2026</option>
+              <option value="">Choose brand…</option>
               {brands.map((b) => <option key={b.id} value={b.id}>{b.name}</option>)}
             </select>
           </Field>
           <Field label="Category" error={errors.category} required>
             <select value={form.category || ""} onChange={(e) => field("category", e.target.value)}>
-              <option value="">Choose category\u2026</option>
+              <option value="">Choose category…</option>
               {categories.map((c) => <option key={c.id} value={c.id}>{c.label}</option>)}
             </select>
           </Field>
         </FormRow>
 
         <FormRow cols={2}>
-          <Field label="Selling Price (\u20A6)" error={errors.price} required>
+          <Field label="Selling Price (₦)" error={errors.price} required>
             <input
               type="number" inputMode="numeric" min="0"
               value={form.price ?? ""}
@@ -299,7 +290,7 @@ export default function ProductEditPanel({
               placeholder="520000"
             />
           </Field>
-          <Field label="Compare-at Price (\u20A6)" error={errors.was}>
+          <Field label="Compare-at Price (₦)" error={errors.was}>
             <input
               type="number" inputMode="numeric" min="0"
               value={form.was ?? ""}
@@ -393,7 +384,7 @@ export default function ProductEditPanel({
         </FormRow>
 
         {/* ============================================
-             SPECIFICATIONS  (session 1a)
+             SPECIFICATIONS
              ============================================ */}
         <div className="adm-specs-section">
           <h3 className="adm-specs-section__title">Specifications</h3>
@@ -430,8 +421,6 @@ export default function ProductEditPanel({
 
           <FormRow>
             <Field label="Additional specs">
-              {/* datalist provides label autocomplete suggestions
-                  based on the selected category */}
               <datalist id={`spec-labels-${form.category || "default"}`}>
                 {specLabelSuggestions.map((s) => (
                   <option key={s} value={s} />
@@ -475,6 +464,16 @@ export default function ProductEditPanel({
           </FormRow>
         </div>
 
+        {/* ============================================
+             ATTRIBUTES  (Session 2 — self-contained panel
+             with its own Save button)
+             ============================================ */}
+        <ProductAttributesPanel
+          productSku={mode === "edit" ? form.sku : null}
+          categoryId={form.category}
+          mode={mode}
+        />
+
         {saveError && (
           <div className="adm-empty adm-empty--err" style={{ padding: "14px 16px" }}>
             <AlertTriangle size={18} /> <b>Save failed</b> <span>{saveError}</span>
@@ -507,7 +506,7 @@ export default function ProductEditPanel({
               Cancel
             </button>
             <button type="submit" className="adm-btn adm-btn--primary" disabled={saving}>
-              {savedFlash ? <><Check size={13} /> Saved</> : <><Save size={13} /> {saving ? "Saving\u2026" : "Save Product"}</>}
+              {savedFlash ? <><Check size={13} /> Saved</> : <><Save size={13} /> {saving ? "Saving…" : "Save Product"}</>}
             </button>
           </div>
         </footer>

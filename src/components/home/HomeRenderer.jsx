@@ -1,4 +1,5 @@
 import { useSiteSections } from "../../context/SiteSectionsContext.jsx";
+import HomeSkeleton from "./HomeSkeleton.jsx";
 import CategorySidebar from "./CategorySidebar.jsx";
 import Hero from "./Hero.jsx";
 import HeroPromoTiles from "./HeroPromoTiles.jsx";
@@ -7,7 +8,9 @@ import ScanfrostStore from "./ScanfrostStore.jsx";
 import ProductRowSection from "./ProductRowSection.jsx";
 import AnniversaryDeals from "./AnniversaryDeals.jsx";
 import CategoryStrip from "./CategoryStrip.jsx";
+import FeaturedCollection from "./FeaturedCollection.jsx";
 import LastViewed from "./LastViewed.jsx";
+import LastSearched from "./LastSearched.jsx";
 import ServiceCards from "./ServiceCards.jsx";
 import AppPromo from "./AppPromo.jsx";
 import BottomBenefits from "./BottomBenefits.jsx";
@@ -39,8 +42,10 @@ const SECTIONS = {
   deals_row:         ProductRowSection,
   anniversary_deals: AnniversaryDeals,
   category_strip:    CategoryStrip,
+  featured_collection: FeaturedCollection,
   featured_row:      ProductRowSection,
   last_viewed:       LastViewed,
+  last_searched:     LastSearched,
   service_cards:     ServiceCards,
   app_promo:         AppPromo,
   bottom_benefits:   BottomBenefits,
@@ -66,10 +71,10 @@ export default function HomeRenderer() {
   const { sections, loading } = useSiteSections();
 
   if (loading && sections.length === 0) {
-    // Empty first paint — avoids a flash of "nothing". Better than
-    // showing a spinner because in normal use the fallback data
-    // resolves so fast this branch never triggers.
-    return null;
+    // Shimmering placeholder instead of a blank gap between header
+    // and footer — matches the real layout's shape so nothing shifts
+    // once the actual sections swap in.
+    return <HomeSkeleton />;
   }
 
   // Split sections into: hero row group, main wrap content, full-width tail.

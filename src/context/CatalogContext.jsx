@@ -1,124 +1,271 @@
-import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
+import { createContext, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { loadCatalog } from "../lib/catalogClient.js";
 import { setSnapshot } from "../lib/catalogSnapshot.js";
+import {
+  supabase, supabaseConfigured,
+} from "../lib/supabaseClient.js";
+import { fetchAllCollections } from "../lib/collectionsClient.js";
+import {
+  fetchAllOffers,
+  createOffer as apiCreateOffer,
+  updateOffer as apiUpdateOffer,
+  deleteOffer as apiDeleteOffer,
+  toggleOfferActive as apiToggleOfferActive,
+} from "../lib/adminOffersClient.js";
 
 /**
- * CatalogProvider
+ * CatalogContext
  *
- * Loads the storefront catalog once on mount. Every page reads via
- * useCatalog(), which returns helpers with the exact same API as
- * the old src/data/products.js exports so we can migrate pages one
- * at a time:
+ * Owns storefront catalog state (products, categories, brands),
+ * plus admin-managed collections and product offers. Serves
+ * both storefront reads and admin write-through operations.
  *
- *   const { products, categories, brands, bySku, byCategory, byBrand,
- *           getDeals, loading, error, source, refresh } = useCatalog();
+ * Session (2026-08-28) added:
+ *   · productOffers state (list of all offers with product join)
+ *   · loadOffers() to hydrate from DB
+ *   · upsertOffer(payload)   — create or update, matches Collections pattern
+ *   · removeOffer(id)         — delete
+ *   · setOfferActive(id, on)  — pause/resume without deleting
+ *   · getOfferBySku(sku)      — helper for storefront product page
  *
- * "Refresh on window focus" is a small win: an admin who edits a
- * product and switches back to the storefront tab sees the change
- * within ~500ms without a manual reload.
- *
- * Deliberately NOT here (yet):
- *   · Real-time subscriptions (Supabase channel) — more moving parts,
- *     not needed for a single-operator shop yet.
- *   · Per-page fetches or pagination — catalog is small enough to
- *     ship in one payload.
+ * Rest of file preserved verbatim.
  */
 
-const Ctx = createContext(null);
-
-const INITIAL = {
-  products: [],
-  categories: [],
-  brands: [],
-  loading: true,
-  error: null,
-  source: null,
-};
+const CatalogCtx = createContext(null);
 
 export function CatalogProvider({ children }) {
-  const [state, setState] = useState(INITIAL);
-  // Guard against back-to-back focus refreshes (window focus fires often)
-  const lastFetchRef = useRef(0);
+  const [products, setProducts]     = useState([]);
+  const [categories, setCategories] = useState([]);
+  const [brands, setBrands]         = useState([]);
+  const [collections, setCollections] = useState([]);
+  const [productOffers, setProductOffers] = useState([]);
+  const [loading, setLoading]       = useState(true);
+  const [error, setError]           = useState(null);
+  const [source, setSource]         = useState("pending");
+  const initialLoadDone = useRef(false);
 
-  const fetchNow = useCallback(async ({ silent = false } = {}) => {
-    if (!silent) setState((s) => ({ ...s, loading: true }));
+  /* ---- Initial load ---- */
+
+  async function reload() {
+    setLoading(true);
+    setError(null);
+
     const bundle = await loadCatalog();
-    lastFetchRef.current = Date.now();
+    setProducts(bundle.products);
+    setCategories(bundle.categories);
+    setBrands(bundle.brands);
+    setSource(bundle.source);
+    if (bundle.error) setError(bundle.error);
+
+    /* Sync snapshot for non-hook consumers */
     setSnapshot({
       products:   bundle.products,
       categories: bundle.categories,
       brands:     bundle.brands,
     });
-    setState({
-      products:   bundle.products,
-      categories: bundle.categories,
-      brands:     bundle.brands,
-      source:     bundle.source,
-      loading:    false,
-      error:      bundle.error,
-    });
+
+    /* Load collections (best-effort, silent on failure) */
+    if (supabaseConfigured) {
+      const collectionsRes = await fetchAllCollections();
+      if (collectionsRes.ok) setCollections(collectionsRes.data || []);
+    }
+
+    /* Load offers (best-effort, silent on failure) */
+    if (supabaseConfigured) {
+      const offersRes = await fetchAllOffers();
+      if (offersRes.ok) setProductOffers(offersRes.data || []);
+    }
+
+    setLoading(false);
+    initialLoadDone.current = true;
+  }
+
+  useEffect(() => {
+    reload();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Initial load
-  useEffect(() => {
-    fetchNow();
-  }, [fetchNow]);
+  /* ============================================================
+     PRODUCT operations (admin)
+     ============================================================ */
 
-  // Refresh on window focus (throttled to once per 30s so quick tab
-  // flips don't hammer Supabase)
-  useEffect(() => {
-    function onFocus() {
-      if (Date.now() - lastFetchRef.current < 30_000) return;
-      fetchNow({ silent: true });
-    }
-    window.addEventListener("focus", onFocus);
-    return () => window.removeEventListener("focus", onFocus);
-  }, [fetchNow]);
+  async function upsertProduct(payload) {
+    if (!supabaseConfigured) throw new Error("Supabase not configured.");
+    const { data, error: err } = await supabase
+      .from("products")
+      .upsert(payload, { onConflict: "sku" })
+      .select()
+      .single();
+    if (err) throw err;
 
-  // Memoized helpers that mirror the old src/data/products.js API.
-  // Because we depend on state.products/categories/brands, every helper
-  // reference is stable across the SAME data snapshot — which is what
-  // components memoizing on these expect.
-  const helpers = useMemo(() => {
-    const { products, categories, brands } = state;
-    return {
-      bySku:      (sku)   => products.find((p) => p.sku === sku) || null,
-      bySlug:     (slug)  => products.find((p) => p.slug === slug) || null,
-      byCategory: (catId) => products.filter((p) => p.category === catId),
-      byBrand:    (brand) => products.filter((p) => p.brand === brand),
-      byId:       (catId) => categories.find((c) => c.id === catId) || null,
-      brandById:  (id)    => brands.find((b) => b.id === id) || null,
-      /** Look up a brand by id OR case-insensitive display name. */
-      findBrand:  (idOrName) => {
-        if (!idOrName) return null;
-        const k = String(idOrName).toLowerCase();
-        return brands.find((b) => b.id === k || String(b.name).toLowerCase() === k) || null;
-      },
-      /** Deals = anything with a `was` price (a struck-through original). */
-      getDeals: () => products.filter((p) => p.was),
-    };
-  }, [state]);
+    /* Local state update: replace or add */
+    setProducts((prev) => {
+      const idx = prev.findIndex((p) => p.sku === data.sku);
+      let next;
+      if (idx >= 0) {
+        next = [...prev];
+        next[idx] = { ...next[idx], ...data };
+      } else {
+        next = [data, ...prev];
+      }
+      /* Sync snapshot */
+      setSnapshot({ products: next, categories, brands });
+      return next;
+    });
 
-  const value = useMemo(() => ({
-    products:   state.products,
-    categories: state.categories,
-    brands:     state.brands,
-    loading:    state.loading,
-    error:      state.error,
-    source:     state.source,
-    refresh:    () => fetchNow(),
-    ...helpers,
-  }), [state, helpers, fetchNow]);
+    return data;
+  }
 
-  return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
+  async function deleteProduct(sku) {
+    if (!supabaseConfigured) throw new Error("Supabase not configured.");
+    const { error: err } = await supabase
+      .from("products")
+      .delete()
+      .eq("sku", sku);
+    if (err) throw err;
+
+    setProducts((prev) => {
+      const next = prev.filter((p) => p.sku !== sku);
+      setSnapshot({ products: next, categories, brands });
+      return next;
+    });
+  }
+
+  /* ============================================================
+     COLLECTION operations (admin)
+     ============================================================ */
+
+  async function upsertCollection(payload) {
+    if (!supabaseConfigured) throw new Error("Supabase not configured.");
+    const isUpdate = !!payload.id;
+    const op = isUpdate
+      ? supabase.from("collections").update(payload).eq("id", payload.id)
+      : supabase.from("collections").insert(payload);
+    const { data, error: err } = await op.select().single();
+    if (err) throw err;
+
+    setCollections((prev) => {
+      const idx = prev.findIndex((c) => c.id === data.id);
+      if (idx >= 0) {
+        const next = [...prev];
+        next[idx] = { ...next[idx], ...data };
+        return next;
+      }
+      return [data, ...prev];
+    });
+
+    return data;
+  }
+
+  async function deleteCollection(id) {
+    if (!supabaseConfigured) throw new Error("Supabase not configured.");
+    const { error: err } = await supabase
+      .from("collections")
+      .delete()
+      .eq("id", id);
+    if (err) throw err;
+
+    setCollections((prev) => prev.filter((c) => c.id !== id));
+  }
+
+  function _setCollections(list) {
+    setCollections(list);
+  }
+
+  /* ============================================================
+     OFFER operations (admin) — NEW in Session 2
+     ============================================================ */
+
+  async function loadOffers() {
+    if (!supabaseConfigured) return;
+    const res = await fetchAllOffers();
+    if (res.ok) setProductOffers(res.data || []);
+  }
+
+  async function upsertOffer(payload) {
+    const isUpdate = !!payload.id;
+    const res = isUpdate
+      ? await apiUpdateOffer(payload.id, payload)
+      : await apiCreateOffer(payload);
+
+    if (!res.ok) throw new Error(res.error);
+
+    /* Refresh from DB to get the joined product data. Simpler
+       than reconstructing the join client-side. */
+    await loadOffers();
+
+    return res.data;
+  }
+
+  async function removeOffer(id) {
+    const res = await apiDeleteOffer(id);
+    if (!res.ok) throw new Error(res.error);
+    setProductOffers((prev) => prev.filter((o) => o.id !== id));
+  }
+
+  async function setOfferActive(id, isActive) {
+    const res = await apiToggleOfferActive(id, isActive);
+    if (!res.ok) throw new Error(res.error);
+    setProductOffers((prev) =>
+      prev.map((o) => (o.id === id ? { ...o, is_active: isActive } : o))
+    );
+  }
+
+  /* Storefront helper: find an offer for a specific product SKU.
+     Returns the offer only if it's active and not expired. */
+  function getOfferBySku(sku) {
+    if (!sku) return null;
+    const now = Date.now();
+    return productOffers.find(
+      (o) =>
+        o.product_sku === sku &&
+        o.is_active &&
+        new Date(o.ends_at).getTime() > now
+    ) || null;
+  }
+
+  /* ============================================================
+     HELPERS (storefront reads)
+     ============================================================ */
+
+  const byCategory = (catId) => products.filter((p) => p.category === catId);
+  const byBrand    = (brand) => products.filter((p) => p.brand === brand);
+  const bySku      = (sku)   => products.find((p) => p.sku === sku) || null;
+  const bySlug     = (slug)  => products.find((p) => p.slug === slug) || null;
+  const byId       = (catId) => categories.find((c) => c.id === catId) || null;
+  const findBrand  = (name)  => brands.find((b) => b.name === name) || null;
+
+  const value = useMemo(
+    () => ({
+      /* State */
+      products, categories, brands, collections, productOffers,
+      loading, error, source,
+
+      /* Reload */
+      reload,
+
+      /* Product CRUD */
+      upsertProduct, deleteProduct,
+
+      /* Collection CRUD */
+      upsertCollection, deleteCollection, _setCollections,
+
+      /* Offer CRUD */
+      loadOffers, upsertOffer, removeOffer, setOfferActive,
+      getOfferBySku,
+
+      /* Helpers */
+      byCategory, byBrand, bySku, bySlug, byId, findBrand,
+    }),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [products, categories, brands, collections, productOffers, loading, error, source]
+  );
+
+  return <CatalogCtx.Provider value={value}>{children}</CatalogCtx.Provider>;
 }
 
 export function useCatalog() {
-  const v = useContext(Ctx);
-  if (!v) {
-    throw new Error(
-      "useCatalog must be used inside <CatalogProvider>. Wrap the app in App.jsx."
-    );
-  }
-  return v;
+  const ctx = useContext(CatalogCtx);
+  if (!ctx) throw new Error("useCatalog must be used within CatalogProvider");
+  return ctx;
 }

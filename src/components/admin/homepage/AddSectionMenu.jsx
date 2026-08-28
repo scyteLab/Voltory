@@ -19,6 +19,7 @@ const OPTIONS = [
   { kind: "app_promo",         label: "App Promo Banner",       hint: "Download-the-app CTA" },
   { kind: "bottom_benefits",   label: "Bottom Benefits Strip",  hint: "Full-width trust bar" },
   { kind: "last_viewed",       label: "Recently Viewed",        hint: "Personalised, per visitor" },
+  { kind: "last_searched",     label: "Last Searched",          hint: "Recent search terms, re-scored against live prices" },
 ];
 
 const DEFAULT_CONFIGS = {

@@ -1,0 +1,72 @@
+/* ============================================================
+   ATTRIBUTE FILTERS  (Session 3)
+   Extends the existing .cfilter styles with widget-specific
+   additions: color swatches, number-range hint text.
+   ============================================================ */
+
+/* ---- Color swatches (color-type attribute filter) ---- */
+
+.cfilter__swatches {
+  list-style: none;
+  padding: 0;
+  margin: 6px 0 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.cfilter__swatch {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 6px 8px;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  cursor: pointer;
+  font: inherit;
+  font-size: 13px;
+  color: var(--ink);
+  text-align: left;
+  transition: background 100ms, border-color 100ms;
+}
+
+.cfilter__swatch:hover {
+  background: #f8fafc;
+}
+
+.cfilter__swatch--on {
+  background: #eff6ff;
+  border-color: #bfdbfe;
+}
+
+.cfilter__swatch-color {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  box-shadow: inset 0 0 0 2px #ffffff;
+  flex-shrink: 0;
+  display: inline-block;
+}
+
+.cfilter__swatch-lbl {
+  flex: 1;
+  font-weight: 500;
+}
+
+.cfilter__swatch em {
+  color: var(--mut);
+  font-size: 11.5px;
+  font-style: normal;
+}
+
+/* ---- Number range hint ---- */
+
+.cfilter__hint {
+  display: block;
+  margin-top: 6px;
+  font-size: 11.5px;
+  color: var(--mut);
+}

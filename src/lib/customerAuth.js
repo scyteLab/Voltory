@@ -1,336 +1,420 @@
-import { supabase, supabaseConfigured } from "./supabaseClient.js";
+import bcrypt from "bcryptjs";
+import { supabase } from "./supabaseClient.js";
 
 /**
- * customerAuth — Session 30 (own-auth interim; Session 32 migrates to Supabase Auth).
+ * customerAuth.js  \u2014  storefront customer auth (password-based)
  *
- * Two entry points that create customer rows:
- *   • verifyOtp()          — explicit signup / login. Creates a session.
- *   • upsertFromCheckout() — silent, from guest checkout. No session.
+ * Pivoted from OTP to phone + password.
+ * Reasons documented in the accompanying session README.
  *
- * Both flows share the same underlying "find-or-create customer by phone"
- * logic (findOrCreateCustomer) so a customer who checked out as a guest
- * and later signs up ends up merging into the same row cleanly.
+ * Public API:
+ *   getCurrentCustomer()
+ *   signUp({ phone, password, name, email? })
+ *   signIn({ phone, password })
+ *   signOutCurrent()
+ *   updateProfile(patch)
+ *   changePassword({ currentPassword, newPassword })
  *
- * OTP is FAKE in this session — always "1234". The signup / login UIs
- * show a visible "Development Mode: OTP is 1234" banner. Session 32
- * replaces this with Termii + real codes.
+ * Session model unchanged from OTP era:
+ *   \u00B7 On successful sign-in/up, we mint a session token
+ *   \u00B7 Token stored in localStorage under SESSION_KEY
+ *   \u00B7 Token \u2194 customer_id row in `customer_sessions` table
+ *   \u00B7 30-day expiry
+ *
+ * Security notes (honest, documented tradeoffs):
+ *   \u00B7 Passwords hashed client-side with bcrypt (10 rounds).
+ *     This reveals the hashing algorithm to attackers but avoids
+ *     a serverless function for launch. Migration to server-side
+ *     hashing is a future hardening pass.
+ *   \u00B7 Rate limiting on sign-in: max 5 attempts per phone per
+ *     15 minutes. Blocks brute-force attempts at the app layer.
+ *   \u00B7 Minimum password length: 6 characters. Deliberately low
+ *     to reduce friction for Nigerian customers; brute-force
+ *     defense comes from rate limiting, not password complexity.
+ *   \u00B7 No email verification. Email is optional and only used
+ *     for password reset (future). Not a security anchor.
  */
 
-const TOKEN_KEY = "voltory_customer_session";
-const DEV_OTP_CODE = "1234"; // TODO(session-32): remove after Termii lands.
+const SESSION_KEY  = "voltory_customer_session";
+const BCRYPT_COST  = 10;
+const MIN_PASSWORD = 6;
+const MAX_LOGIN_ATTEMPTS = 5;
+const LOCKOUT_MIN  = 15;
 
 /* ============================================================
-   Phone normalisation
+   Helpers
    ============================================================ */
 
-/**
- * Normalise a Nigerian phone to +234NNNNNNNNNN.
- * Accepts 0803..., 234803..., +234 803 456 7890, etc.
- * Returns null if it doesn't look like a valid NG mobile.
- */
-export function normalisePhone(raw) {
-  if (!raw) return null;
-  const digits = String(raw).replace(/\D/g, "");
-  let core = digits;
-  if (core.startsWith("234")) core = core.slice(3);
-  else if (core.startsWith("0")) core = core.slice(1);
-  if (core.length !== 10) return null;
-  if (!/^[789]/.test(core)) return null; // NG mobile prefixes
-  return "+234" + core;
+async function hashPassword(plaintext) {
+  return bcrypt.hash(plaintext, BCRYPT_COST);
 }
 
-/* ============================================================
-   Session token helpers
-   ============================================================ */
-
-function getStoredToken() {
-  try { return localStorage.getItem(TOKEN_KEY); } catch { return null; }
-}
-function setStoredToken(token) {
+async function comparePassword(plaintext, hash) {
+  if (!hash) return false;
   try {
-    if (token) localStorage.setItem(TOKEN_KEY, token);
-    else localStorage.removeItem(TOKEN_KEY);
-  } catch { /* private mode etc */ }
+    return await bcrypt.compare(plaintext, hash);
+  } catch {
+    return false;
+  }
 }
 
-/** 256 bits of randomness, hex-encoded. Bearer credential; looked up server-side. */
-function generateSessionToken() {
-  const bytes = new Uint8Array(32);
-  crypto.getRandomValues(bytes);
-  return Array.from(bytes, (b) => b.toString(16).padStart(2, "0")).join("");
+function normalizePhone(phone) {
+  if (!phone) return "";
+  const digits = String(phone).replace(/[^\d]/g, "");
+  // Convert +234... or 234... to 0-prefixed local form
+  if (digits.startsWith("234") && digits.length === 13) return "0" + digits.slice(3);
+  if (digits.startsWith("0")   && digits.length === 11) return digits;
+  return digits;
 }
 
-/** SHA-256 hex. Same function will still be used post-Termii. */
-async function hashCode(code) {
-  const buf = new TextEncoder().encode(String(code));
-  const digest = await crypto.subtle.digest("SHA-256", buf);
-  return Array.from(new Uint8Array(digest), (b) => b.toString(16).padStart(2, "0")).join("");
+function validatePassword(pw) {
+  if (!pw || typeof pw !== "string") return "Password is required.";
+  if (pw.length < MIN_PASSWORD) return `Password must be at least ${MIN_PASSWORD} characters.`;
+  return null;
+}
+
+function validatePhone(phone) {
+  const normalized = normalizePhone(phone);
+  if (!normalized) return "Phone number is required.";
+  if (!/^0[7-9][01]\d{8}$/.test(normalized)) return "Please enter a valid Nigerian phone number.";
+  return null;
 }
 
 /* ============================================================
-   Shared: find-or-create customer by phone
+   Sign up  \u2014  create account with phone + password
    ============================================================ */
 
-/**
- * Look up an existing customer by phone. If none exists, create one
- * with the given profile fields. If one exists, merge in any provided
- * fields without overwriting existing values.
- *
- * `source` is only applied on creation. A guest who later signs up
- * keeps source='guest' — which is honest and useful for analytics.
- * Session 32 can add a `has_signed_up` flag if we want to distinguish.
- */
-async function findOrCreateCustomer({ phone, profile = {}, source = "guest" }) {
-  const existing = await supabase
-    .from("customers")
-    .select("*")
-    .eq("phone", phone)
-    .maybeSingle();
-  if (existing.error) return { ok: false, error: existing.error.message };
+export async function signUp({ phone, password, name, email }) {
+  const phoneErr = validatePhone(phone);
+  if (phoneErr) return { ok: false, error: phoneErr };
 
-  if (existing.data) {
-    // Merge in any new fields we have that aren't already set
-    const patch = {};
-    if (profile.name  && !existing.data.name)  patch.name  = profile.name;
-    if (profile.email && !existing.data.email) patch.email = profile.email;
-    if (profile.gender && !existing.data.gender) patch.gender = profile.gender;
-    if (profile.dob   && !existing.data.dob)   patch.dob   = profile.dob;
-    if (profile.marketing_opt_in && !existing.data.marketing_opt_in) {
-      patch.marketing_opt_in = true;
+  const pwErr = validatePassword(password);
+  if (pwErr) return { ok: false, error: pwErr };
+
+  if (!name?.trim()) return { ok: false, error: "Name is required." };
+
+  const normalizedPhone = normalizePhone(phone);
+  const cleanEmail = email?.trim() ? email.trim().toLowerCase() : null;
+
+  try {
+    /* Check if phone already registered with a password */
+    const { data: existing, error: findErr } = await supabase
+      .from("customers")
+      .select("id, password_hash")
+      .eq("phone", normalizedPhone)
+      .maybeSingle();
+
+    if (findErr) return { ok: false, error: findErr.message };
+
+    if (existing?.password_hash) {
+      return { ok: false, error: "An account with this phone number already exists. Please sign in." };
     }
-    if (!Object.keys(patch).length) return { ok: true, customer: existing.data };
-    const upd = await supabase.from("customers")
-      .update(patch)
-      .eq("id", existing.data.id)
-      .select()
-      .single();
-    if (upd.error) return { ok: false, error: upd.error.message };
-    return { ok: true, customer: upd.data };
-  }
 
-  // Create fresh
-  const ins = await supabase.from("customers")
+    const passwordHash = await hashPassword(password);
+
+    let customer;
+    if (existing) {
+      /* Phone exists (from guest checkout) but no password \u2014
+         upgrade the existing row rather than duplicate */
+      const { data, error } = await supabase
+        .from("customers")
+        .update({
+          password_hash: passwordHash,
+          name:  name.trim(),
+          email: cleanEmail,
+        })
+        .eq("id", existing.id)
+        .select()
+        .single();
+      if (error) return { ok: false, error: error.message };
+      customer = data;
+    } else {
+      const { data, error } = await supabase
+        .from("customers")
+        .insert({
+          phone: normalizedPhone,
+          password_hash: passwordHash,
+          name:  name.trim(),
+          email: cleanEmail,
+        })
+        .select()
+        .single();
+      if (error) return { ok: false, error: error.message };
+      customer = data;
+    }
+
+    const sessRes = await mintSession(customer.id);
+    if (!sessRes.ok) return sessRes;
+
+    return { ok: true, customer };
+  } catch (err) {
+    return { ok: false, error: err?.message || String(err) };
+  }
+}
+
+/* ============================================================
+   Sign in  \u2014  phone + password
+   ============================================================ */
+
+export async function signIn({ phone, password }) {
+  const phoneErr = validatePhone(phone);
+  if (phoneErr) return { ok: false, error: phoneErr };
+  if (!password) return { ok: false, error: "Password is required." };
+
+  const normalizedPhone = normalizePhone(phone);
+
+  try {
+    /* Rate limit: count recent failed attempts for this phone.
+       We reuse customer_otp_challenges as a lightweight attempts
+       log (repurposed \u2014 the `purpose` column now stores
+       'login_fail' rows). No new table needed. */
+    const rateCutoff = new Date(Date.now() - LOCKOUT_MIN * 60 * 1000).toISOString();
+
+    const { count } = await supabase
+      .from("customer_otp_challenges")
+      .select("id", { count: "exact", head: true })
+      .eq("phone", normalizedPhone)
+      .eq("purpose", "login_fail")
+      .gt("created_at", rateCutoff);
+
+    if (count != null && count >= MAX_LOGIN_ATTEMPTS) {
+      return {
+        ok: false,
+        error: `Too many failed sign-in attempts. Try again in ${LOCKOUT_MIN} minutes.`,
+      };
+    }
+
+    /* Fetch customer */
+    const { data: customer, error: findErr } = await supabase
+      .from("customers")
+      .select("*")
+      .eq("phone", normalizedPhone)
+      .maybeSingle();
+
+    if (findErr) return { ok: false, error: findErr.message };
+
+    if (!customer) {
+      /* Log failed attempt to defeat username enumeration */
+      logFailedAttempt(normalizedPhone);
+      return { ok: false, error: "Invalid phone number or password." };
+    }
+
+    if (!customer.password_hash) {
+      /* Legacy customer (from guest checkout or OTP era) \u2014
+         has phone but never set a password. Prompt to sign up. */
+      return {
+        ok: false,
+        error: "This phone number has never been used to create an account. Please sign up.",
+        needsSignup: true,
+      };
+    }
+
+    const passwordOk = await comparePassword(password, customer.password_hash);
+    if (!passwordOk) {
+      logFailedAttempt(normalizedPhone);
+      const remaining = Math.max(0, MAX_LOGIN_ATTEMPTS - (count || 0) - 1);
+      return {
+        ok: false,
+        error: remaining > 0
+          ? `Invalid phone number or password. ${remaining} attempt${remaining === 1 ? "" : "s"} left.`
+          : `Too many failed sign-in attempts. Try again in ${LOCKOUT_MIN} minutes.`,
+      };
+    }
+
+    /* Success \u2014 clean up any failed-attempt log rows for this
+       phone so future attempts start fresh */
+    supabase
+      .from("customer_otp_challenges")
+      .delete()
+      .eq("phone", normalizedPhone)
+      .eq("purpose", "login_fail")
+      .then(() => {}, () => {});
+
+    const sessRes = await mintSession(customer.id);
+    if (!sessRes.ok) return sessRes;
+
+    return { ok: true, customer };
+  } catch (err) {
+    return { ok: false, error: err?.message || String(err) };
+  }
+}
+
+/**
+ * Fire-and-forget log of a failed login attempt.
+ * Reuses customer_otp_challenges as an attempts tracker to
+ * avoid a new table for launch.
+ */
+function logFailedAttempt(phone) {
+  const expiresAt = new Date(Date.now() + LOCKOUT_MIN * 60 * 1000).toISOString();
+  supabase
+    .from("customer_otp_challenges")
     .insert({
       phone,
-      source,
-      name:  profile.name  || null,
-      email: profile.email || null,
-      gender: profile.gender || null,
-      dob:   profile.dob   || null,
-      marketing_opt_in: !!profile.marketing_opt_in,
+      code_hash: "login_fail",
+      purpose:   "login_fail",
+      attempts:  1,
+      expires_at: expiresAt,
     })
-    .select()
-    .single();
-  if (ins.error) return { ok: false, error: ins.error.message };
-  return { ok: true, customer: ins.data };
+    .then(() => {}, () => {});
 }
 
 /* ============================================================
-   Explicit signup / login flow (creates a session)
-   ============================================================ */
+   Guest checkout (silent — no session, no password)
+   ============================================================
+   Called from StoreContext.placeOrder on every checkout to ensure a
+   `customers` row exists for the phone number, so the order can be
+   linked to it. Does NOT set a password or mint a session — the
+   shopper stays a guest until they explicitly sign up.
+*/
 
-/**
- * Request an OTP. Same call for signup and login; the `purpose` field
- * on the challenge row disambiguates. In dev, always returns the fake
- * code as `devCode` so the UI can display it.
- */
-export async function requestOtp({ phone, purpose = "login" }) {
-  const p = normalisePhone(phone);
-  if (!p) return { ok: false, error: "That doesn't look like a Nigerian phone number." };
-  if (!supabaseConfigured) return { ok: false, error: "Cannot reach account service." };
-
-  const codeHash = await hashCode(DEV_OTP_CODE);
-
-  // Always start fresh — clear any active challenges for this phone.
-  await supabase.from("customer_otp_challenges").delete().eq("phone", p);
-
-  const { error } = await supabase.from("customer_otp_challenges").insert({
-    phone: p, code_hash: codeHash, purpose,
-  });
-  if (error) return { ok: false, error: error.message };
-
-  // TODO(session-32): actually send via Termii.
-  return { ok: true, devCode: DEV_OTP_CODE };
-}
-
-/**
- * Verify OTP + mint session. For purpose='signup', creates the customer
- * (or merges into an existing row from a prior guest checkout) with
- * source='signup' on new creation. For purpose='login', requires an
- * existing customer.
- */
-export async function verifyOtp({ phone, code, purpose = "login", profile = {} }) {
-  const p = normalisePhone(phone);
-  if (!p) return { ok: false, error: "Phone number looks off." };
-  if (!code || !/^\d{4}$/.test(String(code))) {
-    return { ok: false, error: "Enter the 4-digit code." };
-  }
-  if (!supabaseConfigured) return { ok: false, error: "Cannot reach account service." };
-
-  const codeHash = await hashCode(code);
-
-  const { data: challenge, error: chErr } = await supabase
-    .from("customer_otp_challenges")
-    .select("*")
-    .eq("phone", p)
-    .eq("purpose", purpose)
-    .gt("expires_at", new Date().toISOString())
-    .order("created_at", { ascending: false })
-    .limit(1)
-    .maybeSingle();
-
-  if (chErr) return { ok: false, error: chErr.message };
-  if (!challenge) return { ok: false, error: "Your code expired. Request a new one." };
-  if (challenge.attempts >= 5) return { ok: false, error: "Too many attempts. Request a new code." };
-  if (challenge.code_hash !== codeHash) {
-    await supabase.from("customer_otp_challenges")
-      .update({ attempts: challenge.attempts + 1 })
-      .eq("id", challenge.id);
-    return { ok: false, error: "That code is incorrect." };
-  }
-
-  // Consume the challenge so it can't be replayed
-  await supabase.from("customer_otp_challenges").delete().eq("id", challenge.id);
-
-  // For login, require existing customer.
-  // For signup, create or merge. If a guest row exists, this signup
-  // silently upgrades it — no "welcome back" popup, per product decision.
-  const existing = await supabase.from("customers").select("*").eq("phone", p).maybeSingle();
-  if (existing.error) return { ok: false, error: existing.error.message };
-
-  let customer;
-  if (existing.data) {
-    // Merge in profile fields for signup
-    if (purpose === "signup") {
-      const res = await findOrCreateCustomer({ phone: p, profile, source: "signup" });
-      if (!res.ok) return res;
-      customer = res.customer;
-    } else {
-      customer = existing.data;
-    }
-  } else {
-    if (purpose === "login") {
-      return { ok: false, error: "No account for that number yet. Try signing up." };
-    }
-    const res = await findOrCreateCustomer({ phone: p, profile, source: "signup" });
-    if (!res.ok) return res;
-    customer = res.customer;
-  }
-
-  // Mint session
-  const token = generateSessionToken();
-  const sess = await supabase.from("customer_sessions").insert({
-    token,
-    customer_id: customer.id,
-    user_agent: (typeof navigator !== "undefined" ? navigator.userAgent : null),
-  });
-  if (sess.error) return { ok: false, error: sess.error.message };
-
-  await supabase.from("customers")
-    .update({ last_seen_at: new Date().toISOString() })
-    .eq("id", customer.id);
-
-  setStoredToken(token);
-  return { ok: true, customer, token };
-}
-
-/* ============================================================
-   Guest checkout path (silent — NO session)
-   ============================================================ */
-
-/**
- * Called from StoreContext.placeOrder for every checkout. Ensures a
- * `customers` row exists for the phone number and returns its id so
- * the caller can persist it on the order.
- *
- * IMPORTANT: does NOT mint a session token. The customer stays a
- * guest from the browser's perspective — no /account access, no
- * "signed in" state. The only effect is a real DB record the admin
- * can see, and future orders will link cleanly.
- *
- * If the customer was previously signed in (either now or in the
- * past) and happens to use the same phone at checkout, no problem —
- * we find the existing row and reuse it. Their session (if any) is
- * unaffected.
- */
 export async function upsertFromCheckout({ phone, name, email }) {
-  const p = normalisePhone(phone);
-  if (!p) return { ok: false, error: "Phone number invalid.", id: null };
-  if (!supabaseConfigured) return { ok: false, error: "Supabase unreachable.", id: null };
+  const normalizedPhone = normalizePhone(phone);
+  if (!normalizedPhone) return { ok: false, error: "Phone number is required.", id: null };
 
-  const res = await findOrCreateCustomer({
-    phone: p,
-    profile: { name, email },
-    source: "guest",
-  });
-  if (!res.ok) return { ok: false, error: res.error, id: null };
+  const cleanEmail = email?.trim() ? email.trim().toLowerCase() : null;
 
-  // Silently bump last_seen_at so this counts as activity
-  await supabase.from("customers")
-    .update({ last_seen_at: new Date().toISOString() })
-    .eq("id", res.customer.id);
+  try {
+    const { data: existing, error: findErr } = await supabase
+      .from("customers")
+      .select("id, name, email")
+      .eq("phone", normalizedPhone)
+      .maybeSingle();
+    if (findErr) return { ok: false, error: findErr.message, id: null };
 
-  return { ok: true, id: res.customer.id };
+    if (existing) {
+      const patch = {};
+      if (name && !existing.name) patch.name = name;
+      if (cleanEmail && !existing.email) patch.email = cleanEmail;
+      if (Object.keys(patch).length) {
+        await supabase.from("customers").update(patch).eq("id", existing.id);
+      }
+      return { ok: true, id: existing.id };
+    }
+
+    const { data: created, error: insErr } = await supabase
+      .from("customers")
+      .insert({ phone: normalizedPhone, name: name || null, email: cleanEmail })
+      .select("id")
+      .single();
+    if (insErr) return { ok: false, error: insErr.message, id: null };
+
+    return { ok: true, id: created.id };
+  } catch (err) {
+    return { ok: false, error: err?.message || String(err), id: null };
+  }
 }
 
 /* ============================================================
-   Session lifecycle
+   Session management
    ============================================================ */
 
-/** Resolve current signed-in customer, or null. Renews last_seen_at fire-and-forget. */
+async function mintSession(customerId) {
+  try {
+    const token = crypto.randomUUID();
+    const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
+
+    const { error } = await supabase
+      .from("customer_sessions")
+      .insert({ customer_id: customerId, token, expires_at: expiresAt });
+    if (error) return { ok: false, error: error.message };
+
+    localStorage.setItem(SESSION_KEY, token);
+    return { ok: true };
+  } catch (err) {
+    return { ok: false, error: err?.message || String(err) };
+  }
+}
+
 export async function getCurrentCustomer() {
-  const token = getStoredToken();
+  const token = typeof localStorage !== "undefined" ? localStorage.getItem(SESSION_KEY) : null;
   if (!token) return null;
-  if (!supabaseConfigured) return null;
 
-  const now = new Date().toISOString();
+  try {
+    const { data: session } = await supabase
+      .from("customer_sessions")
+      .select("customer_id, expires_at")
+      .eq("token", token)
+      .maybeSingle();
 
-  const { data: session, error } = await supabase
-    .from("customer_sessions")
-    .select("token, customer_id, expires_at")
-    .eq("token", token)
-    .maybeSingle();
+    if (!session || new Date(session.expires_at).getTime() < Date.now()) {
+      localStorage.removeItem(SESSION_KEY);
+      return null;
+    }
 
-  if (error || !session) { setStoredToken(null); return null; }
-  if (new Date(session.expires_at) < new Date()) {
-    await supabase.from("customer_sessions").delete().eq("token", token);
-    setStoredToken(null);
+    const { data: customer } = await supabase
+      .from("customers")
+      .select("*")
+      .eq("id", session.customer_id)
+      .maybeSingle();
+
+    return customer || null;
+  } catch (err) {
+    console.warn("[customerAuth] getCurrentCustomer threw:", err);
     return null;
   }
-
-  const { data: customer, error: cErr } = await supabase
-    .from("customers").select("*").eq("id", session.customer_id).maybeSingle();
-  if (cErr || !customer) { setStoredToken(null); return null; }
-
-  // Fire-and-forget renewals — errors ignored
-  supabase.from("customer_sessions")
-    .update({ last_seen_at: now })
-    .eq("token", token).then(() => {}, () => {});
-  supabase.from("customers")
-    .update({ last_seen_at: now })
-    .eq("id", customer.id).then(() => {}, () => {});
-
-  return customer;
 }
 
 export async function signOutCurrent() {
-  const token = getStoredToken();
-  setStoredToken(null);
-  if (token && supabaseConfigured) {
+  const token = typeof localStorage !== "undefined" ? localStorage.getItem(SESSION_KEY) : null;
+  if (!token) return { ok: true };
+
+  try {
     await supabase.from("customer_sessions").delete().eq("token", token);
+  } catch (err) {
+    console.warn("[customerAuth] signOutCurrent threw:", err);
   }
+  localStorage.removeItem(SESSION_KEY);
+  return { ok: true };
 }
+
+/* ============================================================
+   Profile + password updates
+   ============================================================ */
 
 export async function updateProfile(patch) {
   const current = await getCurrentCustomer();
   if (!current) return { ok: false, error: "Not signed in." };
-  const clean = {};
-  for (const k of ["name", "email", "gender", "dob", "marketing_opt_in"]) {
-    if (patch[k] !== undefined) clean[k] = patch[k];
+
+  /* Don't allow arbitrary password_hash overwrites via this path */
+  const safe = { ...patch };
+  delete safe.password_hash;
+  delete safe.id;
+  delete safe.phone;
+
+  try {
+    const { data, error } = await supabase
+      .from("customers")
+      .update(safe)
+      .eq("id", current.id)
+      .select()
+      .single();
+    if (error) return { ok: false, error: error.message };
+    return { ok: true, customer: data };
+  } catch (err) {
+    return { ok: false, error: err?.message || String(err) };
   }
-  if (!Object.keys(clean).length) return { ok: true, customer: current };
-  const { data, error } = await supabase
-    .from("customers").update(clean).eq("id", current.id).select().single();
-  if (error) return { ok: false, error: error.message };
-  return { ok: true, customer: data };
+}
+
+export async function changePassword({ currentPassword, newPassword }) {
+  const current = await getCurrentCustomer();
+  if (!current) return { ok: false, error: "Not signed in." };
+
+  const pwErr = validatePassword(newPassword);
+  if (pwErr) return { ok: false, error: pwErr };
+
+  try {
+    const ok = await comparePassword(currentPassword, current.password_hash);
+    if (!ok) return { ok: false, error: "Current password is incorrect." };
+
+    const newHash = await hashPassword(newPassword);
+    const { error } = await supabase
+      .from("customers")
+      .update({ password_hash: newHash })
+      .eq("id", current.id);
+    if (error) return { ok: false, error: error.message };
+
+    return { ok: true };
+  } catch (err) {
+    return { ok: false, error: err?.message || String(err) };
+  }
 }

@@ -1,39 +1,40 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 import {
   getCurrentCustomer,
-  requestOtp as apiRequestOtp,
-  verifyOtp as apiVerifyOtp,
+  signUp as apiSignUp,
+  signIn as apiSignIn,
   signOutCurrent,
   updateProfile as apiUpdateProfile,
+  changePassword as apiChangePassword,
 } from "../lib/customerAuth.js";
 
 /**
- * AuthProvider
+ * AuthProvider  \u2014  storefront customer context (password-based)
  *
- * Provides the storefront with a customer context. A customer here
- * is a SIGNED-IN customer — one who went through the explicit signup
- * or login flow and has a session token.
+ * Pivoted from OTP to phone + password.
  *
- * Guest checkouts do NOT populate this context. They create a
- * customer row via upsertFromCheckout (called from StoreContext),
- * but no session is minted, so `customer` stays null.
- *
- * API:
- *   customer           — signed-in customer or null
- *   isAuthenticated    — !!customer
- *   loading            — true during initial session resolve
- *   requestOtp({phone, purpose})
- *   verifyOtp({phone, code, purpose, profile})
+ * Public API:
+ *   customer          \u2014 signed-in customer or null
+ *   isAuthenticated   \u2014 !!customer
+ *   loading           \u2014 true during initial session resolve
+ *   signUp({ phone, password, name, email? })
+ *   signIn({ phone, password })
  *   signOut()
  *   updateProfile(patch)
- *   refresh()          — re-fetch current customer
+ *   changePassword({ currentPassword, newPassword })
+ *   refresh()         \u2014 re-fetch current customer
+ *
+ * Backwards compatibility: the OLD requestOtp / verifyOtp
+ * functions no longer exist. Any component still importing
+ * them will fail at import time \u2014 which surfaces the
+ * migration cleanly.
  */
 
 const Ctx = createContext(null);
 
 export function AuthProvider({ children }) {
   const [customer, setCustomer] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading]   = useState(true);
 
   const refresh = useCallback(async () => {
     const c = await getCurrentCustomer();
@@ -53,10 +54,14 @@ export function AuthProvider({ children }) {
     return () => { cancelled = true; };
   }, []);
 
-  const requestOtp = useCallback((args) => apiRequestOtp(args), []);
+  const signUp = useCallback(async (args) => {
+    const res = await apiSignUp(args);
+    if (res.ok) setCustomer(res.customer);
+    return res;
+  }, []);
 
-  const verifyOtp = useCallback(async (args) => {
-    const res = await apiVerifyOtp(args);
+  const signIn = useCallback(async (args) => {
+    const res = await apiSignIn(args);
     if (res.ok) setCustomer(res.customer);
     return res;
   }, []);
@@ -72,16 +77,19 @@ export function AuthProvider({ children }) {
     return res;
   }, []);
 
+  const changePassword = useCallback((args) => apiChangePassword(args), []);
+
   const value = useMemo(() => ({
     customer,
     isAuthenticated: !!customer,
     loading,
-    requestOtp,
-    verifyOtp,
+    signUp,
+    signIn,
     signOut,
     updateProfile,
+    changePassword,
     refresh,
-  }), [customer, loading, requestOtp, verifyOtp, signOut, updateProfile, refresh]);
+  }), [customer, loading, signUp, signIn, signOut, updateProfile, changePassword, refresh]);
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }

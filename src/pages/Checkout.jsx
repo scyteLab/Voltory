@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link, Navigate, useNavigate } from "react-router-dom";
 import {
-  BadgeCheck, Banknote, ChevronRight, CreditCard, Home as HomeIcon,
+  BadgeCheck, Banknote, ChevronRight, CreditCard, Gift, Home as HomeIcon,
   Info, Lock, MapPin, Phone, Smartphone as PhoneIcon, User, Wrench,
 } from "lucide-react";
 import { useStore } from "../context/StoreContext.jsx";
@@ -34,9 +34,6 @@ export default function Checkout() {
   const { get: getCheckoutSetting } = useCheckoutSettings();
   const navigate = useNavigate();
 
-  // Pre-fill from the signed-in customer if any. Phone in DB is
-  // +2348..., but the checkout form shows/accepts 08... so we strip
-  // the +234 prefix for display.
   const prefillPhone = (customer?.phone || "").startsWith("+234")
     ? "0" + customer.phone.slice(4)
     : (customer?.phone || "");
@@ -47,11 +44,6 @@ export default function Checkout() {
     email: customer?.email || "",
   });
 
-  // Saved addresses (only relevant for signed-in customers). If any
-  // saved addresses exist, we default to the customer's default
-  // address (or the first one) instead of an empty form. Setting
-  // pickedAddressId to null means "the customer wants to enter a
-  // new address" and the manual form is shown.
   const { addresses: savedAddresses, create: createSavedAddress } = useCustomerAddresses();
   const [pickedAddressId, setPickedAddressId] = useState(null);
   const [pickerInitialised, setPickerInitialised] = useState(false);
@@ -69,17 +61,10 @@ export default function Checkout() {
   const [submitting, setSubmitting] = useState(false);
 
   const installFee = installation ? SITE.installationFee : 0;
-  // Recomputed from the admin-configurable threshold (AdminMarketing)
-  // instead of trusting totals.grand, which is memoized in StoreContext
-  // off the static SITE.freeDeliveryOver. Passed through to placeOrder()
-  // below so the saved order matches what's actually charged.
   const freeDeliveryThreshold = getCheckoutSetting("free_delivery_threshold_ngn");
   const deliveryFee = totals.subtotal >= freeDeliveryThreshold || totals.subtotal === 0 ? 0 : 5500;
   const grand = totals.subtotal - totals.discount + deliveryFee + installFee;
 
-  // First time saved addresses arrive, auto-pick the default one
-  // (or the first one if none is marked default). Only runs once
-  // per session so we don't override the user's later choice.
   useEffect(() => {
     if (pickerInitialised) return;
     if (!savedAddresses || savedAddresses.length === 0) return;
@@ -88,9 +73,6 @@ export default function Checkout() {
     setPickerInitialised(true);
   }, [savedAddresses, pickerInitialised]);
 
-  // Whenever a saved address is picked, mirror its fields into the
-  // manual `address` state so all downstream code (validate, order
-  // save) keeps working unchanged.
   useEffect(() => {
     if (!pickedAddressId) return;
     const picked = savedAddresses.find((a) => a.id === pickedAddressId);
@@ -101,8 +83,6 @@ export default function Checkout() {
       street:   picked.street   || "",
       landmark: picked.landmark || "",
     });
-    // Also mirror name/phone into contact if the saved address has
-    // recipient info — useful for gift deliveries
     if (picked.name || picked.phone) {
       setContact((c) => ({
         ...c,
@@ -112,11 +92,6 @@ export default function Checkout() {
     }
   }, [pickedAddressId, savedAddresses]);
 
-  // Empty cart → bounce back home. Must come after every hook above
-  // (Rules of Hooks) — placeOrder() clears the cart and this can
-  // briefly re-render with an empty cart before navigate() away from
-  // /checkout takes effect, so an early return before the hooks would
-  // skip them on that render and crash.
   if (cart.length === 0) return <Navigate to="/cart" replace />;
 
   function validate() {
@@ -124,9 +99,6 @@ export default function Checkout() {
     if (!contact.name.trim()) e.name = "Full name required";
     if (!/^0[789][01]\d{8}$/.test(contact.phone.replace(/\s/g, ""))) e.phone = "Enter a valid Nigerian phone number";
     if (contact.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(contact.email)) e.email = "Invalid email format";
-    // Only validate address fields when the customer is typing a new
-    // address. If they've picked a saved one, its fields were already
-    // validated when it was created.
     if (!pickedAddressId) {
       if (!address.lga.trim()) e.lga = "LGA / City required";
       if (!address.street.trim()) e.street = "Street address required";
@@ -138,7 +110,6 @@ export default function Checkout() {
   async function onSubmit(ev) {
     ev.preventDefault();
     if (!validate()) {
-      // Scroll to first error field
       setTimeout(() => {
         const first = document.querySelector(".has-error input, .has-error select");
         first?.focus();
@@ -147,10 +118,6 @@ export default function Checkout() {
     }
     setSubmitting(true);
 
-    // If the customer typed a new address AND ticked "save for next
-    // time", fire an async save to customer_addresses. We don't wait
-    // for it — the order should proceed even if the save fails
-    // (they can always add it manually on /account/addresses later).
     if (customer && !pickedAddressId && saveForNextTime) {
       createSavedAddress({
         label: "",
@@ -160,23 +127,11 @@ export default function Checkout() {
         lga:   address.lga,
         street: address.street,
         landmark: address.landmark,
-        // First-ever save becomes default automatically
         is_default: savedAddresses.length === 0,
       }).catch(() => { /* silent; not order-blocking */ });
     }
 
-    // Compute the amount to charge (includes installation fee)
     const chargeAmount = grand;
-
-    // Route based on payment method:
-    //   · pod           → no Paystack, order goes through as unpaid
-    //   · card/transfer/ussd → Paystack Inline modal, wait for callback
-    //
-    // If Paystack isn't configured (no VITE_PAYSTACK_PUBLIC_KEY),
-    // we fall back to the pre-Paystack behaviour: order goes through
-    // as unpaid so we don't block launches when payment infra isn't
-    // wired yet.
-
     const needsPaystack = payment !== "pod" && isPaystackConfigured();
 
     if (needsPaystack) {
@@ -195,14 +150,12 @@ export default function Checkout() {
           },
         });
         if (!result.ok) {
-          // Cancelled or failed — stay on checkout
           setSubmitting(false);
           if (!result.cancelled) {
             setErrors({ payment: "Payment could not be completed. Please try again." });
           }
           return;
         }
-        // Payment succeeded — create the order with paid status
         const id = placeOrder({
           contact, address, payment, installation,
           paystackRef: result.ref,
@@ -219,7 +172,6 @@ export default function Checkout() {
       return;
     }
 
-    // Non-Paystack path (pay on delivery, or Paystack not configured)
     setTimeout(() => {
       const id = placeOrder({
         contact, address, payment, installation,
@@ -229,6 +181,9 @@ export default function Checkout() {
       navigate(`/order/${id}`);
     }, 400);
   }
+
+  /* Count of free gifts for the summary section */
+  const giftCount = cart.filter((i) => i.isGift).length;
 
   return (
     <main className="wrap">
@@ -288,8 +243,6 @@ export default function Checkout() {
           <section className="ck-card">
             <h2><span className="ck-card__step">2</span><MapPin size={18} /> Delivery Address</h2>
 
-            {/* Saved addresses picker — only shown for signed-in
-                customers who have at least one saved address. */}
             {customer && savedAddresses.length > 0 && (
               <AddressPicker
                 addresses={savedAddresses}
@@ -297,14 +250,11 @@ export default function Checkout() {
                 onSelect={(id) => setPickedAddressId(id)}
                 onNew={() => {
                   setPickedAddressId(null);
-                  // Clear the form so the customer starts fresh
                   setAddress({ state: "Lagos", lga: "", street: "", landmark: "" });
                 }}
               />
             )}
 
-            {/* Manual form — shown when no saved address is picked
-                (guest checkout, no saved addresses, or "new" toggle) */}
             {!pickedAddressId && (
             <div className="ck-grid">
               <Field label="State" error={errors.state}>
@@ -345,8 +295,6 @@ export default function Checkout() {
             </div>
             )}
 
-            {/* Save-for-next-time — only when signed in AND typing a
-                new address. Guests don't have anywhere to save to. */}
             {customer && !pickedAddressId && (
               <label className="ck-savefornext">
                 <input
@@ -358,7 +306,6 @@ export default function Checkout() {
               </label>
             )}
 
-            {/* Installation toggle */}
             <label className="ck-install">
               <input
                 type="checkbox"
@@ -408,6 +355,29 @@ export default function Checkout() {
             <h2>Order Summary</h2>
             <ul className="ck-summary__items">
               {cart.map((i) => {
+                /* Gift line — render with FREE styling, no product lookup */
+                if (i.isGift) {
+                  return (
+                    <li key={i.sku} className="ck-summary__gift">
+                      <span className="ck-summary__img">
+                        {i.giftImage ? (
+                          <img src={i.giftImage} alt="" />
+                        ) : (
+                          <span className="ck-summary__gift-icon"><Gift size={20} /></span>
+                        )}
+                        <em>{i.qty}</em>
+                      </span>
+                      <span className="ck-summary__name">
+                        <span className="ck-summary__free-label">
+                          <Gift size={10} /> FREE
+                        </span>
+                        {" "}{i.giftDescription}
+                      </span>
+                      <b>FREE</b>
+                    </li>
+                  );
+                }
+                /* Paid product line — lookup product data as before */
                 const p = bySku(i.sku);
                 if (!p) return null;
                 return (
@@ -432,6 +402,12 @@ export default function Checkout() {
                 <div className="ck-summary__discount">
                   <dt>Discount</dt>
                   <dd>−{naira(totals.discount)}</dd>
+                </div>
+              )}
+              {giftCount > 0 && (
+                <div className="ck-summary__discount">
+                  <dt><Gift size={11} /> Free gift{giftCount === 1 ? "" : "s"} included</dt>
+                  <dd>FREE</dd>
                 </div>
               )}
               <div>

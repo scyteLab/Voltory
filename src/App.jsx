@@ -17,8 +17,16 @@ import GMPortal from "./pages/admin/GMPortal.jsx";
 import GMSetup from "./pages/admin/GMSetup.jsx";
 import AdminCategories from "./pages/admin/AdminCategories.jsx";
 import AdminBrands from "./pages/admin/AdminBrands.jsx";
+import AdminCollections from "./pages/admin/AdminCollections.jsx";
+import AdminCollectionEdit from "./pages/admin/AdminCollectionEdit.jsx";
+import AdminOffers from "./pages/admin/AdminOffers.jsx";
+import AdminOfferEdit from "./pages/admin/AdminOfferEdit.jsx";
+import AdminAttributes from "./pages/admin/AdminAttributes.jsx";
+import AdminAttributeEdit from "./pages/admin/AdminAttributeEdit.jsx";
 import AdminOrders from "./pages/admin/AdminOrders.jsx";
 import AdminOrderDetail from "./pages/admin/AdminOrderDetail.jsx";
+import AdminReceipts from "./pages/admin/AdminReceipts.jsx";
+import AdminReceiptDetail from "./pages/admin/AdminReceiptDetail.jsx";
 import AdminCustomers from "./pages/admin/AdminCustomers.jsx";
 import AdminCustomerDetail from "./pages/admin/AdminCustomerDetail.jsx";
 import AdminTeam from "./pages/admin/AdminTeam.jsx";
@@ -46,12 +54,13 @@ import Product from "./pages/Product.jsx";
 import Cart from "./pages/Cart.jsx";
 import Checkout from "./pages/Checkout.jsx";
 import OrderConfirmation from "./pages/OrderConfirmation.jsx";
+import Receipt from "./pages/Receipt.jsx";
+import Collection from "./pages/Collection.jsx";
 import Category from "./pages/Category.jsx";
 import AllCategories from "./pages/AllCategories.jsx";
 import Search from "./pages/Search.jsx";
 import Login from "./pages/Login.jsx";
 import SignUp from "./pages/SignUp.jsx";
-import VerifyOtp from "./pages/VerifyOtp.jsx";
 import Brands from "./pages/Brands.jsx";
 import Brand from "./pages/Brand.jsx";
 import Deals from "./pages/Deals.jsx";
@@ -149,6 +158,7 @@ export default function App() {
               <Route path="/search" element={<Search />} />
               <Route path="/categories" element={<AllCategories />} />
               <Route path="/category/:id" element={<Category />} />
+              <Route path="/collection/:slug" element={<Collection />} />
               <Route path="/product/:slug" element={<Product />} />
               <Route path="/brands" element={<Brands />} />
               <Route path="/brand/:id" element={<Brand />} />
@@ -159,6 +169,7 @@ export default function App() {
               <Route path="/cart" element={<Cart />} />
               <Route path="/checkout" element={<Checkout />} />
               <Route path="/order/:id" element={<OrderConfirmation />} />
+              <Route path="/receipt/:id" element={<Receipt />} />
               <Route path="/track-order" element={<TrackOrder />} />
               <Route path="/help" element={<HelpCenter />} />
               <Route path="/contact" element={<Contact />} />
@@ -192,7 +203,6 @@ export default function App() {
             <Route path="/login" element={<Login />} />
             <Route path="/signup" element={<SignUp />} />
             <Route element={<AuthLayout />}>
-              <Route path="/verify-otp" element={<VerifyOtp />} />
             </Route>
 
             <Route path="/admin/login" element={<AdminLogin />} />
@@ -207,8 +217,16 @@ export default function App() {
               <Route path="/admin/products" element={<CatalogProducts />} />
               <Route path="/admin/catalog/categories" element={<AdminCategories />} />
               <Route path="/admin/catalog/brands" element={<AdminBrands />} />
+              <Route path="/admin/collections" element={<AdminCollections />} />
+              <Route path="/admin/collections/:id" element={<AdminCollectionEdit />} />
+              <Route path="/admin/offers" element={<AdminOffers />} />
+              <Route path="/admin/offers/:id" element={<AdminOfferEdit />} />
+              <Route path="/admin/attributes" element={<AdminAttributes />} />
+              <Route path="/admin/attributes/:id" element={<AdminAttributeEdit />} />
               <Route path="/admin/orders" element={<AdminOrders />} />
               <Route path="/admin/orders/:id" element={<AdminOrderDetail />} />
+              <Route path="/admin/receipts" element={<AdminReceipts />} />
+              <Route path="/admin/receipts/:id" element={<AdminReceiptDetail />} />
               <Route path="/admin/customers" element={<AdminCustomers />} />
               <Route path="/admin/customers/:phone" element={<AdminCustomerDetail />} />
               <Route path="/admin/team" element={<AdminTeam />} />

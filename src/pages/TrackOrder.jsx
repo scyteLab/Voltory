@@ -4,19 +4,34 @@ import {
   AlertCircle, ChevronRight, Check, Home as HomeIcon, MapPin, MessageCircle,
   Package, Phone, Receipt, Search, Truck,
 } from "lucide-react";
-import { getOrder, STATUS_FLOW, STATUS_LABEL, ORDER_STATUS } from "../utils/orders.js";
-import { fetchOrderById } from "../lib/customerOrdersClient.js";
+import { STATUS_FLOW, STATUS_LABEL, ORDER_STATUS } from "../utils/orders.js";
+import { fetchOrderByIdAndPhone } from "../lib/customerOrdersClient.js";
 import { naira } from "../utils/format.js";
 import { SITE } from "../config/site.js";
 
+/**
+ * TrackOrder — public /track-order page
+ *
+ * Guest lookup by (order id + phone). Both required. Rate-limited
+ * server-side. Preserves the existing visual design: breadcrumb,
+ * support-page shell, step tracker, WhatsApp fallback CTAs.
+ *
+ * URL query params:
+ *   ?id=VLT-...     — prefills order id field
+ *   ?phone=0803...  — prefills phone field
+ *   (both present)  — auto-submits on load (deep link from email/SMS)
+ */
 export default function TrackOrder() {
   const [searchParams] = useSearchParams();
-  const initialId = searchParams.get("id") || "";
-  const [input, setInput] = useState(initialId);
-  const [submitted, setSubmitted] = useState(initialId);
-  const [order, setOrder] = useState(() => (initialId ? getOrder(initialId) : null));
-  const [looking, setLooking] = useState(false);
-  const [error, setError] = useState(null);
+  const initialId    = searchParams.get("id") || "";
+  const initialPhone = searchParams.get("phone") || "";
+
+  const [idInput, setIdInput]       = useState(initialId);
+  const [phoneInput, setPhoneInput] = useState(initialPhone);
+  const [submitted, setSubmitted]   = useState(null);
+  const [order, setOrder]           = useState(null);
+  const [looking, setLooking]       = useState(false);
+  const [error, setError]           = useState(null);
 
   useEffect(() => {
     const prev = document.title;
@@ -24,36 +39,50 @@ export default function TrackOrder() {
     return () => { document.title = prev; };
   }, []);
 
-  // Fetch whenever `submitted` changes. Try local first (instant),
-  // then Supabase (works across devices).
+  /* Auto-submit if both params were in the URL */
   useEffect(() => {
-    if (!submitted) { setOrder(null); return; }
-    let cancelled = false;
-    const local = getOrder(submitted);
-    if (local) setOrder(local);
+    if (initialId && initialPhone) {
+      doLookup(initialId, initialPhone);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  async function doLookup(id, phone) {
+    const cleanedId = id.trim().toUpperCase();
+    setSubmitted({ id: cleanedId, phone: phone.trim() });
+    setOrder(null);
     setLooking(true);
-    fetchOrderById(submitted).then((res) => {
-      if (cancelled) return;
-      setLooking(false);
-      if (res.order) setOrder(res.order);
-      // Don't null out a local order just because remote lookup failed
-    });
-    return () => { cancelled = true; };
-  }, [submitted]);
+    setError(null);
+
+    const res = await fetchOrderByIdAndPhone({ orderId: cleanedId, phone: phone.trim() });
+    setLooking(false);
+
+    if (res.order) {
+      setOrder(res.order);
+    } else {
+      setError(res.error || "We couldn’t find that order.");
+    }
+  }
 
   function onSubmit(e) {
     e.preventDefault();
     setError(null);
-    const cleaned = input.trim().toUpperCase();
-    if (!cleaned) {
+
+    const cleanedId = idInput.trim().toUpperCase();
+    if (!cleanedId) {
       setError("Enter the order ID from your confirmation SMS or email.");
       return;
     }
-    if (!cleaned.startsWith("VLT-")) {
+    if (!cleanedId.startsWith("VLT-")) {
       setError("That doesn’t look like a NAVEN order ID. They start with VLT-.");
       return;
     }
-    setSubmitted(cleaned);
+    if (!phoneInput.trim()) {
+      setError("Enter the phone number you used when placing the order.");
+      return;
+    }
+
+    doLookup(cleanedId, phoneInput);
   }
 
   return (
@@ -68,38 +97,64 @@ export default function TrackOrder() {
         <span className="support-head__icon"><Truck size={26} /></span>
         <div>
           <h1>Track Your Order</h1>
-          <p>Enter your order ID below to see live status, delivery progress and contact options.</p>
+          <p>Enter your order ID and phone number to see live status, delivery progress and contact options.</p>
         </div>
       </header>
 
       <section className="track-form">
         <form onSubmit={onSubmit}>
-          <label className={"field" + (error ? " has-error" : "")}>
+          <label className={"field" + (error && !idInput.startsWith("VLT-") ? " has-error" : "")}>
             <span className="field__label">Order ID</span>
             <span className="auth-input">
               <Receipt size={16} />
               <input
                 type="text"
-                value={input}
-                onChange={(e) => { setInput(e.target.value); setError(null); }}
+                value={idInput}
+                onChange={(e) => { setIdInput(e.target.value); setError(null); }}
                 placeholder="e.g. VLT-202611031245-A8C2"
                 autoComplete="off"
                 spellCheck="false"
+                disabled={looking}
               />
             </span>
-            {error && <span className="field__error">{error}</span>}
             <small className="field__hint">
               Your order ID is in the confirmation SMS we sent after checkout, or in My Account → My Orders.
             </small>
           </label>
-          <button type="submit" className="auth-submit">
-            <Search size={16} /> Track Order
+
+          <label className="field">
+            <span className="field__label">Phone Number</span>
+            <span className="auth-input">
+              <Phone size={16} />
+              <input
+                type="tel"
+                inputMode="numeric"
+                value={phoneInput}
+                onChange={(e) => { setPhoneInput(e.target.value); setError(null); }}
+                placeholder="0803 123 4567"
+                autoComplete="tel"
+                disabled={looking}
+              />
+            </span>
+            <small className="field__hint">
+              The phone number used when placing the order.
+            </small>
+          </label>
+
+          {error && (
+            <div className="field has-error">
+              <span className="field__error">{error}</span>
+            </div>
+          )}
+
+          <button type="submit" className="auth-submit" disabled={looking || !idInput.trim() || !phoneInput.trim()}>
+            <Search size={16} /> {looking ? "Looking up…" : "Track Order"}
           </button>
         </form>
       </section>
 
-      {/* Result */}
-      {submitted && !order && looking && (
+      {/* Result states */}
+      {submitted && looking && !order && (
         <div className="track-noresult" style={{ borderColor: "var(--line)" }}>
           <span className="track-noresult__icon"><Search size={24} /></span>
           <div>
@@ -109,14 +164,14 @@ export default function TrackOrder() {
         </div>
       )}
 
-      {submitted && !order && !looking && (
+      {submitted && !looking && !order && error && (
         <div className="track-noresult">
           <span className="track-noresult__icon"><AlertCircle size={24} /></span>
           <div>
             <h3>We couldn’t find that order</h3>
             <p>
-              Double-check the ID for typos — it should look like <b className="mono">VLT-YYYYMMDDHHmm-XXXX</b>.
-              If you’re still stuck, our team can look it up by your phone number.
+              Double-check both the ID (like <b className="mono">VLT-YYYYMMDDHHmm-XXXX</b>) and the phone number
+              you used at checkout. If you’re still stuck, our team can help.
             </p>
             <div className="track-noresult__actions">
               <a href={SITE.whatsappLink} target="_blank" rel="noreferrer" className="btn-shop">
