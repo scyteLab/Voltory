@@ -8,26 +8,20 @@ import { supabase } from "../../lib/supabaseClient.js";
 import {
   parseCsvFile, validateRows, commitRows, generateTemplateCsv,
   TEMPLATE_CSV, COLUMNS,
-} from "../../lib/stockBulkImport.js";
+} from "../../lib/priceBulkImport.js";
 import ImportDropzone from "../../components/admin/catalog/ImportDropzone.jsx";
+import { naira } from "../../utils/format.js";
 
 /**
- * CatalogStockImport \u2014 /admin/inventory/update
+ * CatalogPriceImport \u2014 /admin/pricing/update
  *
- * Weekly stock refresh via a pre-filled CSV.
+ * Bulk price refresh via a pre-filled CSV. Mirrors the stock update
+ * page pattern for admin muscle-memory consistency.
  *
- * Workflow (as of 2026-09-26):
- *   1. Admin clicks "Download template" \u2014 CSV includes every active
- *      product with SKU, name, brand, current_stock pre-listed.
- *   2. Admin opens in Excel, filters/sorts by brand/category.
- *   3. Admin edits ONLY the new_stock column for shipments received.
- *   4. Admin uploads \u2014 preview shows delta.
- *   5. Only rows where new_stock \u2260 current_stock are applied.
- *
- * Real UX improvement over the previous blank-template workflow \u2014
- * admin doesn't have to type 500 SKUs by hand.
+ * SAFETY: only updates price + was columns. Never touches stock,
+ * images, or anything else.
  */
-export default function CatalogStockImport() {
+export default function CatalogPriceImport() {
   const navigate = useNavigate();
 
   const [refs, setRefs]           = useState(null);
@@ -52,31 +46,31 @@ export default function CatalogStockImport() {
     let cancelled = false;
     (async () => {
       try {
-        /* Fetch sku + name + brand + stock for template pre-fill.
-           Only active products so the template stays scoped and
-           inactive/discontinued items don't clutter the workflow. */
         const { data, error } = await supabase
           .from("products")
-          .select("sku, name, brand, stock, status")
+          .select("sku, name, brand, price, was, status")
           .eq("status", "active");
         if (error) throw error;
         if (cancelled) return;
 
         const existingSkus = new Set();
-        const currentStockBySku = new Map();
+        const currentPriceBySku = new Map();
+        const currentWasBySku = new Map();
         const templateRows = [];
         (data || []).forEach((r) => {
           existingSkus.add(r.sku);
-          currentStockBySku.set(r.sku, Number(r.stock) || 0);
+          currentPriceBySku.set(r.sku, Number(r.price) || 0);
+          currentWasBySku.set(r.sku, r.was == null ? null : Number(r.was));
           templateRows.push({
             sku: r.sku,
             name: r.name,
             brand: r.brand,
-            stock: Number(r.stock) || 0,
+            price: Number(r.price) || 0,
+            was: r.was == null ? null : Number(r.was),
           });
         });
 
-        setRefs({ existingSkus, currentStockBySku, templateRows });
+        setRefs({ existingSkus, currentPriceBySku, currentWasBySku, templateRows });
       } catch (err) {
         if (!cancelled) setRefsError(err.message || String(err));
       } finally {
@@ -139,19 +133,16 @@ export default function CatalogStockImport() {
   /* ---------- download template ---------- */
 
   const handleDownloadTemplate = useCallback(() => {
-    /* Prefer the dynamic pre-filled template if reference data
-       loaded; fall back to the static empty template otherwise. */
     const csv = refs?.templateRows?.length > 0
       ? generateTemplateCsv(refs.templateRows)
       : TEMPLATE_CSV;
 
-    /* BOM prefix so Excel opens UTF-8 correctly (handles \u20A6 etc) */
     const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
     const stamp = new Date().toISOString().slice(0, 10);
-    a.download = `naven-stock-update-${stamp}.csv`;
+    a.download = `naven-price-update-${stamp}.csv`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
@@ -167,8 +158,8 @@ export default function CatalogStockImport() {
     return (
       <div className="adm-page">
         <div className="hb__err">Couldn't load reference data: {refsError}</div>
-        <Link to="/admin/inventory" className="adm-btn adm-btn--secondary">
-          <ArrowLeft size={14} /> Back to inventory
+        <Link to="/admin/products" className="adm-btn adm-btn--secondary">
+          <ArrowLeft size={14} /> Back to products
         </Link>
       </div>
     );
@@ -180,12 +171,12 @@ export default function CatalogStockImport() {
     return (
       <div className="adm-page">
         <div className="waq-detail__crumbs">
-          <Link to="/admin/inventory"><ArrowLeft size={14} /> Back to inventory</Link>
+          <Link to="/admin/products"><ArrowLeft size={14} /> Back to products</Link>
         </div>
 
         <header className="adm-page__head">
           <div>
-            <h1>Stock update complete</h1>
+            <h1>Price update complete</h1>
           </div>
         </header>
 
@@ -227,9 +218,9 @@ export default function CatalogStockImport() {
             <button
               type="button"
               className="adm-btn adm-btn--primary"
-              onClick={() => navigate("/admin/inventory")}
+              onClick={() => navigate("/admin/products")}
             >
-              Back to inventory
+              Back to products
             </button>
           </div>
         </div>
@@ -242,7 +233,6 @@ export default function CatalogStockImport() {
   const totalToApply = summary?.update || 0;
   const productCount = refs?.templateRows?.length || 0;
 
-  /* Filter preview rows based on whether unchanged should show */
   const visibleRows = rowsWithVerdict
     ? (showUnchanged ? rowsWithVerdict : rowsWithVerdict.filter((r) => r.verdict !== "unchanged"))
     : null;
@@ -250,13 +240,13 @@ export default function CatalogStockImport() {
   return (
     <div className="adm-page">
       <div className="waq-detail__crumbs">
-        <Link to="/admin/inventory"><ArrowLeft size={14} /> Back to inventory</Link>
+        <Link to="/admin/products"><ArrowLeft size={14} /> Back to products</Link>
       </div>
 
       <header className="adm-page__head">
         <div>
-          <h1>Bulk update stock</h1>
-          <p>Download the pre-filled template with all {productCount} active products, edit the <b>new_stock</b> column for shipments you received, then upload. Only rows where new_stock differs from current_stock are applied.</p>
+          <h1>Bulk update prices</h1>
+          <p>Download the pre-filled template with all {productCount} active products, edit the <b>new_price</b> and <b>new_was</b> columns for the products whose prices changed, then upload. Only rows with actual changes are applied.</p>
         </div>
         <button
           type="button"
@@ -270,13 +260,13 @@ export default function CatalogStockImport() {
       <details className="adm-import__help" open={!rowsWithVerdict}>
         <summary><Info size={14} /> How this works</summary>
         <ol>
-          <li>Click <b>Download template</b> above \u2014 the CSV comes pre-filled with every active product's current stock.</li>
-          <li>Open in Excel. Filter or sort by brand/category to find your shipment items quickly.</li>
-          <li>For each product you received, edit the <b>new_stock</b> column with the new total quantity.</li>
-          <li>Leave everything else unchanged \u2014 products where new_stock stays equal to current_stock are silently skipped.</li>
-          <li>Save as CSV, drop it below, review the delta preview, then click Update.</li>
-          <li>The new stock value REPLACES the old one \u2014 this is not "add 5 more," it's "set stock to 5."</li>
-          <li>Product images, names, prices, and everything else are NEVER touched by this upload.</li>
+          <li>Click <b>Download template</b> above \u2014 the CSV comes pre-filled with every active product's current price and compare-at price.</li>
+          <li>Open in Excel. Filter or sort by brand/category to find the products you need to reprice.</li>
+          <li>Edit the <b>new_price</b> column (and optionally <b>new_was</b>) for whatever products changed.</li>
+          <li>Leave everything else unchanged \u2014 products where prices didn't change are silently skipped.</li>
+          <li><b>new_was</b> is the crossed-out original price. Leave blank for no discount. Must be higher than new_price.</li>
+          <li>Save as CSV, drop it below, review the preview, then click Update.</li>
+          <li>Stock, product images, names, and everything else are NEVER touched by this upload.</li>
         </ol>
         <div className="adm-import__cols">
           <b>Columns:</b>
@@ -323,11 +313,11 @@ export default function CatalogStockImport() {
               <span>to update</span>
             </div>
             <div className="adm-import__sumcard">
-              <b>{summary.up}</b>
+              <b>{summary.priceUp}</b>
               <span>going up</span>
             </div>
             <div className="adm-import__sumcard">
-              <b>{summary.down}</b>
+              <b>{summary.priceDown}</b>
               <span>going down</span>
             </div>
             <div className="adm-import__sumcard">
@@ -364,7 +354,7 @@ export default function CatalogStockImport() {
             </div>
           )}
 
-          <StockPreviewTable
+          <PricePreviewTable
             rows={visibleRows}
             showAll={showAll}
             onShowAll={() => setShowAll(true)}
@@ -404,12 +394,12 @@ export default function CatalogStockImport() {
 }
 
 /* ============================================================
-   Preview table \u2014 shows delta between current and new
+   Preview table
    ============================================================ */
 
 const INITIAL_LIMIT = 100;
 
-function StockPreviewTable({ rows, showAll, onShowAll }) {
+function PricePreviewTable({ rows, showAll, onShowAll }) {
   if (!rows || rows.length === 0) return null;
   const visible = showAll ? rows : rows.slice(0, INITIAL_LIMIT);
   const truncated = rows.length > INITIAL_LIMIT && !showAll;
@@ -423,9 +413,10 @@ function StockPreviewTable({ rows, showAll, onShowAll }) {
             <th style={{ width: 100 }}>Verdict</th>
             <th>SKU</th>
             <th>Name</th>
-            <th style={{ textAlign: "right" }}>Current</th>
-            <th style={{ textAlign: "right" }}>New</th>
+            <th style={{ textAlign: "right" }}>Current Price</th>
+            <th style={{ textAlign: "right" }}>New Price</th>
             <th style={{ textAlign: "right" }}>Delta</th>
+            <th style={{ textAlign: "right" }}>New Was</th>
             <th>Errors</th>
           </tr>
         </thead>
@@ -437,12 +428,19 @@ function StockPreviewTable({ rows, showAll, onShowAll }) {
               <td className="mono">{r.resolved?.sku || r.row.sku || "\u2014"}</td>
               <td>{r.row?.name || "\u2014"}</td>
               <td style={{ textAlign: "right" }} className="mono">
-                {Number.isFinite(r.resolved?.currentStock) ? r.resolved.currentStock : "\u2014"}
+                {Number.isFinite(r.resolved?.currentPrice) ? naira(r.resolved.currentPrice) : "\u2014"}
               </td>
               <td style={{ textAlign: "right" }} className="mono">
-                <b>{r.resolved?.stock ?? "\u2014"}</b>
+                <b>{Number.isFinite(r.resolved?.price) ? naira(r.resolved.price) : "\u2014"}</b>
               </td>
-              <td style={{ textAlign: "right" }}>{deltaCell(r.resolved?.delta)}</td>
+              <td style={{ textAlign: "right" }}>
+                {priceDeltaCell(r.resolved?.price, r.resolved?.currentPrice)}
+              </td>
+              <td style={{ textAlign: "right" }} className="mono">
+                {r.resolved?.was == null
+                  ? <span style={{ color: "var(--adm-ink-3)" }}>\u2014</span>
+                  : naira(r.resolved.was)}
+              </td>
               <td className="adm-import__errors">
                 {r.errors.length > 0 && (
                   <ul>{r.errors.map((e, i) => <li key={i}>{e}</li>)}</ul>
@@ -472,9 +470,16 @@ function verdictPill(v) {
   return <span className="revs__status revs__status--rejected"><AlertCircle size={11} /> Error</span>;
 }
 
-function deltaCell(delta) {
-  if (delta == null) return <span style={{ color: "var(--adm-ink-3)" }}>\u2014</span>;
-  if (delta === 0)   return <span style={{ color: "var(--adm-ink-3)", display: "inline-flex", alignItems: "center", gap: 3 }}><Minus size={11} /> 0</span>;
-  if (delta > 0)     return <span style={{ color: "#047857", fontWeight: 700, display: "inline-flex", alignItems: "center", gap: 3 }}><ArrowUp size={11} /> +{delta}</span>;
-  return <span style={{ color: "#b91c1c", fontWeight: 700, display: "inline-flex", alignItems: "center", gap: 3 }}><ArrowDown size={11} /> {delta}</span>;
+function priceDeltaCell(newPrice, currentPrice) {
+  if (!Number.isFinite(newPrice) || !Number.isFinite(currentPrice)) {
+    return <span style={{ color: "var(--adm-ink-3)" }}>\u2014</span>;
+  }
+  const delta = newPrice - currentPrice;
+  if (delta === 0) {
+    return <span style={{ color: "var(--adm-ink-3)", display: "inline-flex", alignItems: "center", gap: 3 }}><Minus size={11} /> 0</span>;
+  }
+  if (delta > 0) {
+    return <span style={{ color: "#047857", fontWeight: 700, display: "inline-flex", alignItems: "center", gap: 3 }}><ArrowUp size={11} /> +{naira(delta)}</span>;
+  }
+  return <span style={{ color: "#b91c1c", fontWeight: 700, display: "inline-flex", alignItems: "center", gap: 3 }}><ArrowDown size={11} /> {naira(Math.abs(delta))}</span>;
 }

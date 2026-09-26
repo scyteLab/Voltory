@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Link, NavLink } from "react-router-dom";
 import {
-  Boxes, ChevronDown, Gift, LayoutDashboard, LayoutGrid, LifeBuoy, Megaphone,
+  Boxes, ChevronDown, Download, Gift, LayoutDashboard, LayoutGrid, LifeBuoy, Megaphone,
   MessageCircle, Package, Receipt, Settings as SettingsIcon, ShieldCheck,
   ShoppingCart, Star, Tags, UserCog, Users,
 } from "lucide-react";
@@ -36,6 +36,7 @@ const TOP_LINKS = [
   { label: "Inventory",  icon: Boxes,        live: true,  to: "/admin/inventory", badgeKey: "lowStock" },
   { label: "Marketing",  icon: Megaphone,    live: true,  to: "/admin/marketing" },
   { label: "Reports",    icon: Tags,         live: true,  to: "/admin/reports" },
+  { label: "Exports",    icon: Download,     live: true,  to: "/admin/exports" },
   { label: "Warranty",   icon: ShieldCheck,  live: true,  to: "/admin/warranty",  badgeKey: "openWarranty" },
   { label: "Reviews",    icon: Star,         live: true,  to: "/admin/reviews",   badgeKey: "pendingReviews" },
 ];

@@ -53,6 +53,7 @@ import "./styles/product-attributes.css";
 import "./styles/attribute-filters.css";
 import "./styles/offers.css";
 import "./styles/offers-storefront.css";
+import "./styles/exports.css";
 
 ReactDOM.createRoot(document.getElementById("root")).render(
   <React.StrictMode>

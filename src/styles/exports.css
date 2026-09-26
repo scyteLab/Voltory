@@ -1,0 +1,160 @@
+/* ============================================================
+   ADMIN EXPORTS \u2014 /admin/exports styling
+   ============================================================ */
+
+.exports-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+  gap: 16px;
+  margin-top: 20px;
+}
+
+.exports-card {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 20px;
+  background: var(--adm-bg, #fff);
+  border: 1px solid var(--adm-border, #e4e6ea);
+  border-radius: 10px;
+  transition: box-shadow 0.15s, border-color 0.15s;
+}
+
+.exports-card:hover {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  border-color: var(--adm-border-strong, #d5d8dd);
+}
+
+.exports-card--wide {
+  grid-column: 1 / -1;
+}
+
+.exports-card__icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 10px;
+  color: #fff;
+}
+
+.exports-card__icon--stock {
+  background: linear-gradient(135deg, #3b82f6, #2563eb);
+}
+
+.exports-card__icon--price {
+  background: linear-gradient(135deg, #f59e0b, #d97706);
+}
+
+.exports-card__icon--sales {
+  background: linear-gradient(135deg, #10b981, #059669);
+}
+
+.exports-card h3 {
+  font-size: 17px;
+  font-weight: 700;
+  margin: 0;
+  color: var(--adm-ink, #1a1d20);
+}
+
+.exports-card p {
+  font-size: 13px;
+  color: var(--adm-ink-2, #4a4f57);
+  margin: 0;
+  line-height: 1.5;
+}
+
+.exports-card__fields {
+  list-style: disc;
+  padding-left: 20px;
+  margin: 0;
+  font-size: 12px;
+  color: var(--adm-ink-3, #6a6f78);
+  line-height: 1.7;
+}
+
+.exports-card__fields li {
+  margin: 0;
+}
+
+.exports-card .adm-btn {
+  align-self: flex-start;
+  margin-top: auto;
+}
+
+/* Date range picker inside sales card */
+.exports-daterange {
+  background: var(--adm-bg-2, #f7f8fa);
+  border: 1px solid var(--adm-border, #e4e6ea);
+  border-radius: 8px;
+  padding: 10px 14px;
+}
+
+.exports-daterange summary {
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--adm-ink-2, #4a4f57);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  user-select: none;
+}
+
+.exports-daterange summary:hover {
+  color: var(--adm-ink, #1a1d20);
+}
+
+.exports-daterange__grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-top: 12px;
+}
+
+.exports-daterange__grid label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 12px;
+  color: var(--adm-ink-2, #4a4f57);
+}
+
+.exports-daterange__grid label span {
+  font-weight: 600;
+}
+
+.exports-daterange__grid input {
+  padding: 6px 10px;
+  border: 1px solid var(--adm-border, #e4e6ea);
+  border-radius: 6px;
+  font-size: 13px;
+  font-family: inherit;
+  background: #fff;
+}
+
+.exports-daterange__grid input:focus {
+  outline: none;
+  border-color: var(--adm-accent, #3b82f6);
+}
+
+.exports-daterange__hint {
+  margin: 8px 0 0;
+  font-size: 11px;
+  color: var(--adm-ink-3, #6a6f78);
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* Responsive */
+@media (max-width: 720px) {
+  .exports-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .exports-daterange__grid {
+    grid-template-columns: 1fr;
+  }
+}

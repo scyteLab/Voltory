@@ -11,6 +11,8 @@ import AdminDashboard from "./pages/admin/AdminDashboard.jsx";
 import CatalogProducts from "./pages/admin/CatalogProducts.jsx";
 import CatalogProductsImport from "./pages/admin/CatalogProductsImport.jsx";
 import CatalogStockImport from "./pages/admin/CatalogStockImport.jsx";
+import CatalogPriceImport from "./pages/admin/CatalogPriceImport.jsx";
+import AdminExports from "./pages/admin/AdminExports.jsx";
 import AdminInventory from "./pages/admin/AdminInventory.jsx";
 import AdminMarketing from "./pages/admin/AdminMarketing.jsx";
 import GMPortal from "./pages/admin/GMPortal.jsx";
@@ -211,6 +213,8 @@ export default function App() {
               <Route path="/admin/products/import" element={<CatalogProductsImport />} />
               <Route path="/admin/inventory" element={<AdminInventory />} />
               <Route path="/admin/inventory/update" element={<CatalogStockImport />} />
+              <Route path="/admin/pricing/update" element={<CatalogPriceImport />} />
+              <Route path="/admin/exports" element={<AdminExports />} />
               <Route path="/admin/marketing" element={<AdminMarketing />} />
               <Route path="/admin/gm-portal" element={<GMPortal />} />
               <Route path="/admin/gm-setup" element={<GMSetup />} />

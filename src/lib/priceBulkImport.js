@@ -2,27 +2,19 @@ import Papa from "papaparse";
 import { supabase } from "./supabaseClient.js";
 
 /**
- * stockBulkImport \u2014 CSV parsing + validation + commit for
- * STOCK-ONLY updates.
+ * priceBulkImport \u2014 CSV parsing + validation + commit for
+ * PRICE-ONLY updates.
  *
- * 2026-09-26 enhancement: Template is now GENERATED dynamically
- * with every active product pre-listed. Admin downloads a CSV
- * already populated with SKU + name + brand + current_stock,
- * then only edits the new_stock column for whatever they received.
+ * Mirrors stockBulkImport pattern exactly. Same admin workflow:
+ *   1. Download pre-filled template (all active SKUs + current prices)
+ *   2. Edit new_price (and optionally new_was) in Excel
+ *   3. Upload \u2014 only rows with changes are applied
  *
- * Old workflow: type every SKU manually \u2014 draining.
- * New workflow: filter/sort in Excel, edit new_stock only.
- *
- * Distinct from productsBulkImport because the use case is
- * different: bulk import is for onboarding new products; this
- * one is for weekly stock refreshes after receiving shipments.
- * Different mental model, different tool.
- *
- * SAFETY GUARANTEE: commit sends ONLY { stock: N } to Supabase.
- * Never touches image, gallery, price, name, or any other column.
+ * SAFETY GUARANTEE: commit sends ONLY { price, was } to Supabase.
+ * Never touches stock, image, gallery, name, or any other column.
  *
  * Public API:
- *   generateTemplateCsv(rows)    \u2014 pre-filled template (NEW)
+ *   generateTemplateCsv(rows)    \u2014 pre-filled template
  *   parseCsvFile(file)           \u2192 { ok, rows, errors }
  *   validateRows(rows, refs)     \u2192 { rowsWithVerdict, summary }
  *   commitRows(rowsWithVerdict)  \u2192 { updated, errors }
@@ -30,25 +22,30 @@ import { supabase } from "./supabaseClient.js";
  *   COLUMNS                      \u2014 canonical column definitions
  *
  * Verdict values:
- *   'update'    \u2014 SKU exists, stock will change
- *   'unchanged' \u2014 SKU exists, new_stock === current_stock (skip)
+ *   'update'    \u2014 SKU exists, at least one price will change
+ *   'unchanged' \u2014 SKU exists, no price changes (skip)
  *   'error'     \u2014 row is unusable
  */
 
 /* ============================================================
-   Column definitions \u2014 the admin-facing shape
+   Column definitions
    ============================================================
-   The CSV includes admin-readability columns (name, brand,
-   current_stock) that are IGNORED on commit \u2014 they're purely
-   for the admin to filter/sort in Excel. Only sku + new_stock
-   drive the update. */
+   was is the "compare-at" price (crossed-out original). Optional
+   \u2014 many products don't have a discount. Blank new_was means
+   "no compare price" (or "keep as-is if unchanged").
+
+   For the admin, current_price and current_was are read-only
+   reference columns. Editable columns: new_price, new_was.
+*/
 
 export const COLUMNS = [
-  { key: "sku",           required: true,  type: "text", note: "Product code (do not edit \u2014 pre-filled)" },
-  { key: "name",          required: false, type: "text", note: "Product name (for reference only, ignored on upload)" },
-  { key: "brand",         required: false, type: "text", note: "Brand (for reference only, ignored on upload)" },
-  { key: "current_stock", required: false, type: "int",  note: "Current stock (for reference only, ignored on upload)" },
-  { key: "new_stock",     required: true,  type: "int",  note: "New stock quantity \u2014 EDIT THIS COLUMN ONLY" },
+  { key: "sku",           required: true,  type: "text",  note: "Product code (do not edit \u2014 pre-filled)" },
+  { key: "name",          required: false, type: "text",  note: "Product name (for reference only, ignored on upload)" },
+  { key: "brand",         required: false, type: "text",  note: "Brand (for reference only, ignored on upload)" },
+  { key: "current_price", required: false, type: "money", note: "Current selling price (for reference only, ignored on upload)" },
+  { key: "current_was",   required: false, type: "money", note: "Current compare-at price (for reference only, ignored on upload)" },
+  { key: "new_price",     required: true,  type: "money", note: "New selling price in naira \u2014 EDIT THIS COLUMN" },
+  { key: "new_was",       required: false, type: "money", note: "New compare-at price in naira (blank = no discount) \u2014 EDIT THIS COLUMN" },
 ];
 
 const REQUIRED_COLUMNS = COLUMNS.filter((c) => c.required).map((c) => c.key);
@@ -57,15 +54,6 @@ const REQUIRED_COLUMNS = COLUMNS.filter((c) => c.required).map((c) => c.key);
    Template generation \u2014 pre-filled with all active products
    ============================================================ */
 
-/**
- * Build a CSV string with every active product pre-listed.
- * Admin downloads this, opens in Excel, filters or sorts by
- * brand/category, updates new_stock for whatever shipment
- * they received, and uploads.
- *
- * rows shape: [{ sku, name, brand, stock }]
- * Sorted by brand, then name for admin scan-ability.
- */
 export function generateTemplateCsv(rows) {
   const sorted = [...(rows || [])].sort((a, b) => {
     const brandCmp = (a.brand || "").localeCompare(b.brand || "");
@@ -74,15 +62,15 @@ export function generateTemplateCsv(rows) {
   });
 
   const csvRows = [
-    /* Header row */
-    ["sku", "name", "brand", "current_stock", "new_stock"],
-    /* One row per active product with new_stock pre-filled to current */
+    ["sku", "name", "brand", "current_price", "current_was", "new_price", "new_was"],
     ...sorted.map((r) => [
       r.sku,
       r.name || "",
       r.brand || "",
-      String(r.stock ?? 0),
-      String(r.stock ?? 0),   /* pre-fill new_stock = current_stock */
+      String(r.price ?? 0),
+      r.was == null ? "" : String(r.was),
+      String(r.price ?? 0),               /* pre-fill new_price = current_price */
+      r.was == null ? "" : String(r.was), /* pre-fill new_was = current_was */
     ]),
   ];
 
@@ -90,14 +78,13 @@ export function generateTemplateCsv(rows) {
 }
 
 /* ============================================================
-   Fallback empty template (kept for backward compat / graceful
-   degradation if reference data isn't loaded yet)
+   Fallback empty template
    ============================================================ */
 
 export const TEMPLATE_CSV =
-  COLUMNS.map((c) => c.key).join(",") + "\n" +
-  "SF-REF-350L,Scanfrost 350L Refrigerator,Scanfrost,10,12\n" +
-  "MID-AC-15HP,Midea 1.5HP AC,Midea,8,5";
+  ["sku","name","brand","current_price","current_was","new_price","new_was"].join(",") + "\n" +
+  "SF-REF-350L,Scanfrost 350L Refrigerator,Scanfrost,285000,320000,285000,320000\n" +
+  "MID-AC-15HP,Midea 1.5HP AC,Midea,395000,,395000,";
 
 /* ============================================================
    Parse
@@ -134,16 +121,8 @@ export function parseCsvFile(file) {
    Validate
    ============================================================ */
 
-/**
- * Given parsed rows and refs { existingSkus, currentStockBySku },
- * return per-row verdicts.
- *
- * Rows where new_stock === current_stock get verdict 'unchanged'
- * and are silently skipped on commit. Admin doesn't need to clean
- * these up manually \u2014 real UX polish for pre-filled workflow.
- */
 export function validateRows(rows, refs) {
-  const { existingSkus, currentStockBySku } = refs;
+  const { existingSkus, currentPriceBySku, currentWasBySku } = refs;
   const seenInCsv = new Map();
 
   const rowsWithVerdict = rows.map((row, idx) => {
@@ -164,33 +143,47 @@ export function validateRows(rows, refs) {
     }
     resolved.sku = sku;
 
-    /* ---- new_stock ---- */
-    const stockStr = (row.new_stock || "").replace(/[,\s]/g, "");
-    const stock = Number(stockStr);
-    if (stockStr === "") {
-      errors.push("new_stock is required");
-    } else if (!Number.isInteger(stock) || stock < 0) {
-      errors.push(`new_stock "${row.new_stock}" is not a non-negative integer`);
+    /* ---- new_price ---- */
+    const priceStr = (row.new_price || "").replace(/[,\s\u20A6]/g, "");   /* strip commas, spaces, \u20A6 */
+    const price = Number(priceStr);
+    if (priceStr === "") {
+      errors.push("new_price is required");
+    } else if (!Number.isFinite(price) || price <= 0) {
+      errors.push(`new_price "${row.new_price}" is not a positive number`);
     }
-    resolved.stock = Math.max(0, Math.round(stock));
+    resolved.price = Math.round(price);
 
-    /* Compute delta */
-    if (existingSkus.has(sku)) {
-      const current = currentStockBySku.get(sku);
-      resolved.currentStock = current;
-      if (Number.isFinite(current)) {
-        resolved.delta = resolved.stock - current;
+    /* ---- new_was ---- (optional) */
+    const wasStr = (row.new_was || "").replace(/[,\s\u20A6]/g, "");
+    let was = null;
+    if (wasStr !== "") {
+      was = Number(wasStr);
+      if (!Number.isFinite(was) || was <= 0) {
+        errors.push(`new_was "${row.new_was}" is not a positive number`);
+      } else if (was <= price) {
+        errors.push(`new_was (${was}) must be higher than new_price (${price}) \u2014 that's how the crossed-out discount works`);
       }
     }
+    resolved.was = was == null ? null : Math.round(was);
 
-    /* Verdict: error > unchanged > update */
+    /* Track current values for delta display */
+    if (existingSkus.has(sku)) {
+      resolved.currentPrice = currentPriceBySku.get(sku) ?? 0;
+      resolved.currentWas   = currentWasBySku.get(sku) ?? null;
+    }
+
+    /* Verdict logic:
+       - errors \u2192 error
+       - price unchanged AND was unchanged \u2192 unchanged
+       - otherwise \u2192 update
+    */
     let verdict;
     if (errors.length > 0) {
       verdict = "error";
-    } else if (resolved.delta === 0) {
-      verdict = "unchanged";
     } else {
-      verdict = "update";
+      const priceSame = resolved.price === resolved.currentPrice;
+      const wasSame   = (resolved.was ?? null) === (resolved.currentWas ?? null);
+      verdict = (priceSame && wasSame) ? "unchanged" : "update";
     }
 
     return { rowIndex: idx, row, verdict, errors, resolved };
@@ -201,23 +194,16 @@ export function validateRows(rows, refs) {
     update:    rowsWithVerdict.filter((r) => r.verdict === "update").length,
     unchanged: rowsWithVerdict.filter((r) => r.verdict === "unchanged").length,
     error:     rowsWithVerdict.filter((r) => r.verdict === "error").length,
-    up:        rowsWithVerdict.filter((r) => r.verdict === "update" && r.resolved.delta > 0).length,
-    down:      rowsWithVerdict.filter((r) => r.verdict === "update" && r.resolved.delta < 0).length,
+    priceUp:   rowsWithVerdict.filter((r) => r.verdict === "update" && r.resolved.price > (r.resolved.currentPrice || 0)).length,
+    priceDown: rowsWithVerdict.filter((r) => r.verdict === "update" && r.resolved.price < (r.resolved.currentPrice || 0)).length,
   };
   return { rowsWithVerdict, summary };
 }
 
 /* ============================================================
-   Commit \u2014 partial UPDATE, ONLY the stock column
+   Commit \u2014 partial UPDATE, ONLY price + was columns
    ============================================================ */
 
-/**
- * Runs the actual updates. Only rows with verdict === 'update' are
- * committed (unchanged and error rows are skipped).
- *
- * SAFETY: sends ONLY { stock } in the UPDATE. Never touches image,
- * gallery, price, name, or any other column.
- */
 export async function commitRows(rowsWithVerdict, onProgress) {
   const committable = rowsWithVerdict.filter((r) => r.verdict === "update");
   let updated = 0;
@@ -228,7 +214,10 @@ export async function commitRows(rowsWithVerdict, onProgress) {
     try {
       const { error } = await supabase
         .from("products")
-        .update({ stock: item.resolved.stock })    /* ONLY stock */
+        .update({
+          price: item.resolved.price,
+          was:   item.resolved.was,
+        })    /* ONLY price and was */
         .eq("sku", item.resolved.sku);
       if (error) {
         errors.push({ rowIndex: item.rowIndex, sku: item.resolved.sku, message: error.message });
