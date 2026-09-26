@@ -3,7 +3,7 @@ import { Link, NavLink } from "react-router-dom";
 import {
   Boxes, ChevronDown, Download, Gift, LayoutDashboard, LayoutGrid, LifeBuoy, Megaphone,
   MessageCircle, Package, Receipt, Settings as SettingsIcon, ShieldCheck,
-  ShoppingCart, Star, Tags, UserCog, Users,
+  ShoppingCart, Star, Tag, Tags, UserCog, Users,
 } from "lucide-react";
 import Logo from "../layout/Logo.jsx";
 import { useAdminCounters } from "../../hooks/useAdminCounters.js";
@@ -34,6 +34,7 @@ const TOP_LINKS = [
   { label: "Customers",  icon: Users,        live: true,  to: "/admin/customers" },
   { label: "Team",       icon: UserCog,      live: true,  to: "/admin/team" },
   { label: "Inventory",  icon: Boxes,        live: true,  to: "/admin/inventory", badgeKey: "lowStock" },
+  { label: "Pricing",    icon: Tag,          live: true,  to: "/admin/pricing/update" },
   { label: "Marketing",  icon: Megaphone,    live: true,  to: "/admin/marketing" },
   { label: "Reports",    icon: Tags,         live: true,  to: "/admin/reports" },
   { label: "Exports",    icon: Download,     live: true,  to: "/admin/exports" },

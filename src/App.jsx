@@ -1,4 +1,4 @@
-import { BrowserRouter, Link, Outlet, Route, Routes } from "react-router-dom";
+import { BrowserRouter, Link, Navigate, Outlet, Route, Routes } from "react-router-dom";
 import { StoreProvider } from "./context/StoreContext.jsx";
 import { AdminProvider } from "./context/AdminContext.jsx";
 import { CatalogProvider } from "./context/CatalogContext.jsx";
@@ -213,6 +213,7 @@ export default function App() {
               <Route path="/admin/products/import" element={<CatalogProductsImport />} />
               <Route path="/admin/inventory" element={<AdminInventory />} />
               <Route path="/admin/inventory/update" element={<CatalogStockImport />} />
+              <Route path="/admin/pricing" element={<Navigate to="/admin/pricing/update" replace />} />
               <Route path="/admin/pricing/update" element={<CatalogPriceImport />} />
               <Route path="/admin/exports" element={<AdminExports />} />
               <Route path="/admin/marketing" element={<AdminMarketing />} />
