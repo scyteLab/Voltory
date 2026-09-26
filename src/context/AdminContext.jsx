@@ -24,13 +24,32 @@ export function AdminProvider({ children }) {
   const [roleData, setRoleData] = useState(undefined); // undefined = loading
 
   useEffect(() => {
+    let settled = false;
+    const timeoutId = window.setTimeout(() => {
+      if (!settled) setSession(null);
+    }, 8_000);
+
     supabase.auth.getSession()
-      .then(({ data }) => setSession(data.session))
-      .catch(() => setSession(null));
+      .then(({ data }) => {
+        settled = true;
+        window.clearTimeout(timeoutId);
+        setSession(data.session);
+      })
+      .catch(() => {
+        settled = true;
+        window.clearTimeout(timeoutId);
+        setSession(null);
+      });
     const { data: sub } = supabase.auth.onAuthStateChange((_event, next) => {
+      settled = true;
+      window.clearTimeout(timeoutId);
       setSession(next);
     });
-    return () => sub.subscription.unsubscribe();
+    return () => {
+      settled = true;
+      window.clearTimeout(timeoutId);
+      sub.subscription.unsubscribe();
+    };
   }, []);
 
   /* When session changes (sign-in, sign-out, refresh), refetch

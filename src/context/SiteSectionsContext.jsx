@@ -1,5 +1,5 @@
 import { createContext, useCallback, useContext, useEffect, useRef, useState } from "react";
-import { loadSiteSections } from "../lib/siteSectionsClient.js";
+import { FALLBACK_SECTIONS, loadSiteSections } from "../lib/siteSectionsClient.js";
 
 /**
  * SiteSectionsProvider
@@ -23,12 +23,20 @@ export function SiteSectionsProvider({ children }) {
 
   const fetchNow = useCallback(async ({ silent = false } = {}) => {
     if (!silent) setLoading(true);
-    const res = await loadSiteSections();
-    lastFetchRef.current = Date.now();
-    setSections(res.sections);
-    setSource(res.source);
-    setError(res.error);
-    setLoading(false);
+    try {
+      const res = await loadSiteSections();
+      lastFetchRef.current = Date.now();
+      setSections(res.sections);
+      setSource(res.source);
+      setError(res.error);
+    } catch (err) {
+      lastFetchRef.current = Date.now();
+      setSections(FALLBACK_SECTIONS);
+      setSource("fallback");
+      setError(err?.message || String(err));
+    } finally {
+      setLoading(false);
+    }
   }, []);
 
   useEffect(() => { fetchNow(); }, [fetchNow]);

@@ -64,8 +64,21 @@ function LoginInner() {
     try {
       await signInAdmin(email.trim(), password);
       navigate("/admin", { replace: true });
-    } catch {
-      setError("Incorrect email or password.");
+    } catch (err) {
+      const message = String(err?.message || "");
+      const isNetworkError =
+        err?.name === "TypeError" ||
+        /failed to fetch|networkerror|err_name_not_resolved/i.test(message);
+
+      if (isNetworkError) {
+        setError("Unable to reach the authentication service. Check your internet connection and Supabase configuration.");
+      } else if (err?.status === 429) {
+        setError("Too many sign-in attempts. Please wait a moment and try again.");
+      } else if (err?.status === 400 || /invalid login credentials/i.test(message)) {
+        setError("Incorrect email or password.");
+      } else {
+        setError("Admin sign-in failed. Please try again or contact your administrator.");
+      }
     } finally {
       setSubmitting(false);
     }

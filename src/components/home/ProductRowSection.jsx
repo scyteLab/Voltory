@@ -31,7 +31,7 @@ import CountdownTimer from "./CountdownTimer.jsx";
  * `source: { skus: ["A", "B"] }` — exactly those SKUs, in order
  */
 export default function ProductRowSection({ config = {}, sectionKind }) {
-  const { products, getDeals, byCategory, byBrand, bySku } = useCatalog();
+  const { products, byCategory, byBrand, bySku } = useCatalog();
   const ref = useRef(null);
   const limit = Number(config.limit) || 10;
 
@@ -41,7 +41,7 @@ export default function ProductRowSection({ config = {}, sectionKind }) {
 
   if (source === "auto" || !source) {
     // Fall back based on the section kind
-    if (sectionKind === "deals_row") items = getDeals();
+    if (sectionKind === "deals_row") items = products.filter((p) => p.was);
     else items = products; // featured_row default
   } else if (typeof source === "object" && source !== null) {
     if (Array.isArray(source.skus) && source.skus.length > 0) {

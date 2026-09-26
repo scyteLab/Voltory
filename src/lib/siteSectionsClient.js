@@ -15,7 +15,7 @@ import { supabase, supabaseConfigured } from "./supabaseClient.js";
  * empty. Same shape as a real DB row so consumers stay ignorant of
  * the source.
  */
-const FALLBACK_SECTIONS = [
+export const FALLBACK_SECTIONS = [
   { kind: "category_sidebar",   position: 10,  is_visible: true, config: {} },
   { kind: "hero",               position: 20,  is_visible: true, config: {} },
   {
@@ -58,6 +58,22 @@ const FALLBACK_SECTIONS = [
   { kind: "bottom_benefits",    position: 130, is_visible: true, config: {} },
 ];
 
+const SITE_SECTIONS_TIMEOUT_MS = 8_000;
+
+function withTimeout(promise, timeoutMs) {
+  let timeoutId;
+  const timeout = new Promise((_, reject) => {
+    timeoutId = window.setTimeout(
+      () => reject(new Error("Homepage sections request timed out.")),
+      timeoutMs,
+    );
+  });
+
+  return Promise.race([promise, timeout]).finally(() => {
+    window.clearTimeout(timeoutId);
+  });
+}
+
 /**
  * Fetch the homepage layout, ordered by position ascending.
  * Returns { sections, source, error }. `sections` always includes
@@ -71,10 +87,13 @@ export async function loadSiteSections() {
     return { sections: FALLBACK_SECTIONS, source: "fallback", error: null };
   }
   try {
-    const { data, error } = await supabase
-      .from("site_sections")
-      .select("*")
-      .order("position", { ascending: true });
+    const { data, error } = await withTimeout(
+      supabase
+        .from("site_sections")
+        .select("*")
+        .order("position", { ascending: true }),
+      SITE_SECTIONS_TIMEOUT_MS,
+    );
 
     if (error) {
       return { sections: FALLBACK_SECTIONS, source: "fallback", error: error.message };
