@@ -21,12 +21,18 @@ import {
  * both storefront reads and admin write-through operations.
  *
  * Session (2026-08-28) added:
- *   · productOffers state (list of all offers with product join)
- *   · loadOffers() to hydrate from DB
- *   · upsertOffer(payload)   — create or update, matches Collections pattern
- *   · removeOffer(id)         — delete
- *   · setOfferActive(id, on)  — pause/resume without deleting
- *   · getOfferBySku(sku)      — helper for storefront product page
+ *   \u00B7 productOffers state (list of all offers with product join)
+ *   \u00B7 loadOffers() to hydrate from DB
+ *   \u00B7 upsertOffer(payload)   \u2014 create or update, matches Collections pattern
+ *   \u00B7 removeOffer(id)         \u2014 delete
+ *   \u00B7 setOfferActive(id, on)  \u2014 pause/resume without deleting
+ *   \u00B7 getOfferBySku(sku)      \u2014 helper for storefront product page
+ *
+ * 2026-09-26 fix: findBrand and byBrand made resilient to case
+ * differences between URL slugs (lowercase id) and stored brand
+ * names (PascalCase). Storefront brand pages were showing "Brand
+ * not found" for every brand because findBrand only matched on
+ * name while the URL passed the id.
  *
  * Rest of file preserved verbatim.
  */
@@ -173,7 +179,7 @@ export function CatalogProvider({ children }) {
   }
 
   /* ============================================================
-     OFFER operations (admin) — NEW in Session 2
+     OFFER operations (admin) \u2014 NEW in Session 2
      ============================================================ */
 
   async function loadOffers() {
@@ -229,11 +235,35 @@ export function CatalogProvider({ children }) {
      ============================================================ */
 
   const byCategory = (catId) => products.filter((p) => p.category === catId);
-  const byBrand    = (brand) => products.filter((p) => p.brand === brand);
+
+  /* byBrand \u2014 case-insensitive match against product.brand.
+     Real reason: even after the DB casing SQL fix, defensive
+     matching protects the storefront from any future upload that
+     bypasses the casing rule (e.g. bulk import typing "SAMSUNG"). */
+  const byBrand = (brand) => {
+    const needle = String(brand || "").toLowerCase();
+    return products.filter((p) => (p.brand || "").toLowerCase() === needle);
+  };
+
   const bySku      = (sku)   => products.find((p) => p.sku === sku) || null;
   const bySlug     = (slug)  => products.find((p) => p.slug === slug) || null;
   const byId       = (catId) => categories.find((c) => c.id === catId) || null;
-  const findBrand  = (name)  => brands.find((b) => b.name === name) || null;
+
+  /* findBrand \u2014 accepts either brand id (lowercase, from URL slug)
+     OR brand name (PascalCase, from legacy callers). Real reason:
+     Brand.jsx passes the URL param (:id) which is the lowercase
+     brand id like "samsung", but earlier this helper only matched
+     on b.name ("Samsung" PascalCase) \u2014 so every brand page
+     showed "Brand not found". Now matches either column. */
+  const findBrand = (idOrName) => {
+    if (!idOrName) return null;
+    const needle = String(idOrName).toLowerCase();
+    return brands.find(
+      (b) =>
+        (b.id || "").toLowerCase() === needle ||
+        (b.name || "").toLowerCase() === needle
+    ) || null;
+  };
 
   const value = useMemo(
     () => ({
