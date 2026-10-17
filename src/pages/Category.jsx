@@ -2,11 +2,13 @@ import { useEffect, useMemo, useState } from "react";
 import { Link, useParams, useSearchParams } from "react-router-dom";
 import { ChevronRight, Home as HomeIcon, SlidersHorizontal, X } from "lucide-react";
 import { useCatalog } from "../context/CatalogContext.jsx";
+import CatalogLoading from "../components/ui/CatalogLoading.jsx";
 import { BRAND_PAGES } from "../config/brandPages.js";
 import { naira, discountPct } from "../utils/format.js";
 import { SITE } from "../config/site.js";
 import ProductCard from "../components/product/ProductCard.jsx";
 import FilterSidebar from "../components/category/FilterSidebar.jsx";
+import Pagination from "../components/ui/Pagination.jsx";
 import BuyingGuide from "../components/category/BuyingGuide.jsx";
 import BrandLogo from "../components/brand/BrandLogo.jsx";
 import {
@@ -40,7 +42,7 @@ const ATTR_PREFIX = "attr_";
 
 export default function Category() {
   const { id: categoryId } = useParams();
-  const { products, brands, byCategory, byId } = useCatalog();
+  const { products, brands, byCategory, byId, loading } = useCatalog();
   const category = byId(categoryId);
   const [searchParams, setSearchParams] = useSearchParams();
 
@@ -145,7 +147,7 @@ export default function Category() {
     return names.map((n) => brands.find((b) => b.name === n)).filter(Boolean);
   }, [baseProducts, brands, brandFilterActive]);
 
-  if (!category) return <CategoryNotFound id={categoryId} />;
+  if (!category) return loading ? <CatalogLoading label="Loading category" /> : <CategoryNotFound id={categoryId} />;
 
   const subCats = category.megamenu?.find((g) => g.heading === "By Type")?.items || [];
 
@@ -318,26 +320,7 @@ export default function Category() {
             </div>
           )}
 
-          {totalPages > 1 && (
-            <nav className="cpager" aria-label="Pagination">
-              <button onClick={() => setPage(currentPage - 1)} disabled={currentPage === 1}>
-                Previous
-              </button>
-              {Array.from({ length: totalPages }, (_, i) => i + 1).map((n) => (
-                <button
-                  key={n}
-                  onClick={() => setPage(n)}
-                  className={n === currentPage ? "cpager__on" : ""}
-                  aria-current={n === currentPage ? "page" : undefined}
-                >
-                  {n}
-                </button>
-              ))}
-              <button onClick={() => setPage(currentPage + 1)} disabled={currentPage === totalPages}>
-                Next
-              </button>
-            </nav>
-          )}
+          <Pagination page={currentPage} totalPages={totalPages} onChange={setPage} />
         </section>
       </div>
     </main>

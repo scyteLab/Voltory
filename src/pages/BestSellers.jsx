@@ -8,6 +8,7 @@ import { naira } from "../utils/format.js";
 import { SITE } from "../config/site.js";
 import ProductCard from "../components/product/ProductCard.jsx";
 import FilterSidebar from "../components/category/FilterSidebar.jsx";
+import Pagination from "../components/ui/Pagination.jsx";
 
 const SORTS = [
   { id: "bestseller", label: "Most Popular" },
@@ -161,20 +162,7 @@ export default function BestSellers() {
             </div>
           )}
 
-          {totalPages > 1 && (
-            <nav className="cpager" aria-label="Pagination">
-              <button onClick={() => setPage(currentPage - 1)} disabled={currentPage === 1}>Previous</button>
-              {Array.from({ length: totalPages }, (_, i) => i + 1).map((n) => (
-                <button
-                  key={n}
-                  onClick={() => setPage(n)}
-                  className={n === currentPage ? "cpager__on" : ""}
-                  aria-current={n === currentPage ? "page" : undefined}
-                >{n}</button>
-              ))}
-              <button onClick={() => setPage(currentPage + 1)} disabled={currentPage === totalPages}>Next</button>
-            </nav>
-          )}
+          <Pagination page={currentPage} totalPages={totalPages} onChange={setPage} />
         </section>
       </div>
     </main>

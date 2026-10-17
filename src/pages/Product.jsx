@@ -37,6 +37,43 @@ function NotFound({ slug }) {
   );
 }
 
+/* Shown while the catalogue is still loading (e.g. straight after a
+   page refresh) so we never flash "Product not found" for a product
+   that simply hasn't arrived yet. */
+function ProductLoading() {
+  return (
+    <main className="wrap" style={{ padding: "24px 0 48px" }} aria-busy="true" aria-label="Loading product">
+      <div className="skel" style={{ height: 14, width: 260, borderRadius: 6, marginBottom: 20 }} />
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: 24 }}>
+        <div className="skel" style={{ minHeight: 380, borderRadius: "var(--r-lg)" }} />
+        <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+          <div className="skel" style={{ height: 28, width: "80%", borderRadius: 6 }} />
+          <div className="skel" style={{ height: 16, width: "40%", borderRadius: 6 }} />
+          <div className="skel" style={{ height: 36, width: "50%", borderRadius: 6 }} />
+          <div className="skel" style={{ height: 120, borderRadius: "var(--r)" }} />
+          <div className="skel" style={{ height: 48, borderRadius: "var(--r)" }} />
+        </div>
+      </div>
+    </main>
+  );
+}
+
+/* Catalogue request failed and there's nothing to show — offer a retry
+   rather than claiming the product doesn't exist. */
+function ProductLoadError({ onRetry }) {
+  return (
+    <main className="wrap" style={{ padding: "80px 24px", textAlign: "center" }}>
+      <h1 style={{ fontSize: 28, marginBottom: 10 }}>We couldn't load this product</h1>
+      <p style={{ color: "var(--mut)", marginBottom: 24 }}>
+        This is usually a brief connection problem. Please try again.
+      </p>
+      <button type="button" onClick={onRetry} className="btn-shop" style={{ display: "inline-block", padding: "12px 24px" }}>
+        Try again
+      </button>
+    </main>
+  );
+}
+
 function ProductJsonLd({ product }) {
   const json = {
     "@context": "https://schema.org",
@@ -67,7 +104,10 @@ function ProductJsonLd({ product }) {
 
 export default function Product() {
   const { slug } = useParams();
-  const { bySlug, bySku, byCategory, getOfferBySku } = useCatalog();
+  const {
+    products, loading, error, reload,
+    bySlug, bySku, byCategory, getOfferBySku,
+  } = useCatalog();
   const navigate = useNavigate();
   const product = bySlug(slug);
   const {
@@ -85,7 +125,12 @@ export default function Product() {
     return () => { document.title = prev; };
   }, [product]);
 
-  if (!product) return <NotFound slug={slug} />;
+  if (!product) {
+    // Only conclude "not found" once the catalogue has actually loaded.
+    if (loading) return <ProductLoading />;
+    if (error && products.length === 0) return <ProductLoadError onRetry={reload} />;
+    return <NotFound slug={slug} />;
+  }
 
   const st = stockState(product.stock);
   const off = discountPct(product.price, product.was);

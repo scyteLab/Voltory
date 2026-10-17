@@ -594,6 +594,13 @@
   border-color: var(--p) !important;
   color: #fff !important;
 }
+.cpager__dots {
+  min-width: 24px;
+  text-align: center;
+  color: var(--mut);
+  font-weight: 600;
+  user-select: none;
+}
 
 /* ============ responsive ============ */
 @media (max-width: 920px) {
@@ -705,3 +712,12 @@
   white-space: nowrap;
 }
 .cfilter__rating--on .cfilter__rating-lbl { color: var(--p); font-weight: 700; }
+
+/* pagination — phones: arrow-only prev/next, compact buttons */
+.cpager button { display: inline-flex; align-items: center; justify-content: center; gap: 4px; }
+@media (max-width: 540px) {
+  .cpager { gap: 3px; }
+  .cpager button { padding: 8px 9px; min-width: 34px; font-size: 12.5px; }
+  .cpager__label { display: none; }
+  .cpager__dots { min-width: 14px; }
+}

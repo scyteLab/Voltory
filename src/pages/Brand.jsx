@@ -5,10 +5,12 @@ import {
   ShieldCheck, SlidersHorizontal, Store, Truck, X,
 } from "lucide-react";
 import { useCatalog } from "../context/CatalogContext.jsx";
+import CatalogLoading from "../components/ui/CatalogLoading.jsx";
 import { BRAND_PAGES, TIER_META } from "../config/brandPages.js";
 import { SITE } from "../config/site.js";
 import ProductCard from "../components/product/ProductCard.jsx";
 import FilterSidebar from "../components/category/FilterSidebar.jsx";
+import Pagination from "../components/ui/Pagination.jsx";
 import BrandLogo from "../components/brand/BrandLogo.jsx";
 
 const SORTS = [
@@ -30,7 +32,7 @@ const BRAND_FILTER_CONFIG = ["rating", "price", "availability"];
 
 export default function Brand() {
   const { id: brandId } = useParams();
-  const { findBrand, byBrand } = useCatalog();
+  const { findBrand, byBrand, loading } = useCatalog();
   const brand = findBrand(brandId);
   const [searchParams, setSearchParams] = useSearchParams();
   const [drawerOpen, setDrawerOpen] = useState(false);
@@ -46,7 +48,7 @@ export default function Brand() {
     }
   }, [brand]);
 
-  if (!brand) return <BrandNotFound id={brandId} />;
+  if (!brand) return loading ? <CatalogLoading label="Loading brand" /> : <BrandNotFound id={brandId} />;
   const sort = searchParams.get("sort") || "popular";
   const page = Math.max(1, parseInt(searchParams.get("page") || "1", 10));
 
@@ -211,26 +213,7 @@ export default function Brand() {
               </div>
             )}
 
-            {totalPages > 1 && (
-              <nav className="cpager" aria-label="Pagination">
-                <button onClick={() => setPage(currentPage - 1)} disabled={currentPage === 1}>
-                  Previous
-                </button>
-                {Array.from({ length: totalPages }, (_, i) => i + 1).map((n) => (
-                  <button
-                    key={n}
-                    onClick={() => setPage(n)}
-                    className={n === currentPage ? "cpager__on" : ""}
-                    aria-current={n === currentPage ? "page" : undefined}
-                  >
-                    {n}
-                  </button>
-                ))}
-                <button onClick={() => setPage(currentPage + 1)} disabled={currentPage === totalPages}>
-                  Next
-                </button>
-              </nav>
-            )}
+            <Pagination page={currentPage} totalPages={totalPages} onChange={setPage} />
           </section>
         </div>
       )}
