@@ -26,11 +26,12 @@
   position: relative;
 }
 
-/* category sidebar */
+/* category sidebar — right side stays square so the mega-menu flyout
+   can dock flush against it (rounded only on the outer/left side). */
 .catsidebar {
   background: #fff;
   border: 1px solid var(--line);
-  border-radius: var(--r);
+  border-radius: var(--r) 0 0 var(--r);
   align-self: stretch;
   position: static;
   z-index: 20;
@@ -44,18 +45,19 @@
   padding: 10px 14px;
   font-weight: 700;
   font-size: 13px;
-  border-radius: var(--r) var(--r) 0 0;
+  border-radius: var(--r) 0 0 0;
 }
 .catsidebar__list { list-style: none; padding: 2px 0; position: static; }
 .catsidebar__list > li { position: static; }
 .catsidebar__link {
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 7px 14px;
-  font-size: 12.5px;
+  gap: 7px;
+  padding: 7px 11px;
+  font-size: 11px;
   color: var(--ink);
   font-weight: 400;
+  white-space: nowrap;
   transition: background 0.12s, color 0.12s;
 }
 .catsidebar__link:hover,
@@ -84,16 +86,19 @@
   font-weight: 600;
 }
 
-/* mega-menu flyout — overlays hero banner, stops before promo cards */
+/* mega-menu flyout — sits flush against the sidebar (no dead gap, so
+   the cursor never leaves the sidebar/menu's shared hover region
+   while crossing into it) and stops before promo cards. */
 .megamenu {
   position: absolute;
   top: 0;
-  left: calc(220px + 12px);
+  left: 220px;
   right: calc(200px + 12px);
   bottom: 0;
   background: #fff;
   border: 1px solid var(--line);
-  border-radius: var(--r-lg);
+  border-left: none;
+  border-radius: 0 var(--r-lg) var(--r-lg) 0;
   box-shadow: 4px 4px 24px rgba(0,0,0,.12);
   padding: 22px 28px;
   display: flex;
@@ -301,8 +306,9 @@
 .hero-promo__sub b { color: var(--err); font-weight: 700; }
 .hero-promo--cool .hero-promo__sub b { color: var(--p); }
 .hero-promo__img {
-  width: 58px;
-  height: 58px;
+  flex: 1;
+  width: 100%;
+  min-height: 0;
   object-fit: contain;
   margin: 2px 0;
   filter: drop-shadow(0 2px 6px rgba(0,0,0,.1));
@@ -316,7 +322,6 @@
   font-weight: 700;
   padding: 4px 16px;
   border-radius: 4px;
-  margin-top: auto;
   margin-bottom: 3px;
   transition: filter 0.15s;
 }

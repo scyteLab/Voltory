@@ -12,6 +12,7 @@ import {
 import { useCatalog } from "../context/CatalogContext.jsx";
 import Icon from "../components/ui/Icon.jsx";
 import BrandLogo from "../components/brand/BrandLogo.jsx";
+import Tagline from "../components/brand/Tagline.jsx";
 
 export default function About() {
   const { brands: BRANDS } = useCatalog();
@@ -37,6 +38,7 @@ export default function About() {
             <Sparkles size={13} /> OUR STORY
           </span>
           <h1>{ABOUT_MISSION.headline}</h1>
+          <Tagline variant="secondary" size="sm" className="brand-tagline--on-dark brand-tagline--under-heading" />
           <p>{ABOUT_MISSION.body}</p>
         </div>
         <div className="mkt-hero__art">

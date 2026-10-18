@@ -54,6 +54,7 @@ import "./styles/attribute-filters.css";
 import "./styles/offers.css";
 import "./styles/offers-storefront.css";
 import "./styles/exports.css";
+import "./styles/hero.css";
 
 ReactDOM.createRoot(document.getElementById("root")).render(
   <React.StrictMode>

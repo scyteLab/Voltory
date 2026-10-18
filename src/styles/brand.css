@@ -318,3 +318,47 @@
   .bcat-row { gap: 8px; padding: 10px; }
   .bhero__main { flex-direction: column; align-items: flex-start; }
 }
+/* ============================================================
+   NAVEN BRAND TAGLINE
+
+   Per brand guide: Montserrat Light, uppercase, wide tracking.
+   Tracking tightened from the guide's 0.3em to 0.1em so the
+   tagline sits closer to the wordmark width.
+   Never bold. The width does the work, not the weight.
+   ============================================================ */
+
+.brand-tagline {
+  font-family: var(--font-body, "Montserrat", sans-serif);
+  font-weight: 300;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--mut, #5B6776);
+  margin: 0;
+  line-height: 1.4;
+}
+
+.brand-tagline--sm { font-size: 10px; }
+.brand-tagline--md { font-size: 12px; }
+.brand-tagline--lg { font-size: 14px; }
+
+.brand-tagline--left   { text-align: left; }
+.brand-tagline--center { text-align: center; }
+
+/* On dark surfaces (navy header, footer, hero), lighten the colour */
+.brand-tagline--on-dark {
+  color: rgba(255, 255, 255, 0.72);
+}
+
+/* Spacing when the tagline sits under a page/card heading */
+.brand-tagline--under-heading { margin: 6px 0 12px; }
+
+/* Header lockup: wordmark with the tagline stacked beneath */
+.header-brand {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  flex-shrink: 0;
+}
+@media (max-width: 920px) {
+  .header-brand .brand-tagline { display: none; }
+}

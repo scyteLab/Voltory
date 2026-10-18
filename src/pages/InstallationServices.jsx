@@ -17,6 +17,7 @@ import {
 } from "../utils/installationRequests.js";
 import { naira } from "../utils/format.js";
 import Icon from "../components/ui/Icon.jsx";
+import Tagline from "../components/brand/Tagline.jsx";
 
 const NG_STATES = [
   "Abia", "Adamawa", "Akwa Ibom", "Anambra", "Bauchi", "Bayelsa", "Benue",
@@ -124,6 +125,7 @@ export default function InstallationServices() {
             <Wrench size={13} /> NATIONWIDE SERVICE
           </span>
           <h1>Professional Installation,<br />Done Right the First Time.</h1>
+          <Tagline variant="secondary" size="sm" className="brand-tagline--on-dark brand-tagline--under-heading" />
           <p>
             Certified technicians for ACs, fridges, washing machines, TVs and more —
             across Lagos, Abuja and all 36 states. Manufacturer warranty stays intact.

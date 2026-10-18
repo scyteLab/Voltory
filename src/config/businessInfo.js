@@ -58,8 +58,15 @@ export const BUSINESS_INFO = {
   phone:        SITE.phone,
   whatsapp:     SITE.whatsapp,
   whatsappLink: SITE.whatsappLink,
+  phoneDigits:  "2349064998654",
+  phoneTelHref: "tel:+2349064998654",
+  whatsappHref: "https://wa.me/2349064998654",
   supportEmail: SITE.supportEmail,
   website:      "https://mynaven.com",
+
+  // ---- Brand taglines (brand guide) --------------------------
+  taglinePrimary:   "THE PREMIUM ELECTRONICS",
+  taglineSecondary: "THE ONE PLACE FOR ALL ELECTRONICS",
 
   // ---- Tax config ---------------------------------------------
 

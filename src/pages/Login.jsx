@@ -3,6 +3,8 @@ import { Link, useNavigate } from "react-router-dom";
 import { Eye, EyeOff, KeyRound, Phone } from "lucide-react";
 import { useCustomerAuth } from "../context/AuthContext.jsx";
 import AuthShell from "../components/auth/AuthShell.jsx";
+import { SITE } from "../config/site.js";
+import Tagline from "../components/brand/Tagline.jsx";
 
 /**
  * Login  \u2014  /login
@@ -70,6 +72,7 @@ export default function Login() {
         </div>
 
         <h2 className="ashell-form__title">Welcome back</h2>
+        <Tagline variant="primary" size="sm" className="brand-tagline--under-heading" />
         <p className="ashell-form__sub">
           Enter your phone number and password to sign in.
         </p>
@@ -141,7 +144,7 @@ export default function Login() {
 
         <p className="ashell-form__legal" style={{ marginTop: 24 }}>
           Forgot your password?{" "}
-          <a href={`https://wa.me/2348000000000?text=${encodeURIComponent("Hi NAVEN, I forgot my password. My registered phone is: ")}`}
+          <a href={`${SITE.whatsappLink}?text=${encodeURIComponent("Hi NAVEN, I forgot my password. My registered phone is: ")}`}
              target="_blank" rel="noreferrer">
             Contact support on WhatsApp
           </a>

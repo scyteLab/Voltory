@@ -12,6 +12,7 @@ import CatalogProducts from "./pages/admin/CatalogProducts.jsx";
 import CatalogProductsImport from "./pages/admin/CatalogProductsImport.jsx";
 import CatalogStockImport from "./pages/admin/CatalogStockImport.jsx";
 import CatalogPriceImport from "./pages/admin/CatalogPriceImport.jsx";
+import CatalogSpecsImport from "./pages/admin/CatalogSpecsImport.jsx";
 import AdminExports from "./pages/admin/AdminExports.jsx";
 import AdminInventory from "./pages/admin/AdminInventory.jsx";
 import AdminMarketing from "./pages/admin/AdminMarketing.jsx";
@@ -42,6 +43,7 @@ import AdminWhatsappQuotes from "./pages/admin/AdminWhatsappQuotes.jsx";
 import AdminWhatsappQuoteDetail from "./pages/admin/AdminWhatsappQuoteDetail.jsx";
 import TopBar from "./components/layout/TopBar.jsx";
 import Header from "./components/layout/Header.jsx";
+import Tagline from "./components/brand/Tagline.jsx";
 import MainNav from "./components/layout/MainNav.jsx";
 import Footer from "./components/layout/Footer.jsx";
 import WhatsAppBubble from "./components/layout/WhatsAppBubble.jsx";
@@ -124,7 +126,9 @@ function AuthLayout() {
           <h2 className="auth-brand__headline">
             Original Electronics.<br />Trusted Performance.
           </h2>
-          <p className="auth-brand__sub">{SITE.tagline}</p>
+          <div className="auth-brand__sub">
+            <Tagline variant="primary" size="md" className="brand-tagline--on-dark" />
+          </div>
           <ul className="auth-brand__trust">
             {AUTH_TRUST.map(({ Icon, text }) => (
               <li key={text}>
@@ -215,6 +219,8 @@ export default function App() {
               <Route path="/admin/inventory/update" element={<CatalogStockImport />} />
               <Route path="/admin/pricing" element={<Navigate to="/admin/pricing/update" replace />} />
               <Route path="/admin/pricing/update" element={<CatalogPriceImport />} />
+              <Route path="/admin/specs/update" element={<CatalogSpecsImport />} />
+              <Route path="/admin/specs" element={<Navigate to="/admin/specs/update" replace />} />
               <Route path="/admin/exports" element={<AdminExports />} />
               <Route path="/admin/marketing" element={<AdminMarketing />} />
               <Route path="/admin/gm-portal" element={<GMPortal />} />

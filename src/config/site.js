@@ -10,8 +10,7 @@ export const SITE = {
   // ---- Identity (edit these to rename the business) ----
   name: "NAVEN",
   legalName: "NAVEN Electronics Ltd",
-  tagline: "Life, Better Equipped.",
-  footerPromise: "Life, Better Equipped.",
+  tagline: "The Premium Electronics",
   copyrightYear: 2026,
 
   // Logo: index of the letter replaced by the bolt icon (the "O" in V⚡LTORY).
@@ -19,10 +18,10 @@ export const SITE = {
   logoBoltIndex: -1,
 
   // ---- Contact ----
-  phone: "0700 888 6658",
+  phone: "+234 906 4998 654",
   supportEmail: "support@mynaven.com",
-  whatsapp: "+234 803 888 6658",
-  whatsappLink: "https://wa.me/2348038886658",
+  whatsapp: "+234 906 4998 654",
+  whatsappLink: "https://wa.me/2349064998654",
 
   // ---- Commerce ----
   currency: "NGN",

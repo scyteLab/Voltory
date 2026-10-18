@@ -224,6 +224,18 @@ export default function ReceiptTemplate({ order }) {
            FOOTER
            ============================================ */}
       <footer className="receipt__foot">
+        <p style={{
+          fontFamily: "Montserrat, sans-serif",
+          fontWeight: 300,
+          textTransform: "uppercase",
+          letterSpacing: "0.1em",
+          fontSize: "9px",
+          color: "#5B6776",
+          textAlign: "center",
+          margin: "12px 0 4px",
+        }}>
+          {BUSINESS_INFO.taglineSecondary}
+        </p>
         <p className="receipt__thanks">
           Thank you for shopping with {BUSINESS_INFO.brandName}.
         </p>

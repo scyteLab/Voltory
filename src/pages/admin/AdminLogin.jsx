@@ -7,6 +7,7 @@ import {
 import { useAdmin } from "../../context/AdminContext.jsx";
 import { AdminThemeProvider, useAdminTheme } from "../../context/AdminThemeContext.jsx";
 import Logo from "../../components/layout/Logo.jsx";
+import Tagline from "../../components/brand/Tagline.jsx";
 
 /* Traveling streak lines behind the brand panel — same motion
    signature (and same handcrafted values) as AuthShowcase on the
@@ -159,6 +160,7 @@ function LoginInner() {
               <Sparkles size={20} />
             </span>
             <h1>Welcome back</h1>
+            <Tagline variant="primary" size="sm" align="center" className="brand-tagline--under-heading" />
             <p>Sign in to your admin account to continue.</p>
           </div>
 

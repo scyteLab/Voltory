@@ -1,0 +1,539 @@
+/* ============================================================
+   NAVEN HERO SLIDER \u2014 Brand-aligned Edition 2026
+   
+   Class prefix: .jh- (jumia-hero \u2014 kept from previous iteration)
+   
+   Themes now use the real Naven palette:
+     \u00B7 Deep Navy #120F4C anchors every slide
+     \u00B7 Naven Green #2DEA87 is the signal accent
+     \u00B7 Indigo and Cobalt provide controlled variation
+     \u00B7 Green never dominates \u2014 only kickers, highlights, pills
+   ============================================================ */
+
+
+/* ---- Container ---- */
+
+.jh-hero {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  border-radius: 12px;
+  background: #120F4C;
+  isolation: isolate;
+  font-family: var(--font-body, "Montserrat", sans-serif);
+}
+
+
+/* ---- Slide (crossfade between them) ---- */
+
+.jh-slide {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  grid-template-columns: 60% 40%;
+  opacity: 0;
+  visibility: hidden;
+  transition:
+    opacity 600ms cubic-bezier(.4, 0, .2, 1),
+    visibility 0s linear 600ms;
+  pointer-events: none;
+}
+
+.jh-slide--on {
+  opacity: 1;
+  visibility: visible;
+  transition:
+    opacity 600ms cubic-bezier(.4, 0, .2, 1),
+    visibility 0s linear 0s;
+  pointer-events: auto;
+}
+
+
+/* ---- Themes: all brand-aligned, Deep Navy anchor + Naven Green signal ---- */
+
+/* NAVEN welcome slide \u2014 pure brand (Deep Navy + Naven Green) */
+.jh-slide--naven {
+  background: linear-gradient(135deg, #120F4C 0%, #0A0833 100%);
+  --jh-accent:   #2DEA87;    /* Naven Green signal */
+  --jh-accent-2: #57EE9F;
+  --jh-ink:      #FFFFFF;
+  --jh-ink-2:    rgba(255, 255, 255, 0.78);
+  --jh-mark-glow: rgba(45, 234, 135, 0.15);
+}
+
+/* Scanfrost \u2014 same brand frame, Scanfrost is the product */
+.jh-slide--scanfrost {
+  background: linear-gradient(135deg, #120F4C 0%, #0A0833 100%);
+  --jh-accent:   #2DEA87;
+  --jh-accent-2: #57EE9F;
+  --jh-ink:      #FFFFFF;
+  --jh-ink-2:    rgba(255, 255, 255, 0.78);
+  --jh-mark-glow: rgba(45, 234, 135, 0.12);
+}
+
+/* Midea \u2014 Indigo support colour for variation, Green stays signal */
+.jh-slide--midea {
+  background: linear-gradient(135deg, #3C3E82 0%, #1E1F55 100%);
+  --jh-accent:   #2DEA87;
+  --jh-accent-2: #ABF7CF;
+  --jh-ink:      #FFFFFF;
+  --jh-ink-2:    rgba(255, 255, 255, 0.82);
+  --jh-mark-glow: rgba(45, 234, 135, 0.12);
+}
+
+/* Deals of the Day \u2014 the one "signal moment": Naven Green as ground */
+/* Brand allows Green to lead on specific signal surfaces \u2014 this is one */
+.jh-slide--deals {
+  background: linear-gradient(135deg, #2DEA87 0%, #178d50 100%);
+  --jh-accent:   #120F4C;    /* Navy signals back on green ground */
+  --jh-accent-2: #0A0833;
+  --jh-ink:      #0A0833;    /* Ink reads cleanly on green (WCAG AA 9.53:1) */
+  --jh-ink-2:    rgba(10, 8, 51, 0.78);
+  --jh-mark-glow: rgba(18, 15, 76, 0.15);
+}
+
+/* Inverter ACs \u2014 Cobalt support for a cool, product-aligned feel */
+.jh-slide--inverter {
+  background: linear-gradient(135deg, #0F54C1 0%, #0A3785 100%);
+  --jh-accent:   #2DEA87;
+  --jh-accent-2: #ABF7CF;
+  --jh-ink:      #FFFFFF;
+  --jh-ink-2:    rgba(255, 255, 255, 0.82);
+  --jh-mark-glow: rgba(45, 234, 135, 0.12);
+}
+
+/* ---- Legacy theme aliases (keep so existing SLIDES don't break during rollout) ---- */
+.jh-slide--navy    { background: linear-gradient(135deg, #120F4C 0%, #0A0833 100%); --jh-accent: #2DEA87; --jh-accent-2: #57EE9F; --jh-ink: #fff; --jh-ink-2: rgba(255,255,255,0.78); --jh-mark-glow: rgba(45,234,135,0.15); }
+.jh-slide--crimson { background: linear-gradient(135deg, #120F4C 0%, #0A0833 100%); --jh-accent: #2DEA87; --jh-accent-2: #57EE9F; --jh-ink: #fff; --jh-ink-2: rgba(255,255,255,0.78); --jh-mark-glow: rgba(45,234,135,0.12); }
+.jh-slide--royal   { background: linear-gradient(135deg, #3C3E82 0%, #1E1F55 100%); --jh-accent: #2DEA87; --jh-accent-2: #ABF7CF; --jh-ink: #fff; --jh-ink-2: rgba(255,255,255,0.82); --jh-mark-glow: rgba(45,234,135,0.12); }
+.jh-slide--emerald { background: linear-gradient(135deg, #2DEA87 0%, #178d50 100%); --jh-accent: #120F4C; --jh-accent-2: #0A0833; --jh-ink: #0A0833; --jh-ink-2: rgba(10,8,51,0.78); --jh-mark-glow: rgba(18,15,76,0.15); }
+.jh-slide--sky     { background: linear-gradient(135deg, #0F54C1 0%, #0A3785 100%); --jh-accent: #2DEA87; --jh-accent-2: #ABF7CF; --jh-ink: #fff; --jh-ink-2: rgba(255,255,255,0.82); --jh-mark-glow: rgba(45,234,135,0.12); }
+
+
+/* ---- LEFT: text content ---- */
+
+.jh-slide__copy {
+  padding: 36px 40px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 14px;
+  color: var(--jh-ink);
+  z-index: 2;
+}
+
+/* Kicker \u2014 Montserrat SemiBold uppercase per brand label spec */
+.jh-slide__kicker {
+  font-family: var(--font-body, "Montserrat", sans-serif);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--jh-accent);
+  opacity: 1;
+}
+
+/* Big headline \u2014 Oswald/LT Univers Cond Black per brand display spec */
+.jh-slide__headline {
+  font-family: var(--font-display, "Oswald", sans-serif);
+  font-size: clamp(30px, 3.6vw, 44px);
+  font-weight: 700;
+  line-height: 1.0;
+  letter-spacing: 0.01em;
+  text-transform: uppercase;
+  margin: 0;
+  color: var(--jh-ink);
+}
+
+.jh-slide__highlight {
+  color: var(--jh-accent);
+  display: inline-block;
+}
+
+/* Discount pill \u2014 brand voice: specific, not hyped */
+.jh-slide__discount-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.jh-slide__discount {
+  display: inline-flex;
+  align-items: center;
+  padding: 10px 22px;
+  font-family: var(--font-display, "Oswald", sans-serif);
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: var(--jh-accent-ink, #0A0833);
+  background: var(--jh-accent);
+  border-radius: 999px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.18);
+}
+
+/* On green-ground slide, the pill flips to navy for contrast */
+.jh-slide--deals .jh-slide__discount,
+.jh-slide--emerald .jh-slide__discount {
+  color: #FFFFFF;
+  background: #120F4C;
+}
+
+.jh-slide__tcs {
+  font-size: 12px;
+  color: var(--jh-ink-2);
+  font-weight: 500;
+  letter-spacing: 0.02em;
+}
+
+/* Trust badges \u2014 Montserrat SemiBold labels per brand spec */
+.jh-slide__badges {
+  list-style: none;
+  padding: 0;
+  margin: 4px 0 0;
+  display: flex;
+  gap: 22px;
+  flex-wrap: wrap;
+}
+
+.jh-slide__badges li {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11.5px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--jh-ink);
+  opacity: 0.9;
+}
+
+.jh-slide__badges svg {
+  color: var(--jh-accent);
+  flex-shrink: 0;
+}
+
+/* CTA button \u2014 solid pill, uses signal colour */
+.jh-slide__cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 24px;
+  font-family: var(--font-body, "Montserrat", sans-serif);
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: #0A0833;
+  background: var(--jh-accent);
+  border-radius: 999px;
+  text-decoration: none;
+  margin-top: 6px;
+  transition: transform 200ms cubic-bezier(.2, .8, .2, 1), box-shadow 200ms;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.2);
+}
+
+.jh-slide--deals .jh-slide__cta,
+.jh-slide--emerald .jh-slide__cta {
+  background: #120F4C;
+  color: #FFFFFF;
+}
+
+.jh-slide__cta:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.28);
+}
+
+.jh-slide__cta svg {
+  transition: transform 200ms cubic-bezier(.2, .8, .2, 1);
+}
+
+.jh-slide__cta:hover svg {
+  transform: translateX(3px);
+}
+
+
+/* ---- RIGHT: brand mark placeholder OR image ---- */
+
+.jh-slide__visual {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  overflow: hidden;
+}
+
+.jh-slide__img {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+  object-position: center;
+}
+
+/* Decorative circle placeholder \u2014 subtle green glow for brand feel */
+.jh-slide__mark {
+  position: relative;
+  width: 240px;
+  height: 240px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.jh-slide__mark::before {
+  content: "";
+  position: absolute;
+  inset: -20%;
+  background: radial-gradient(circle, var(--jh-mark-glow, rgba(45, 234, 135, 0.12)) 0%, transparent 60%);
+  pointer-events: none;
+}
+
+.jh-slide__mark-ring {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.06);
+  border: 2px solid rgba(255, 255, 255, 0.14);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: inset 0 4px 24px rgba(0, 0, 0, 0.2);
+}
+
+.jh-slide--deals .jh-slide__mark-ring,
+.jh-slide--emerald .jh-slide__mark-ring {
+  background: rgba(10, 8, 51, 0.08);
+  border-color: rgba(10, 8, 51, 0.22);
+}
+
+.jh-slide__mark-ring-inner {
+  width: 74%;
+  height: 74%;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.04);
+  border: 2px solid rgba(255, 255, 255, 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+.jh-slide--deals .jh-slide__mark-ring-inner,
+.jh-slide--emerald .jh-slide__mark-ring-inner {
+  background: rgba(10, 8, 51, 0.06);
+  border-color: rgba(10, 8, 51, 0.28);
+}
+
+.jh-slide__mark-ring-inner span {
+  font-family: var(--font-display, "Oswald", sans-serif);
+  font-size: clamp(16px, 1.9vw, 26px);
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  color: var(--jh-accent);
+  text-align: center;
+  line-height: 1;
+  text-shadow: 0 2px 12px rgba(0, 0, 0, 0.3);
+  text-transform: uppercase;
+}
+
+
+/* ---- Dots pagination ---- */
+
+.jh-hero__dots {
+  position: absolute;
+  bottom: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 14px;
+  background: rgba(0, 0, 0, 0.25);
+  border-radius: 999px;
+  z-index: 3;
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+}
+
+.jh-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.45);
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  transition: all 200ms cubic-bezier(.2, .8, .2, 1);
+  position: relative;
+}
+
+.jh-dot::after {
+  content: "";
+  position: absolute;
+  inset: -6px;
+}
+
+.jh-dot:hover {
+  background: rgba(255, 255, 255, 0.75);
+}
+
+.jh-dot--on {
+  width: 24px;
+  border-radius: 999px;
+  background: #FFFFFF;
+}
+
+
+/* ============================================================
+   MOBILE (< 720px)
+   ============================================================ */
+
+@media (max-width: 720px) {
+  .jh-hero {
+    height: auto;
+    min-height: 460px;
+  }
+
+  .jh-slide {
+    grid-template-columns: 1fr;
+    grid-template-rows: 1fr auto;
+  }
+
+  .jh-slide__copy {
+    padding: 28px 24px 20px;
+    text-align: center;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .jh-slide__headline {
+    font-size: clamp(26px, 7vw, 32px);
+  }
+
+  .jh-slide__discount-row {
+    justify-content: center;
+  }
+
+  .jh-slide__badges {
+    justify-content: center;
+    gap: 16px;
+  }
+
+  .jh-slide__cta {
+    align-self: center;
+  }
+
+  .jh-slide__visual {
+    padding: 8px 20px 44px;
+    min-height: 180px;
+  }
+
+  .jh-slide__mark {
+    width: 160px;
+    height: 160px;
+  }
+
+  .jh-slide__mark-ring-inner span {
+    font-size: 18px;
+  }
+
+  .jh-hero__dots {
+    bottom: 10px;
+  }
+}
+
+
+/* ============================================================
+   REDUCED MOTION \u2014 accessibility
+   ============================================================ */
+
+@media (prefers-reduced-motion: reduce) {
+  .jh-slide,
+  .jh-slide__cta,
+  .jh-slide__cta svg,
+  .jh-dot {
+    transition: opacity 200ms linear !important;
+  }
+}
+
+/* ============================================================
+   PURE-IMAGE SLIDE VARIANT
+
+   For the Jumia-style hero where each slide IS a single
+   full-bleed image, the entire image clickable, no overlay.
+
+   Used when SLIDES array entries have `.jh-slide--image` class
+   (set by Hero.jsx when image is the whole content).
+   ============================================================ */
+
+.jh-slide--image {
+  /* Override the 60/40 grid from the themed slides */
+  display: block;
+  padding: 0;
+  background: transparent;
+}
+
+.jh-slide__image-link {
+  position: relative;
+  display: block;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+/* Blurred copy of the same flyer fills whatever space the fitted
+   flyer leaves, so there are no flat bars when the hero box and the
+   flyer have different shapes. */
+.jh-slide__image-link::before {
+  content: "";
+  position: absolute;
+  inset: -24px;
+  background: var(--jh-slide-bg) center / cover no-repeat;
+  filter: blur(20px) brightness(0.75);
+}
+
+.jh-slide__full-image {
+  position: relative;
+  display: block;
+  width: 100%;
+  height: 100%;
+  /* contain, not cover: the whole flyer stays visible. The hero box
+     (~2:1 on desktop) is narrower than the flyers (2.36–2.6:1), so
+     cover was cutting text off the left and right edges. */
+  object-fit: contain;
+  object-position: center;
+  /* No border-radius inside — the outer .jh-hero already clips */
+}
+
+/* Hover feedback — subtle brightness lift (desktop only) */
+@media (hover: hover) {
+  .jh-slide__image-link:hover .jh-slide__full-image {
+    filter: brightness(1.03);
+    transition: filter 200ms ease;
+  }
+}
+
+/* Mobile: hero height adjusts for narrower aspect ratio */
+@media (max-width: 720px) {
+  .jh-slide--image {
+    display: block;
+  }
+}
+
+/* Tablet + phone (single-column hero row, no fixed 360px row height):
+   the image-only hero takes the flyer's shape (1584×672). Without this
+   it collapses on tablets, and on phones the themed slides' 460px
+   min-height would leave ~300px of navy bars around the flyer. */
+@media (max-width: 1024px) {
+  .jh-hero:has(.jh-slide--image) {
+    min-height: 0;
+    height: auto;
+    aspect-ratio: 1584 / 672;
+  }
+}
