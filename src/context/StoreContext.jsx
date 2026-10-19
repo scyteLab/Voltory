@@ -117,7 +117,10 @@ export function StoreProvider({ children }) {
   const [theme, setTheme] = useState(DEFAULT_SITE_SETTINGS.theme);
   const [fontPair, setFontPair] = useState(DEFAULT_SITE_SETTINGS.font_pair);
   const [cart, setCart] = useState(() => getStoredCart());
-  const [coupon, setCoupon] = useState(SITE.welcomeCoupon.code);
+  // Default to NO coupon. Automatic discount removed 2026-10-19.
+  // Phase 3 will add GM-approved coupons via admin backend —
+  // only then will discounts apply, and only when GM activates them.
+  const [coupon, setCoupon] = useState("");
   const [toast, setToast] = useState(null);
   const [callConfirm, setCallConfirm] = useState(null);
   const [account, setAccount] = useState(() => loadAccount());
@@ -297,7 +300,9 @@ export function StoreProvider({ children }) {
     const discount = coupon === SITE.welcomeCoupon.code
       ? Math.round((subtotal * SITE.welcomeCoupon.percent) / 100)
       : 0;
-    const deliveryFee = subtotal >= SITE.freeDeliveryOver || subtotal === 0 ? 0 : 5500;
+    // Delivery fee neutralised 2026-10-19 — policy pending CGCL decision.
+    // Previous logic: subtotal >= SITE.freeDeliveryOver || subtotal === 0 ? 0 : 5500;
+    const deliveryFee = 0;
     const installationFee = 0;
     const grand = subtotal - discount + deliveryFee + installationFee;
     return { subtotal, discount, deliveryFee, installationFee, grand };

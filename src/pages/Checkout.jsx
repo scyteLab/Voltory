@@ -61,8 +61,11 @@ export default function Checkout() {
   const [submitting, setSubmitting] = useState(false);
 
   const installFee = installation ? SITE.installationFee : 0;
+  // Delivery fee neutralised 2026-10-19 — policy pending CGCL decision.
+  // Previous logic used the admin-configurable free_delivery_threshold_ngn setting
+  // to decide between FREE and ₦5,500; disabled entirely until CGCL sets real policy.
   const freeDeliveryThreshold = getCheckoutSetting("free_delivery_threshold_ngn");
-  const deliveryFee = totals.subtotal >= freeDeliveryThreshold || totals.subtotal === 0 ? 0 : 5500;
+  const deliveryFee = 0;
   const grand = totals.subtotal - totals.discount + deliveryFee + installFee;
 
   useEffect(() => {
@@ -410,10 +413,8 @@ export default function Checkout() {
                   <dd>FREE</dd>
                 </div>
               )}
-              <div>
-                <dt>Delivery</dt>
-                <dd>{deliveryFee === 0 ? "FREE" : naira(deliveryFee)}</dd>
-              </div>
+              {/* Delivery row hidden pending CGCL policy decision (2026-10-19).
+                  Fee calculation preserved for order record; display suppressed. */}
               {installation && (
                 <div>
                   <dt>Installation</dt>

@@ -2,7 +2,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { Fragment, useState } from "react";
 import {
   ChevronRight, Gift, Home as HomeIcon, MessageCircle, Minus, Plus,
-  ShoppingBag, Tag, Trash2, Truck, X,
+  ShoppingBag, Tag, Trash2, X,
 } from "lucide-react";
 import { useStore } from "../context/StoreContext.jsx";
 import { useCatalog } from "../context/CatalogContext.jsx";
@@ -12,15 +12,15 @@ import ProductCard from "../components/product/ProductCard.jsx";
 import SendToWhatsappModal from "../components/cart/SendToWhatsappModal.jsx";
 
 export default function Cart() {
-  const { cart, setQty, removeFromCart, totals, coupon, setCoupon, count } = useStore();
+  const { cart, setQty, removeFromCart, totals, count } = useStore();
   const { products, bySku } = useCatalog();
   const [waModalOpen, setWaModalOpen] = useState(false);
   const navigate = useNavigate();
 
   if (cart.length === 0) return <EmptyCart />;
 
-  const freeDeliveryGap = Math.max(0, SITE.freeDeliveryOver - totals.subtotal);
-  const freeDeliveryProgress = Math.min(100, (totals.subtotal / SITE.freeDeliveryOver) * 100);
+  // freeDeliveryGap and freeDeliveryProgress removed 2026-10-19
+  // along with the free-delivery progress bar — pending CGCL policy.
 
   /* Split cart into paid products and gift lines for rendering.
      We render paid product first, then its associated gift (if any)
@@ -48,23 +48,9 @@ export default function Cart() {
             </h1>
           </div>
 
-          {/* Free-delivery progress */}
-          {freeDeliveryGap > 0 ? (
-            <div className="cart-fd cart-fd--gap">
-              <Truck size={16} />
-              <span>
-                Add <b>{naira(freeDeliveryGap)}</b> more for FREE delivery
-              </span>
-              <div className="cart-fd__bar">
-                <div className="cart-fd__fill" style={{ width: `${freeDeliveryProgress}%` }} />
-              </div>
-            </div>
-          ) : (
-            <div className="cart-fd cart-fd--won">
-              <Truck size={16} />
-              <span>🎉 You qualify for <b>FREE delivery</b></span>
-            </div>
-          )}
+          {/* Free-delivery progress bar removed 2026-10-19.
+              Delivery policy pending CGCL decision; no delivery claims
+              shown until finalised. */}
 
           {/* Line items */}
           <ul className="cart-lines">
@@ -159,7 +145,10 @@ export default function Cart() {
         <aside className="cart-summary">
           <h2>Order Summary</h2>
 
-          <CouponInput coupon={coupon} setCoupon={setCoupon} />
+          {/* Coupon input UI removed 2026-10-19.
+              Automatic 10% welcome discount was removed in Phase 2; this input let
+              customers manually re-enable it by typing WELCOME10. Removed entirely
+              until Phase 3 ships the proper GM-approved coupon system. */}
 
           <dl className="cart-totals">
             <div>
@@ -178,10 +167,8 @@ export default function Cart() {
                 <dd>FREE</dd>
               </div>
             )}
-            <div>
-              <dt>Delivery Fee</dt>
-              <dd>{totals.deliveryFee === 0 ? "FREE" : naira(totals.deliveryFee)}</dd>
-            </div>
+            {/* Delivery row hidden pending CGCL policy decision (2026-10-19).
+                Fee calculation preserved in totals; display suppressed. */}
             <div className="cart-totals__grand">
               <dt>Total</dt>
               <dd>{naira(totals.grand)}</dd>
