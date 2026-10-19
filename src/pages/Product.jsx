@@ -209,7 +209,7 @@ export default function Product() {
           </p>
 
           <ul className="pdp__trust">
-            <li><Truck size={15} /> Free delivery on orders over {naira(SITE.freeDeliveryOver)}</li>
+            <li><Truck size={15} /> Nationwide delivery available</li>
             <li><ShieldCheck size={15} /> Manufacturer warranty included</li>
             <li><Wrench size={15} /> Professional installation available</li>
             <li><FileBadge size={15} /> 7-day return policy</li>

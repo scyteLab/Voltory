@@ -103,8 +103,9 @@ export default function Terms() {
         <p>
           We deliver to addresses across Nigeria. Delivery timelines provided at checkout are
           estimates and may vary depending on your location, product availability, and logistics
-          conditions. Orders above {SITE.currencySymbol}{SITE.freeDeliveryOver.toLocaleString()} qualify
-          for free standard delivery within Lagos.
+          conditions. Delivery fees depend on your location, order size, and the specific products
+          ordered; our team will confirm your delivery cost after you place your order and before
+          dispatch.
         </p>
         <h3>5.1 Delivery Responsibility</h3>
         <p>

@@ -32,7 +32,7 @@ export const HELP_TOPICS = [
       },
       {
         q: "How do I apply a coupon or discount code?",
-        a: "Add your items to the cart, then enter the code in the “Have a coupon?” field. The discount appears in the order summary before you pay. New customers get 10% off their first order with the code WELCOME10 (already applied automatically).",
+        a: "We’re not currently running coupon promotions. When we do, codes will be shared on our deals page or official channels — enter them at checkout and the discount will appear in your order summary before you pay.",
       },
     ],
   },
@@ -48,7 +48,7 @@ export const HELP_TOPICS = [
       },
       {
         q: "How much does delivery cost?",
-        a: "Standard delivery is ₦5,500 nationwide. Orders above ₦150,000 ship FREE — the discount is applied automatically at checkout. Large or fragile items in remote locations may attract a small additional handling fee, which we’ll confirm by phone before dispatch.",
+        a: "We deliver nationwide. Delivery fees depend on your location, order size and the specific products — our team will confirm your delivery cost by phone or email after you place your order, before dispatch. For urgent requirements, please contact support.",
       },
       {
         q: "Where can I track my order?",

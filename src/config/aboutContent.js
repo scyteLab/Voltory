@@ -49,7 +49,7 @@ export const ABOUT_PROMISES = [
   {
     icon: "Truck",
     title: "Nationwide Delivery",
-    body: "All 36 states + FCT. Free above ₦150,000. SMS tracking at every stage.",
+    body: "All 36 states + FCT. SMS tracking at every stage. Delivery cost confirmed after order.",
   },
   {
     icon: "Wrench",
