@@ -75,7 +75,7 @@ export default function SignUp() {
 
         <h2 className="ashell-form__title">Create your account</h2>
         <p className="ashell-form__sub">
-          Quick setup. Your phone is your login \u2014 email is optional for password recovery.
+          Quick setup. Your phone is your login — email is optional for password recovery.
         </p>
 
         <form onSubmit={onSubmit}>

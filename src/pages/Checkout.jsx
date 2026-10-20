@@ -55,7 +55,9 @@ export default function Checkout() {
     street: "",
     landmark: "",
   });
-  const [payment, setPayment] = useState("card");
+  // When Paystack is not configured, only POD is available — default to it.
+  const paystackReady = isPaystackConfigured();
+  const [payment, setPayment] = useState(paystackReady ? "card" : "pod");
   const [installation, setInstallation] = useState(false);
   const [errors, setErrors] = useState({});
   const [submitting, setSubmitting] = useState(false);
@@ -328,7 +330,9 @@ export default function Checkout() {
             <h2><span className="ck-card__step">3</span><CreditCard size={18} /> Payment Method</h2>
 
             <div className="ck-pay">
-              {PAYMENT_METHODS.map((m) => (
+              {PAYMENT_METHODS
+                .filter((m) => paystackReady || m.id === "pod")
+                .map((m) => (
                 <label key={m.id} className={"ck-pay__opt" + (payment === m.id ? " ck-pay__opt--on" : "")}>
                   <input
                     type="radio"
@@ -345,6 +349,12 @@ export default function Checkout() {
                 </label>
               ))}
             </div>
+
+            {!paystackReady && (
+              <p className="ck-card__hint" style={{ marginTop: 12 }}>
+                <Info size={13} /> Online payment (Card, Bank Transfer, USSD) is coming soon. For now, please pay on delivery.
+              </p>
+            )}
 
             <p className="ck-card__hint" style={{ marginTop: 16 }}>
               <Lock size={13} /> All transactions are encrypted. We never store your card details.

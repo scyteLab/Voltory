@@ -50,7 +50,7 @@ export default function OrderConfirmation() {
     return (
       <main className="wrap">
         <div style={{ padding: "60px 20px", textAlign: "center", color: "var(--ink-3)" }}>
-          Loading your order\u2026
+          Loading your order…
         </div>
       </main>
     );
@@ -99,8 +99,9 @@ export default function OrderConfirmation() {
             <h2>Your NAVEN account is ready</h2>
             <p>
               We've created your account automatically using your phone number
-              <b className="mono"> {order.contact.phone}</b>. Next time you shop,
-              just enter your phone \u2014 we'll handle the rest. No password needed.
+              <b className="mono"> {order.contact.phone}</b>. To sign in on your next
+              visit, <Link to="/signup">sign up</Link> with this phone number to set a
+              password — your orders stay linked to it.
             </p>
           </div>
         </section>
@@ -162,12 +163,14 @@ export default function OrderConfirmation() {
                 <dt>Discount</dt><dd>\u2212{naira(order.totals.discount)}</dd>
               </div>
             )}
-            <div><dt>Delivery</dt><dd>{order.totals.deliveryFee === 0 ? "FREE" : naira(order.totals.deliveryFee)}</dd></div>
+            {order.totals.deliveryFee > 0 && (
+              <div><dt>Delivery</dt><dd>{naira(order.totals.deliveryFee)}</dd></div>
+            )}
             {order.totals.installationFee > 0 && (
               <div><dt>Installation</dt><dd>{naira(order.totals.installationFee)}</dd></div>
             )}
             <div className="conf-totals__grand">
-              <dt>Total Paid</dt><dd>{naira(order.totals.grand)}</dd>
+              <dt>Order Total</dt><dd>{naira(order.totals.grand)}</dd>
             </div>
           </dl>
           <p className="conf-card__note" style={{ marginTop: 12 }}>
@@ -208,7 +211,7 @@ export default function OrderConfirmation() {
           <MessageCircle size={20} />
           <span>
             <b>Need help with your order?</b>
-            <small>Chat with us on WhatsApp \u2014 {SITE.whatsapp}</small>
+            <small>Chat with us on WhatsApp — {SITE.whatsapp}</small>
           </span>
           <ChevronRight size={16} />
         </a>
@@ -234,7 +237,7 @@ function SyncPill({ synced }) {
   return (
     <span
       className="conf-hero__syncpill conf-hero__syncpill--pending"
-      title="Order saved locally \u2014 finishing sync in the background"
+      title="Order saved locally — finishing sync in the background"
     >
       <CloudOff size={12} /> Saved locally
     </span>
