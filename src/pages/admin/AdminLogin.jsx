@@ -160,7 +160,7 @@ function LoginInner() {
               <Sparkles size={20} />
             </span>
             <h1>Welcome back</h1>
-            <Tagline variant="primary" size="sm" align="center" className="brand-tagline--under-heading" />
+            <Tagline size="sm" align="center" className="brand-tagline--under-heading" />
             <p>Sign in to your admin account to continue.</p>
           </div>
 

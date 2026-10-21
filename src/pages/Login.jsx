@@ -72,7 +72,7 @@ export default function Login() {
         </div>
 
         <h2 className="ashell-form__title">Welcome back</h2>
-        <Tagline variant="primary" size="sm" className="brand-tagline--under-heading" />
+        <Tagline size="sm" className="brand-tagline--under-heading" />
         <p className="ashell-form__sub">
           Enter your phone number and password to sign in.
         </p>

@@ -66,7 +66,6 @@ export const BUSINESS_INFO = {
 
   // ---- Brand taglines (brand guide) --------------------------
   taglinePrimary:   "THE PREMIUM ELECTRONICS",
-  taglineSecondary: "THE ONE PLACE FOR ALL ELECTRONICS",
 
   // ---- Tax config ---------------------------------------------
 

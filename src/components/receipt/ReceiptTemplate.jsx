@@ -234,7 +234,7 @@ export default function ReceiptTemplate({ order }) {
           textAlign: "center",
           margin: "12px 0 4px",
         }}>
-          {BUSINESS_INFO.taglineSecondary}
+          {BUSINESS_INFO.taglinePrimary}
         </p>
         <p className="receipt__thanks">
           Thank you for shopping with {BUSINESS_INFO.brandName}.

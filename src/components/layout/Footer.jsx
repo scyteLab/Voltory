@@ -9,7 +9,6 @@ import { SITE } from "../../config/site.js";
 import { useStore } from "../../context/StoreContext.jsx";
 import { addSubscriber } from "../../utils/newsletterSubscribers.js";
 import Logo from "./Logo.jsx";
-import Tagline from "../brand/Tagline.jsx";
 
 const BADGE_ICONS = { "Secure Payments": Lock, "Pay on Delivery": Banknote, "Nationwide Delivery": Truck };
 
@@ -70,8 +69,7 @@ export default function Footer() {
       {/* main grid */}
       <div className="wrap ftr__grid">
         <div className="ftr__col ftr__col--brand">
-          <Logo tagline={false} />
-          <Tagline variant="secondary" size="sm" className="brand-tagline--on-dark" />
+          <Logo variant="lockup" ariaLabel="NAVEN — The Premium Electronics" />
           <div className="ftr__contact">
             <a
               href={`tel:${SITE.phone.replace(/\s/g, "")}`}

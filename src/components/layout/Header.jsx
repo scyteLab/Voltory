@@ -5,7 +5,6 @@ import { useStore } from "../../context/StoreContext.jsx";
 import { useCustomerAuth } from "../../context/AuthContext.jsx";
 import { SITE } from "../../config/site.js";
 import Logo from "./Logo.jsx";
-import Tagline from "../brand/Tagline.jsx";
 import SearchBar from "../search/SearchBar.jsx";
 import AccountMenu from "./AccountMenu.jsx";
 
@@ -28,10 +27,10 @@ export default function Header() {
   return (
     <header className="hdr">
       <div className="wrap hdr__inner">
-        <div className="header-brand">
-          <Link to="/" aria-label="Home"><Logo tagline={false} /></Link>
-          <Tagline variant="primary" size="sm" />
-        </div>
+        <Link to="/" aria-label="NAVEN — Home" className="header-brand">
+          <Logo variant="lockup" className="logo header-brand__lockup" ariaLabel="NAVEN — The Premium Electronics" />
+          <Logo className="logo header-brand__mark" />
+        </Link>
         <SearchBar />
         <div className="hdr__counters">
           <Link to="/compare" className="hdr-counter" aria-label="Compare">

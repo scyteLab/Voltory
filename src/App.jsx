@@ -127,7 +127,7 @@ function AuthLayout() {
             Original Electronics.<br />Trusted Performance.
           </h2>
           <div className="auth-brand__sub">
-            <Tagline variant="primary" size="md" className="brand-tagline--on-dark" />
+            <Tagline size="md" className="brand-tagline--on-dark" />
           </div>
           <ul className="auth-brand__trust">
             {AUTH_TRUST.map(({ Icon, text }) => (

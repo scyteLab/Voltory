@@ -352,13 +352,54 @@
 /* Spacing when the tagline sits under a page/card heading */
 .brand-tagline--under-heading { margin: 6px 0 12px; }
 
-/* Header lockup: wordmark with the tagline stacked beneath */
+/* Header brand link — holds the lockup (desktop) or wordmark (narrow) */
 .header-brand {
   display: flex;
-  flex-direction: column;
-  gap: 3px;
+  align-items: center;
   flex-shrink: 0;
+  text-decoration: none;
 }
+
+/* ============================================================
+   NAVEN SVG LOGO — size + colour per placement
+
+   layout/Logo.jsx renders the vector wordmark at 100% of its
+   wrapper's height, so every placement sets --naven-logo-h.
+   Wordmark is 568.5 × 171.5, so width ≈ 3.3 × height
+   (24px tall ≈ 80px wide, the brand minimum).
+   Dark surfaces switch the letters to white via --naven-ink;
+   the green V facet stays green.
+   ============================================================ */
+
+.logo { height: var(--naven-logo-h, 26px); }
+
+/* Header — white background, default navy ink.
+   Desktop: full lockup (tagline ≈ 8px). Below 920px the tagline would
+   drop under 7px, so the wordmark shows alone. `!important` is needed
+   because Logo sets display inline. */
+.header-brand__lockup { height: 50px; }
+.header-brand__mark   { height: 24px; display: none !important; }
 @media (max-width: 920px) {
-  .header-brand .brand-tagline { display: none; }
+  .header-brand__lockup { display: none !important; }
+  .header-brand__mark   { display: inline-flex !important; }
 }
+
+/* Footer — navy. Lockup at 64px puts the tagline at ≈ 10px. */
+.ftr__col--brand {
+  --naven-logo-h: 64px;
+  --naven-ink: #FFFFFF;
+  --naven-tagline: rgba(255, 255, 255, 0.78);
+}
+.ftr__col--brand > .logo { margin-bottom: 4px; }
+
+/* Admin sidebar — dark */
+.adm-sidebar__brand { --naven-logo-h: 24px; --naven-ink: #FFFFFF; }
+
+/* Admin login — dark brand panel */
+.adm-login__logo { --naven-logo-h: 30px; --naven-ink: #FFFFFF; }
+
+/* Auth layout brand panel (App.jsx AuthLayout) — dark */
+.auth-brand__logo-link { --naven-logo-h: 32px; --naven-ink: #FFFFFF; }
+
+/* Auth showcase — existing auth-shell.css filter already renders it white */
+.ashell-showcase__logo { --naven-logo-h: 28px; }

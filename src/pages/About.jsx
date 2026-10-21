@@ -38,7 +38,7 @@ export default function About() {
             <Sparkles size={13} /> OUR STORY
           </span>
           <h1>{ABOUT_MISSION.headline}</h1>
-          <Tagline variant="secondary" size="sm" className="brand-tagline--on-dark brand-tagline--under-heading" />
+          <Tagline size="sm" className="brand-tagline--on-dark brand-tagline--under-heading" />
           <p>{ABOUT_MISSION.body}</p>
         </div>
         <div className="mkt-hero__art">

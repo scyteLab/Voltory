@@ -43,7 +43,7 @@ export default function NotFound() {
         <span className="nf-hero__code">404</span>
         <img className="nf-hero__img" src="/banners/nf-hero.png" alt="" />
         <h1>This page wandered off</h1>
-        <Tagline variant="primary" size="sm" align="center" className="brand-tagline--under-heading" />
+        <Tagline size="sm" align="center" className="brand-tagline--under-heading" />
         <p>
           We couldn’t find <b className="mono">{location.pathname}</b>. The link
           may have changed, or the page may not exist yet. Try one of these popular
