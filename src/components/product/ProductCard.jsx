@@ -51,7 +51,15 @@ export default function ProductCard({ product }) {
 
   return (
     <article className="pcard">
-      {badge && <span className={`pcard__badge ${badge.cls}`}>{badge.label}</span>}
+      {/* New Arrivals sets _isNew / _isRestocked; when present the
+          freshness badge takes the regular badge's spot (no overlap). */}
+      {p._isNew ? (
+        <span className="pcard__freshness-badge pcard__freshness-badge--new">NEW</span>
+      ) : p._isRestocked ? (
+        <span className="pcard__freshness-badge pcard__freshness-badge--restocked">JUST RESTOCKED</span>
+      ) : (
+        badge && <span className={`pcard__badge ${badge.cls}`}>{badge.label}</span>
+      )}
 
       {/* corner action stack — wishlist heart + compare toggle */}
       <span className="pcard__actions-corner">

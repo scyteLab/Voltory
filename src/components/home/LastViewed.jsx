@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import { bySku } from "../../data/products.js";
+import { useCatalog } from "../../context/CatalogContext.jsx";
 import { getRecentlyViewed } from "../../utils/recentlyViewed.js";
 import ProductCard from "../product/ProductCard.jsx";
 
@@ -14,6 +14,7 @@ import ProductCard from "../product/ProductCard.jsx";
  * viewed" row of products they never opened.
  */
 export default function LastViewed() {
+  const { bySku } = useCatalog();
   const [skus, setSkus] = useState([]);
   const ref = useRef(null);
 

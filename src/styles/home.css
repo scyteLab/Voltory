@@ -1197,6 +1197,103 @@
   .cstrip { padding: 10px 6px; }
   .cstrip__media { width: 48px; height: 48px; }
   .cstrip__label { font-size: 9.5px; }
+  /* ============================================================
+     Mobile wrap: Shop by Brand + Shop by Category grid out to 4 cols
+     instead of horizontal scroll. Added 2026-10-24 per project owner.
+     Arrows hidden since there's nothing to scroll when wrapped.
+
+     Refined 2026-10-24:
+       · Brands: 3 columns (9 brands = clean 3×3, wider tiles), short
+         ~2:1 tiles, and the logo scales WITH the tile (max 80% wide /
+         50% tall) instead of the fixed 100×36 box from components.css,
+         so wide marks (Kenwood, Panasonic) and squarer ones (Samsung,
+         LG) read at a similar optical size.
+       · Categories: labels wrap to two lines (space for 2 reserved so
+         rows stay aligned) with fluid type; icon well scales with the
+         column instead of a fixed 48px.
+     ============================================================ */
+  .brands-wrap {
+    padding: 0;
+  }
+  .brands-arrow {
+    display: none;
+  }
+  .brands-strip {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+    overflow-x: visible;
+    scroll-snap-type: none;
+    padding: 8px;
+  }
+  .brands-strip .brand-tile {
+    flex: unset;
+    min-width: 0;
+    width: 100%;
+    height: auto;
+    aspect-ratio: 2 / 1;
+    padding: 6px 8px;
+    border: 1px solid var(--line);
+    border-right: 1px solid var(--line);
+    border-radius: var(--r);
+    scroll-snap-align: none;
+  }
+  .brands-strip .brand-tile img {
+    width: 80%;
+    height: 50%;
+    max-width: 120px;
+    object-fit: contain;
+  }
+  .brands-strip .brand-tile:first-child,
+  .brands-strip .brand-tile:last-child {
+    border-radius: var(--r);
+    border-right: 1px solid var(--line);
+  }
+
+  .cstrip-wrap {
+    padding: 0;
+  }
+  .cstrip-arrow {
+    display: none;
+  }
+  .cstrip {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 2px;
+    overflow-x: visible;
+    scroll-snap-type: none;
+    padding: 10px 6px;
+  }
+  .cstrip__tile {
+    flex: unset;
+    min-width: 0;
+    width: 100%;
+    padding: 8px 2px;
+    gap: 8px;
+    justify-content: flex-start;
+    scroll-snap-align: none;
+  }
+  .cstrip__media {
+    width: min(64px, 78%);
+    height: auto;
+    aspect-ratio: 1;
+  }
+  .cstrip__label {
+    white-space: normal;
+    overflow: hidden;
+    text-overflow: clip;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    /* 2.7vw keeps the longest single word ("Refrigerators") inside a
+       column down to 360px; words never split mid-word. */
+    font-size: clamp(9.5px, 2.7vw, 12px);
+    line-height: 1.25;
+    min-height: 2.5em; /* two lines reserved, so every row lines up */
+    word-break: normal;
+    overflow-wrap: normal;
+  }
   .svcards { grid-template-columns: 1fr 1fr; gap: 8px; }
   .svcard { min-height: 100px; }
   .svcard__body { padding: 10px; gap: 2px; }
@@ -1280,4 +1377,80 @@
 @media (max-width: 720px) {
   .skel--card { min-width: 140px; height: 200px; }
   .skel-row--bands { flex-direction: column; }
+}
+/* ============================================================
+   MEGA MENU — link columns + feature image card (desktop only;
+   the whole sidebar/flyout is hidden ≤1024px)
+   ============================================================ */
+.megamenu { gap: 28px; }
+.megamenu__cols {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-wrap: wrap;
+  align-content: flex-start;
+  gap: 18px 32px;
+}
+
+.mmfeature {
+  /* 320px ≈ 240px-tall 4:3 image + one-line title + CTA, which fills the
+     ~316px of flyout height; shrinks to 240px on narrower desktops. */
+  flex: 0 1 320px;
+  min-width: 240px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  align-self: flex-start;
+}
+.mmfeature__media {
+  position: relative;
+  display: block;
+  aspect-ratio: 4 / 3;
+  border-radius: var(--r);
+  overflow: hidden;
+  background: var(--line);
+}
+.mmfeature__img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: 0;
+  transition: opacity 280ms ease;
+}
+.mmfeature__img--on { opacity: 1; }
+.mmfeature__eyebrow {
+  display: block;
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--p);
+}
+.mmfeature__title {
+  margin: 3px 0 0;
+  font-size: 15px;
+  font-weight: 700;
+  line-height: 1.3;
+  color: var(--ink);
+}
+.mmfeature__cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  margin-top: 6px;
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--p);
+}
+.mmfeature__cta:hover { text-decoration: underline; }
+
+@media (prefers-reduced-motion: reduce) {
+  .mmfeature__img { transition: none; }
+}
+
+/* Brand logos: full colour on touch devices (no hover to reveal it) */
+@media (hover: none) {
+  .brands-strip .brand-tile img { filter: none; }
 }

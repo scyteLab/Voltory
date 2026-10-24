@@ -237,6 +237,24 @@ export default function ProductEditPanel({
         </button>
       </header>
 
+      {/* Catalog dates — "Last restocked" is stamped by a DB trigger when
+          stock goes from 0 to positive; it drives New Arrivals ordering. */}
+      {mode !== "new" && product?.created_at && (
+        <div className="admin-meta-dates">
+          <div className="admin-meta-dates__item">
+            <small>Added to catalog</small>
+            <span>{formatAdminDate(product.created_at)}</span>
+          </div>
+          {product.last_restocked_at &&
+           new Date(product.last_restocked_at).getTime() !== new Date(product.created_at).getTime() && (
+            <div className="admin-meta-dates__item">
+              <small>Last restocked</small>
+              <span>{formatAdminDate(product.last_restocked_at)}</span>
+            </div>
+          )}
+        </div>
+      )}
+
       <form onSubmit={onSubmit} className="adm-editpanel__body">
         <ImageUploader
           mainImage={form.image}
@@ -268,9 +286,20 @@ export default function ProductEditPanel({
 
         <FormRow cols={2}>
           <Field label="Brand" error={errors.brand} required>
-            <select value={form.brand || ""} onChange={(e) => field("brand", e.target.value)}>
+            {/* Value is the brand NAME (products.brand stores names, and the
+                storefront filters on them). It used to be b.id, which saved
+                lowercase ids like "scanfrost". Existing rows with any casing
+                or an id still preselect the right brand. */}
+            <select
+              value={
+                brands.find((b) =>
+                  [b.name, b.id].some((v) => String(v || "").toLowerCase() === String(form.brand || "").toLowerCase())
+                )?.name || ""
+              }
+              onChange={(e) => field("brand", e.target.value)}
+            >
               <option value="">Choose brand…</option>
-              {brands.map((b) => <option key={b.id} value={b.id}>{b.name}</option>)}
+              {brands.map((b) => <option key={b.id} value={b.name}>{b.name}</option>)}
             </select>
           </Field>
           <Field label="Category" error={errors.category} required>
@@ -531,4 +560,10 @@ function Field({ label, children, error, required }) {
       {error && <small className="adm-field__err">{error}</small>}
     </label>
   );
+}
+
+function formatAdminDate(value) {
+  return new Date(value).toLocaleDateString("en-NG", {
+    year: "numeric", month: "long", day: "numeric",
+  });
 }

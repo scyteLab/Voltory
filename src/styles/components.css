@@ -354,3 +354,32 @@
 .brand-tile:hover img {
   filter: grayscale(0) opacity(1);
 }
+
+/* --------------------------------------------------------
+   Freshness badges — NEW and JUST RESTOCKED
+   Used by the New Arrivals page via _isNew / _isRestocked;
+   rendered in place of .pcard__badge, so no stacking needed.
+   -------------------------------------------------------- */
+.pcard__freshness-badge {
+  position: absolute;
+  top: 8px;
+  right: 8px; /* same spot as .pcard__badge; top-left holds wishlist/compare */
+  z-index: 2;
+  padding: 4px 8px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  border-radius: 4px;
+  pointer-events: none;
+  font-family: Montserrat, system-ui, sans-serif;
+}
+.pcard__freshness-badge--new {
+  background: #2DEA87;
+  color: #120F4C;
+}
+.pcard__freshness-badge--restocked {
+  background: #120F4C;
+  color: #FFFFFF;
+  border: 1px solid #2DEA87;
+}

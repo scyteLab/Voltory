@@ -1,13 +1,31 @@
-import { useRef } from "react";
+import { useMemo, useRef } from "react";
 import { PartyPopper, ChevronLeft, ChevronRight } from "lucide-react";
 import { Link } from "react-router-dom";
-import { getDeals } from "../../data/products.js";
+import { useCatalog } from "../../context/CatalogContext.jsx";
+import { discountPct } from "../../utils/format.js";
 import ProductCard from "../product/ProductCard.jsx";
 import CountdownTimer from "./CountdownTimer.jsx";
 
+const LIMIT = 10;
+
+/**
+ * Anniversary sale banner + a row of the deepest in-stock discounts.
+ *
+ * Reads the live catalogue (it used to read the static data/products.js
+ * list, which is empty since the move to Supabase — so only the row's
+ * scroll arrows ever rendered). The row is omitted when there are no
+ * discounted products, so no orphan arrows.
+ */
 export default function AnniversaryDeals() {
-  const picks = getDeals().slice().reverse().slice(0, 10);
+  const { products } = useCatalog();
   const ref = useRef(null);
+
+  const picks = useMemo(() => (
+    products
+      .filter((p) => p.was > p.price && p.stock > 0 && p.status !== "inactive")
+      .sort((a, b) => discountPct(b.price, b.was) - discountPct(a.price, a.was))
+      .slice(0, LIMIT)
+  ), [products]);
 
   function scroll(dir) {
     const el = ref.current;
@@ -31,13 +49,15 @@ export default function AnniversaryDeals() {
           </Link>
         </div>
       </div>
-      <div className="pgrid-wrap">
-        <button className="pgrid-arrow pgrid-arrow--l" onClick={() => scroll(-1)} aria-label="Scroll left"><ChevronLeft size={16} /></button>
-        <section className="pgrid" ref={ref} aria-label="Anniversary deals">
-          {picks.map((p) => <ProductCard key={p.sku} product={p} />)}
-        </section>
-        <button className="pgrid-arrow pgrid-arrow--r" onClick={() => scroll(1)} aria-label="Scroll right"><ChevronRight size={16} /></button>
-      </div>
+      {picks.length > 0 && (
+        <div className="pgrid-wrap">
+          <button className="pgrid-arrow pgrid-arrow--l" onClick={() => scroll(-1)} aria-label="Scroll left"><ChevronLeft size={16} /></button>
+          <section className="pgrid" ref={ref} aria-label="Anniversary deals">
+            {picks.map((p) => <ProductCard key={p.sku} product={p} />)}
+          </section>
+          <button className="pgrid-arrow pgrid-arrow--r" onClick={() => scroll(1)} aria-label="Scroll right"><ChevronRight size={16} /></button>
+        </div>
+      )}
     </>
   );
 }

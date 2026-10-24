@@ -1,5 +1,5 @@
 import { createContext, useContext, useEffect, useMemo, useRef, useState } from "react";
-import { loadCatalog } from "../lib/catalogClient.js";
+import { loadCatalog, canonicalBrandResolver } from "../lib/catalogClient.js";
 import { setSnapshot } from "../lib/catalogSnapshot.js";
 import {
   supabase, supabaseConfigured,
@@ -104,15 +104,17 @@ export function CatalogProvider({ children }) {
       .single();
     if (err) throw err;
 
-    /* Local state update: replace or add */
+    /* Local state update: replace or add (brand name normalised the same
+       way loadCatalog does, so a saved row can't reintroduce "scanfrost") */
     setProducts((prev) => {
-      const idx = prev.findIndex((p) => p.sku === data.sku);
+      const saved = { ...data, brand: canonicalBrandResolver(brands, prev)(data.brand) };
+      const idx = prev.findIndex((p) => p.sku === saved.sku);
       let next;
       if (idx >= 0) {
         next = [...prev];
-        next[idx] = { ...next[idx], ...data };
+        next[idx] = { ...next[idx], ...saved };
       } else {
-        next = [data, ...prev];
+        next = [saved, ...prev];
       }
       /* Sync snapshot */
       setSnapshot({ products: next, categories, brands });

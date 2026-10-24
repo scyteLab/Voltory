@@ -18,7 +18,43 @@ const SORTS = [
 ];
 
 const PAGE_SIZE = 12;
-const FILTER_CONFIG = ["brand", "price", "availability"];
+// Only in-stock products are listed, so the availability filter is moot.
+const FILTER_CONFIG = ["brand", "price"];
+
+const DISPLAY_LIMIT = 60;
+const NEW_DAYS = 60;      // "NEW" badge: created in the last 60 days
+const RESTOCK_DAYS = 30;  // "JUST RESTOCKED": restocked in the last 30 days (and not NEW)
+const DAY_MS = 24 * 60 * 60 * 1000;
+
+const toTime = (v) => (v ? new Date(v).getTime() || 0 : 0);
+
+/**
+ * Freshest in-stock products (policy approved by the project owner,
+ * 2026-10-21): active + stock > 0, sorted by the later of created_at and
+ * last_restocked_at (stamped by a DB trigger when stock goes 0 → positive),
+ * top DISPLAY_LIMIT. Flags drive the card badge; NEW wins over RESTOCKED.
+ */
+function freshestInStock(products) {
+  const now = Date.now();
+  const newCutoff = now - NEW_DAYS * DAY_MS;
+  const restockCutoff = now - RESTOCK_DAYS * DAY_MS;
+
+  return products
+    .filter((p) => p.stock > 0 && p.status !== "inactive")
+    .map((p) => {
+      const createdAt = toTime(p.created_at);
+      const restockedAt = toTime(p.last_restocked_at);
+      const isNew = createdAt >= newCutoff;
+      return {
+        ...p,
+        _freshness: Math.max(createdAt, restockedAt),
+        _isNew: isNew,
+        _isRestocked: !isNew && restockedAt >= restockCutoff && restockedAt > createdAt,
+      };
+    })
+    .sort((a, b) => b._freshness - a._freshness)
+    .slice(0, DISPLAY_LIMIT);
+}
 
 export default function NewArrivals() {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -31,16 +67,7 @@ export default function NewArrivals() {
     return () => { document.title = prev; };
   }, []);
 
-  // "Newest" = anything badged "new" OR with fewer reviews (proxy for recency).
-  // When the backend lands, this becomes ORDER BY created_at DESC.
-  const all = useMemo(() => {
-    return [...products].sort((a, b) => {
-      const aNew = a.badge === "new" ? 0 : 1;
-      const bNew = b.badge === "new" ? 0 : 1;
-      if (aNew !== bNew) return aNew - bNew;
-      return (a.reviews || 0) - (b.reviews || 0);
-    });
-  }, [products]);
+  const all = useMemo(() => freshestInStock(products), [products]);
 
   const filters = useMemo(() => readFiltersFromUrl(searchParams), [searchParams]);
   const sort = searchParams.get("sort") || "newest";
@@ -74,7 +101,8 @@ export default function NewArrivals() {
   function clearFilters() { setSearchParams({}); }
 
   const activeChips = buildActiveChips(filters);
-  const newlyArrivedCount = all.filter((p) => p.badge === "new").length;
+  const newCount = all.filter((p) => p._isNew).length;
+  const restockedCount = all.filter((p) => p._isRestocked).length;
 
   return (
     <main className="wrap">
@@ -93,9 +121,11 @@ export default function NewArrivals() {
           <p>
             Fresh inventory — the latest models from your favourite brands, now in stock.
           </p>
-          {newlyArrivedCount > 0 && (
+          {all.length > 0 && (
             <p className="lhero__sub">
-              <b>{newlyArrivedCount}</b> brand-new product{newlyArrivedCount === 1 ? "" : "s"} this week
+              <b>{all.length}</b> {all.length === 1 ? "product" : "products"}
+              {newCount > 0 && <> · <b>{newCount}</b> newly added</>}
+              {restockedCount > 0 && <> · <b>{restockedCount}</b> back in stock</>}
             </p>
           )}
         </div>
@@ -209,12 +239,8 @@ function applySort(items, sort) {
     case "price-desc": arr.sort((a, b) => b.price - a.price); break;
     case "rating": arr.sort((a, b) => (b.rating || 0) - (a.rating || 0)); break;
     default:
-      arr.sort((a, b) => {
-        const aNew = a.badge === "new" ? 0 : 1;
-        const bNew = b.badge === "new" ? 0 : 1;
-        if (aNew !== bNew) return aNew - bNew;
-        return (a.reviews || 0) - (b.reviews || 0);
-      });
+      // "Newest First" = freshness (later of created / last restocked)
+      arr.sort((a, b) => (b._freshness || 0) - (a._freshness || 0));
   }
   return arr;
 }
