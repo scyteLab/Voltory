@@ -28,6 +28,15 @@ export default function Terms() {
       </div>
 
       <div className="legal-page">
+        <p className="legal__intro">
+          These Terms &amp; Conditions govern your use of {SITE.name} and the
+          purchase of goods through our platform. They are issued in accordance
+          with Nigerian consumer protection law, including the Federal
+          Competition and Consumer Protection Act 2018 (FCCPC Act), and the
+          Nigeria Data Protection Act 2023 (NDPA) where personal data
+          processing is involved. By accessing {SITE.name}, you accept these
+          terms and the rights and obligations they create under Nigerian law.
+        </p>
         <p className="legal-updated">Last updated: 1 June 2026</p>
 
         <h2>1. Acceptance of Terms</h2>

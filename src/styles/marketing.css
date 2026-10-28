@@ -1291,8 +1291,25 @@
   color: var(--mut);
   margin-bottom: 20px;
 }
+/* Nigerian legal basis opening disclaimer — above the "Last updated"
+   line inside each legal page's white card. Added 2026-10-24. */
+.legal-page .legal__intro {
+  font-size: 14px;
+  line-height: 1.65;
+  color: var(--ink);
+  background: var(--p-soft, #F0F2F8);
+  border-left: 3px solid var(--p, #120F4C);
+  border-radius: 4px;
+  padding: 14px 16px;
+  margin: 0 0 16px;
+  font-weight: 500;
+}
 @media (max-width: 920px) {
   .legal-page { padding: 22px 20px; }
+  .legal-page .legal__intro {
+    font-size: 13px;
+    padding: 12px 14px;
+  }
 }
 @media (max-width: 540px) {
   .mkt-grid--3, .mkt-grid--4 { grid-template-columns: 1fr; gap: 10px; }

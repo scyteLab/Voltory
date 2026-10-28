@@ -28,6 +28,15 @@ export default function Returns() {
       </div>
 
       <div className="legal-page">
+        <p className="legal__intro">
+          This Returns &amp; Refund Policy sets out your rights when goods
+          purchased from {SITE.name} do not meet your expectations or arrive
+          defective. It is issued in accordance with the Federal Competition
+          and Consumer Protection Act 2018 (FCCPC Act), which protects your
+          right to goods of merchantable quality, fit for purpose, and matching
+          the description provided at the point of sale. Nothing in this policy
+          limits any statutory consumer right you have under Nigerian law.
+        </p>
         <p className="legal-updated">Last updated: 1 June 2026</p>
 
         <h2>1. Return Window</h2>

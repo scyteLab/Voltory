@@ -28,6 +28,15 @@ export default function Privacy() {
       </div>
 
       <div className="legal-page">
+        <p className="legal__intro">
+          This Privacy Policy explains how {SITE.legalName} collects, uses,
+          stores, and protects your personal data when you use {SITE.name}. It
+          is issued in compliance with the Nigeria Data Protection Act 2023
+          (NDPA) and the Nigeria Data Protection Regulation 2019 (NDPR). We
+          act as the Data Controller for personal data you provide, and the
+          Nigeria Data Protection Commission (NDPC) is the regulator with
+          supervisory authority over this policy.
+        </p>
         <p className="legal-updated">Last updated: 1 June 2026</p>
 
         <h2>1. Introduction</h2>
