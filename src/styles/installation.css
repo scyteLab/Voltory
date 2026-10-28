@@ -326,6 +326,10 @@
   border: none;
   margin-bottom: 22px;
 }
+/* Fieldsets default to min-width: min-content, so a long <option> label
+   widened the whole page on phones. Let them shrink to the container. */
+.ins-form fieldset { min-width: 0; }
+.ins-form select { max-width: 100%; }
 .ins-form fieldset:last-of-type { margin-bottom: 0; }
 .ins-form legend {
   font-size: 13px;

@@ -26,7 +26,7 @@ const LINK_MAP = {
   "Installation Services": "/services/installation",
   "Help Center": "/help",
   "Track Your Order": "/track-order",
-  "Returns & Refunds": "/help#returns",
+  "Returns & Refunds": "/returns",
   "Warranty Information": "/help#warranty",
   "Review Guidelines": "/reviews-guidelines",
   "Contact Us": "/contact",
@@ -35,8 +35,8 @@ const LINK_MAP = {
   "Our Brands": "/brands",
   "Blog": "/blog",
   "Careers": "/careers",
-  "Terms & Conditions": "#",
-  "Privacy Policy": "#",
+  "Terms & Conditions": "/terms",
+  "Privacy Policy": "/privacy",
 };
 
 function resolveLink(label) {
@@ -146,8 +146,8 @@ export default function Footer() {
       <div className="wrap ftr__base">
         <span>&copy; {SITE.copyrightYear} {SITE.name}. All Rights Reserved.</span>
         <span className="ftr__legal">
-          <Link to="#">Privacy Policy</Link>
-          <Link to="#">Terms &amp; Conditions</Link>
+          <Link to="/privacy">Privacy Policy</Link>
+          <Link to="/terms">Terms &amp; Conditions</Link>
         </span>
       </div>
     </footer>

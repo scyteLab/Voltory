@@ -13,7 +13,10 @@
   margin-bottom: 20px;
 }
 
-.mkt-card {
+/* .mkt-card* is scoped to .adm-page: the storefront (Careers, About,
+   Affiliate) has its own .mkt-card in marketing.css, and these rules —
+   loaded later and unscoped — were squashing it into a horizontal row. */
+.adm-page .mkt-card {
   display: flex;
   gap: 20px;
   padding: 24px;
@@ -23,7 +26,7 @@
   margin-bottom: 20px;
 }
 
-.mkt-card__icon {
+.adm-page .mkt-card__icon {
   flex-shrink: 0;
   width: 44px;
   height: 44px;
@@ -34,20 +37,20 @@
   color: var(--adm-brand);
 }
 
-.mkt-card__body { flex: 1; }
-.mkt-card__body h2 {
+.adm-page .mkt-card__body { flex: 1; }
+.adm-page .mkt-card__body h2 {
   margin: 0 0 6px;
   font-size: 17px;
   font-weight: 700;
   color: var(--adm-ink);
 }
-.mkt-card__body p {
+.adm-page .mkt-card__body p {
   margin: 0 0 16px;
   font-size: 13.5px;
   color: var(--adm-ink-2);
   line-height: 1.55;
 }
-.mkt-card__body p b { color: var(--adm-ink); }
+.adm-page .mkt-card__body p b { color: var(--adm-ink); }
 
 /* ---- Field ---- */
 
@@ -105,7 +108,7 @@
   border-left: 3px solid var(--adm-err);
 }
 
-.mkt-card__actions {
+.adm-page .mkt-card__actions {
   display: flex;
   gap: 8px;
   align-items: center;
@@ -141,6 +144,6 @@
 }
 
 @media (max-width: 700px) {
-  .mkt-card { flex-direction: column; gap: 12px; padding: 18px; }
+  .adm-page .mkt-card { flex-direction: column; gap: 12px; padding: 18px; }
   .mkt-field { max-width: 100%; }
 }
