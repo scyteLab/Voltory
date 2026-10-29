@@ -5,7 +5,7 @@ import {
 import { useStore } from "../../context/StoreContext.jsx";
 import { useCustomerAuth } from "../../context/AuthContext.jsx";
 import { useCustomerOrders } from "../../hooks/useCustomerOrders.js";
-import { STATUS_LABEL } from "../../utils/orders.js";
+import { ORDER_STATUS, STATUS_LABEL } from "../../utils/orders.js";
 import { naira } from "../../utils/format.js";
 
 export default function AccountOverview() {
@@ -21,7 +21,10 @@ export default function AccountOverview() {
   const recent = myOrders.slice(0, 3);
   const lastAddress = myOrders[0]?.address;
 
-  const totalSpent = myOrders.reduce((s, o) => s + (o.totals?.grand || 0), 0);
+  // Unpaid online orders (pending_payment) aren't money spent.
+  const totalSpent = myOrders
+    .filter((o) => o.status !== ORDER_STATUS.PENDING_PAYMENT)
+    .reduce((s, o) => s + (o.totals?.grand || 0), 0);
 
   return (
     <div className="ovw">
@@ -96,7 +99,7 @@ export default function AccountOverview() {
                   <div className="ovw-orders__total">
                     <b>{naira(o.totals.grand)}</b>
                     <span className={`ovw-status ovw-status--${o.status}`}>
-                      {STATUS_LABEL[o.status]}
+                      {STATUS_LABEL[o.status] || o.status}
                     </span>
                   </div>
                   <ChevronRight size={16} className="ovw-orders__chev" />

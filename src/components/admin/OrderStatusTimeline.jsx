@@ -1,4 +1,4 @@
-import { AlertCircle, Ban, CheckCircle2, RotateCcw } from "lucide-react";
+import { AlertCircle, Ban, CheckCircle2, Clock, RotateCcw } from "lucide-react";
 import { ORDER_STATUSES, TIMELINE_ORDER } from "../../config/orderStatus.js";
 
 /**
@@ -16,6 +16,17 @@ export default function OrderStatusTimeline({ status }) {
         <div>
           <b>Order cancelled</b>
           <small>This order will not be fulfilled. No further status changes are available.</small>
+        </div>
+      </div>
+    );
+  }
+  if (status === "pending_payment") {
+    return (
+      <div className="adm-timeline adm-timeline--branch adm-timeline--pending-payment">
+        <span className="adm-timeline__branch-icon"><Clock size={16} /></span>
+        <div>
+          <b>Awaiting payment — do not pack or dispatch</b>
+          <small>Paystack hasn't confirmed this payment. It moves to Confirmed automatically once it does. You can cancel it if the customer abandoned payment.</small>
         </div>
       </div>
     );

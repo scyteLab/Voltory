@@ -129,6 +129,13 @@ export default function Checkout() {
       }, 50);
       return;
     }
+    // Never create an order we can't charge for. buildOrder repeats
+    // this check against the saved lines; this one fails fast.
+    if (!(grand > 0)) {
+      setPaymentNotice("");
+      setErrors({ payment: "Your order total is ₦0, so we can't place it. Please refresh the page and try again, or contact support." });
+      return;
+    }
     setSubmitting(true);
 
     if (customer && !pickedAddressId && saveForNextTime) {
@@ -163,7 +170,11 @@ export default function Checkout() {
       });
       if (!created.ok) {
         setSubmitting(false);
-        setErrors({ payment: "We couldn't start your payment. Please check your connection and try again, or choose Pay on Delivery." });
+        setErrors({
+          payment: created.blocked
+            ? created.error
+            : "We couldn't start your payment. Please check your connection and try again, or choose Pay on Delivery.",
+        });
         return;
       }
       setPendingOrder({ id: orderId, grand, reference });
@@ -223,12 +234,17 @@ export default function Checkout() {
     }
 
     setTimeout(() => {
-      const id = placeOrder({
-        contact, address, payment, installation,
-        deliveryFee,
-        orderId: pendingOrder?.id || null,
-      });
-      navigate(`/order/${id}`);
+      try {
+        const id = placeOrder({
+          contact, address, payment, installation,
+          deliveryFee,
+          orderId: pendingOrder?.id || null,
+        });
+        navigate(`/order/${id}`);
+      } catch (err) {
+        setSubmitting(false);
+        setErrors({ payment: err.message || "We couldn't place your order. Please try again." });
+      }
     }, 400);
   }
 

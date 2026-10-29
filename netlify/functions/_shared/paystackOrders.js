@@ -5,7 +5,8 @@
  * Lives in a subfolder so Netlify bundles it into those functions
  * instead of deploying it as a function of its own.
  *
- * THIS IS THE ONLY CODE ALLOWED TO SET payment_status = 'paid'.
+ * THIS IS THE ONLY CODE ALLOWED TO SET payment_status = 'paid' and
+ * to move an online order from status 'pending_payment' to 'confirmed'.
  * It does so only after asking Paystack directly and checking:
  *   · status   === 'success'
  *   · currency === 'NGN'
@@ -84,23 +85,33 @@ async function supabaseRequest(path, init = {}) {
 
 async function loadOrder(orderId) {
   const rows = await supabaseRequest(
-    `orders?id=eq.${encodeURIComponent(orderId)}&select=id,total,payment_status,payment_method,paystack_ref`
+    `orders?id=eq.${encodeURIComponent(orderId)}&select=id,status,total,payment_status,payment_method,paystack_ref`
   );
   return Array.isArray(rows) && rows[0] ? rows[0] : null;
 }
 
 /**
- * Flip the order to paid. The `payment_status=neq.paid` filter makes
- * this idempotent: an already-paid order is never touched again.
+ * Flip the order to paid, then confirm it. Each PATCH is filtered so
+ * this is idempotent and race-safe:
+ *   · `payment_status=neq.paid`  — an already-paid order is never touched again
+ *   · `status=eq.pending_payment` — only an order still awaiting payment is
+ *     confirmed. If staff already cancelled it, it stays cancelled (but is
+ *     recorded as paid and logged, so someone can refund or reinstate it).
  */
 async function markOrderPaid(orderId, transaction) {
+  const id = encodeURIComponent(orderId);
   const patch = { payment_status: "paid", paystack_ref: transaction.reference };
   const method = CHANNEL_TO_METHOD[transaction.channel];
   if (method) patch.payment_method = method;
   await supabaseRequest(
-    `orders?id=eq.${encodeURIComponent(orderId)}&payment_status=neq.paid`,
+    `orders?id=eq.${id}&payment_status=neq.paid`,
     { method: "PATCH", headers: { Prefer: "return=minimal" }, body: JSON.stringify(patch) }
   );
+  const confirmed = await supabaseRequest(
+    `orders?id=eq.${id}&status=eq.pending_payment`,
+    { method: "PATCH", headers: { Prefer: "return=representation" }, body: JSON.stringify({ status: "confirmed" }) }
+  );
+  return Array.isArray(confirmed) && confirmed.length > 0;
 }
 
 /**
@@ -117,13 +128,23 @@ export async function reconcilePayment(reference) {
   if (!order) return { httpStatus: 404, paymentStatus: "unknown", reason: "order_not_found" };
 
   // Idempotent: once paid, always paid. No need to call Paystack again.
-  if (order.payment_status === "paid") return { httpStatus: 200, paymentStatus: "paid" };
+  // (Finish the confirm step if a previous run stopped between PATCHes.)
+  if (order.payment_status === "paid") {
+    if (order.status === "pending_payment") {
+      await supabaseRequest(
+        `orders?id=eq.${encodeURIComponent(orderId)}&status=eq.pending_payment`,
+        { method: "PATCH", headers: { Prefer: "return=minimal" }, body: JSON.stringify({ status: "confirmed" }) }
+      );
+    }
+    return { httpStatus: 200, paymentStatus: "paid" };
+  }
 
   const tx = await fetchPaystackTransaction(reference);
   if (!tx) return { httpStatus: 200, paymentStatus: order.payment_status, reason: "transaction_not_found" };
 
   const expectedKobo = Math.round(Number(order.total) * 100);
   const failures = [];
+  if (!(expectedKobo > 0)) failures.push("order_total_not_positive");
   if (tx.status !== "success") failures.push(`status=${tx.status}`);
   if (tx.reference !== reference) failures.push("reference_mismatch");
   if (tx.currency !== "NGN") failures.push(`currency=${tx.currency}`);
@@ -139,7 +160,13 @@ export async function reconcilePayment(reference) {
     return { httpStatus: 200, paymentStatus: order.payment_status, reason: failures.join(",") };
   }
 
-  await markOrderPaid(orderId, tx);
-  console.log("[paystack] order marked paid", { orderId, reference });
+  const confirmed = await markOrderPaid(orderId, tx);
+  if (confirmed || order.status === "confirmed") {
+    console.log("[paystack] order marked paid", { orderId, reference });
+  } else {
+    console.error("[paystack] payment received for an order that was not awaiting payment — review it", {
+      orderId, reference, status: order.status,
+    });
+  }
   return { httpStatus: 200, paymentStatus: "paid" };
 }

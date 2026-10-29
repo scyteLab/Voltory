@@ -1,6 +1,6 @@
-import { createContext, useContext, useEffect, useMemo, useState } from "react";
+import { createContext, useContext, useEffect, useMemo, useState, useSyncExternalStore } from "react";
 import { SITE } from "../config/site.js";
-import { snapshotBySku } from "../lib/catalogSnapshot.js";
+import { snapshotBySku, subscribeSnapshot, getSnapshotVersion } from "../lib/catalogSnapshot.js";
 import { getStoredCart, saveCart, clearStoredCart } from "../utils/cartPersistence.js";
 import {
   generateOrderId, saveOrder, getOrder, ORDER_STATUS,
@@ -33,6 +33,9 @@ import { fetchAllOffers } from "../lib/adminOffersClient.js";
  *   · Totals calculation ignores gift lines (they're free)
  */
 const Ctx = createContext(null);
+
+/** Thrown by order creation when the order can't be priced (₦0 total, missing price). */
+export class OrderTotalError extends Error {}
 const ACCOUNT_KEY = "voltory_account";
 
 function loadAccount() {
@@ -290,23 +293,32 @@ export function StoreProvider({ children }) {
   /* ---------- totals ----------
      Gift lines are excluded from all pricing calculations (they're free).
      Only paid product lines contribute to subtotal.
+
+     StoreProvider sits above CatalogProvider, so prices come from the
+     catalog snapshot. catalogVersion re-runs this memo when the live
+     catalog lands — without it, a cart restored from localStorage was
+     priced against the hardcoded fallback catalog (live SKUs → ₦0)
+     and orders went out with subtotal/total 0.
   */
+  const catalogVersion = useSyncExternalStore(subscribeSnapshot, getSnapshotVersion);
+  const couponDiscount = (subtotal) => (coupon === SITE.welcomeCoupon.code
+    ? Math.round((subtotal * SITE.welcomeCoupon.percent) / 100)
+    : 0);
   const totals = useMemo(() => {
     const paidLines = cart.filter((i) => !i.isGift);
     const subtotal = paidLines.reduce(
       (s, i) => s + (snapshotBySku(i.sku)?.price ?? 0) * i.qty,
       0
     );
-    const discount = coupon === SITE.welcomeCoupon.code
-      ? Math.round((subtotal * SITE.welcomeCoupon.percent) / 100)
-      : 0;
+    const discount = couponDiscount(subtotal);
     // Delivery fee neutralised 2026-10-19 — policy pending CGCL decision.
     // Previous logic: subtotal >= SITE.freeDeliveryOver || subtotal === 0 ? 0 : 5500;
     const deliveryFee = 0;
     const installationFee = 0;
     const grand = subtotal - discount + deliveryFee + installationFee;
     return { subtotal, discount, deliveryFee, installationFee, grand };
-  }, [cart, coupon]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [cart, coupon, catalogVersion]);
 
   /* Count — EXCLUDES gifts. Shows "2 items" not "2 items + 2 free gifts" */
   const count = cart
@@ -369,15 +381,27 @@ export function StoreProvider({ children }) {
       };
     });
 
+    // Price the order from the exact lines being saved, so the order
+    // row always agrees with its order_items (and with what checkout
+    // shows: both read the same catalog prices).
+    const unpriced = items.filter((i) => !i.isGift && !(Number(i.price) > 0));
+    if (unpriced.length) {
+      throw new OrderTotalError(
+        `We couldn't load the current price for ${unpriced.map((i) => i.name).join(", ")}. Please refresh the page and try again.`
+      );
+    }
     const installFee = installation ? SITE.installationFee : 0;
-    const subtotal = totals.subtotal;
-    const discount = totals.discount;
+    const subtotal = items.reduce((s, i) => s + (i.isGift ? 0 : i.price * i.qty), 0);
+    const discount = couponDiscount(subtotal);
     // Checkout.jsx computes its own deliveryFee from the admin-configurable
     // threshold (useCheckoutSettings) and passes it through here so the
     // saved order total matches what was actually charged at checkout.
     // Every other caller omits it and gets the static SITE-based totals.
     const deliveryFee = deliveryFeeOverride ?? totals.deliveryFee;
     const grand = subtotal - discount + deliveryFee + installFee;
+    if (!(grand > 0)) {
+      throw new OrderTotalError("Your order total is ₦0, so we can't place it. Please refresh the page and try again, or contact support.");
+    }
 
     const existing = loadAccount();
     const sameUser = existing && normalisePhone(existing.phone) === normalisePhone(contact.phone);
@@ -391,7 +415,9 @@ export function StoreProvider({ children }) {
     return {
       id,
       createdAt: previous?.createdAt || new Date().toISOString(),
-      status: ORDER_STATUS.CONFIRMED,
+      // Online orders wait in pending_payment until the server verifies
+      // the charge with Paystack; Pay on Delivery is confirmed at once.
+      status: paymentStatus === "pending" ? ORDER_STATUS.PENDING_PAYMENT : ORDER_STATUS.CONFIRMED,
       items,
       contact,
       address,
@@ -426,6 +452,7 @@ export function StoreProvider({ children }) {
       });
 
   // Pay on Delivery (and any flow that doesn't go through Paystack).
+  // Throws OrderTotalError (nothing saved) if the order can't be priced.
   // Write-through cache: localStorage now, Supabase in background.
   // The customer never waits on the network for their confirmation.
   const placeOrder = ({ paystackRef: _ignoredRef, paymentStatus: _ignoredStatus, ...args }) => {
@@ -452,21 +479,28 @@ export function StoreProvider({ children }) {
   // insert, keeps the cart (the customer may retry or switch to POD)
   // and sends no emails yet.
   const createPendingPaymentOrder = async ({ paystackRef, ...args }) => {
-    const order = buildOrder({ ...args, paystackRef, paymentStatus: "pending" });
+    let order;
+    try {
+      order = buildOrder({ ...args, paystackRef, paymentStatus: "pending" });
+    } catch (err) {
+      return { ok: false, error: err.message, blocked: err instanceof OrderTotalError };
+    }
     saveOrder(order);
     const res = await syncOrder(order);
     return res.ok ? { ok: true, order } : { ok: false, error: res.error };
   };
 
   // Called only after the SERVER has confirmed payment with Paystack.
-  // Mirrors the server's answer into the local cache for display,
-  // clears the cart and fires the order emails.
-  const completePaidOrder = (orderId) => {
-    const order = getOrder(orderId);
+  // Mirrors the server's answer (paid + confirmed) into the local cache
+  // for display and fires the order emails. Checkout also clears the
+  // cart; "Pay now" on the order page passes clearCart: false and the
+  // order it loaded (it may not be in this device's localStorage).
+  const completePaidOrder = (orderId, { clearCart: shouldClearCart = true, order: fallback = null } = {}) => {
+    const order = getOrder(orderId) || fallback;
     if (!order) return;
-    const paid = { ...order, paymentStatus: "paid" };
+    const paid = { ...order, paymentStatus: "paid", status: ORDER_STATUS.CONFIRMED };
     saveOrder(paid);
-    clearCart();
+    if (shouldClearCart) clearCart();
     sendOrderEmails(paid).catch((err) => {
       // eslint-disable-next-line no-console
       console.warn("[completePaidOrder] email dispatch error:", err);

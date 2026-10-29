@@ -52,7 +52,6 @@ function toSupabaseShape(order) {
     customer_id: order.customer_id || null,
     address: order.address || {},
     payment_method: paymentMethod,
-    status: normaliseOutgoingStatus(order.status),
     subtotal:         Math.round(order.totals?.subtotal      ?? 0),
     discount:         Math.round(order.totals?.discount      ?? 0),
     delivery_fee:     Math.round(order.totals?.deliveryFee   ?? 0),
@@ -60,11 +59,13 @@ function toSupabaseShape(order) {
     total:            Math.round(order.totals?.grand         ?? 0),
     notes: order.notes || null,
   };
-  // SECURITY: the browser never writes payment_status = 'paid'. Only
+  // SECURITY: the browser never writes payment_status = 'paid' (or
+  // moves an online order from pending_payment to confirmed). Only
   // the paystack-verify / paystack-webhook functions may. Once the
   // server has marked an order paid we stop sending payment fields
-  // at all, so a later retry-sweep upsert can't overwrite them.
+  // and status at all, so a later upsert can't overwrite them.
   if (order.paymentStatus !== "paid") {
+    orderRow.status         = normaliseOutgoingStatus(order.status);
     orderRow.paystack_ref   = order.paystackRef || null;
     orderRow.payment_status = order.paymentStatus === "pending" ? "pending" : "unpaid";
   }
@@ -96,7 +97,7 @@ function mapPaymentMethod(m) {
  */
 function normaliseOutgoingStatus(s) {
   if (s === "out_for_delivery") return "shipped";
-  const valid = new Set(["confirmed","processing","shipped","delivered","cancelled","refunded"]);
+  const valid = new Set(["pending_payment","confirmed","processing","shipped","delivered","cancelled","refunded"]);
   return valid.has(s) ? s : "confirmed";
 }
 

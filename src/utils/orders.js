@@ -90,6 +90,9 @@ export function markOrderSynced(id) {
  * both point at the same string. Removed in Session 38.
  */
 export const ORDER_STATUS = {
+  /** Online (Card / Transfer / USSD) order not yet verified with Paystack.
+   *  Only the paystack-verify / paystack-webhook functions move it on. */
+  PENDING_PAYMENT: "pending_payment",
   CONFIRMED:  "confirmed",
   PROCESSING: "processing",
   SHIPPED:    "shipped",
@@ -114,6 +117,7 @@ export const STATUS_FLOW = [
  * is what customers care about.
  */
 export const STATUS_LABEL = {
+  [ORDER_STATUS.PENDING_PAYMENT]: "Awaiting payment",
   [ORDER_STATUS.CONFIRMED]:  "Order Confirmed",
   [ORDER_STATUS.PROCESSING]: "Processing",
   [ORDER_STATUS.SHIPPED]:    "Out for Delivery",

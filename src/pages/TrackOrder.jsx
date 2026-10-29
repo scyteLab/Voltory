@@ -201,7 +201,13 @@ function OrderTrack({ order }) {
           <span className="track-result__id">
             <Receipt size={13} /> <b className="mono">{order.id}</b>
           </span>
-          <h2>{order.status === ORDER_STATUS.DELIVERED ? "Delivered" : "Order in progress"}</h2>
+          <h2>
+            {order.status === ORDER_STATUS.DELIVERED
+              ? "Delivered"
+              : order.status === ORDER_STATUS.PENDING_PAYMENT
+                ? "Payment not completed"
+                : "Order in progress"}
+          </h2>
           <p>
             Placed on {new Date(order.createdAt).toLocaleString("en-NG", { dateStyle: "long", timeStyle: "short" })}
           </p>
@@ -209,7 +215,9 @@ function OrderTrack({ order }) {
         <div className="track-result__total">
           <span>Order total</span>
           <b>{naira(order.totals.grand)}</b>
-          <Link to={`/order/${order.id}`}>View full receipt →</Link>
+          <Link to={`/order/${order.id}`}>
+            {order.status === ORDER_STATUS.PENDING_PAYMENT ? "Pay now →" : "View full receipt →"}
+          </Link>
         </div>
       </div>
 

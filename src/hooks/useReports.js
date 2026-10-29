@@ -29,7 +29,9 @@ export function useReports(rangeDays = 30, refreshTick = 0) {
           supabase.from("orders")
             .select("id, total, status, created_at")
             .gte("created_at", sinceIso)
-            .neq("status", "cancelled")
+            // Revenue excludes cancelled orders and online orders whose
+            // payment Paystack hasn't confirmed yet.
+            .not("status", "in", "(cancelled,pending_payment)")
             .order("created_at", { ascending: true }),
           supabase.from("top_products_by_units").select("*").limit(10),
           supabase.from("orders_status_breakdown").select("*"),

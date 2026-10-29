@@ -28,8 +28,25 @@ let current = {
   brands:     FALLBACK_BRANDS,
 };
 
+// Bumped on every setSnapshot so React code that prices from the
+// snapshot (StoreContext totals) can re-render when the live catalog
+// replaces the hardcoded fallback.
+let version = 0;
+const listeners = new Set();
+
 export function setSnapshot({ products, categories, brands }) {
   current = { products, categories, brands };
+  version += 1;
+  listeners.forEach((fn) => fn());
+}
+
+/** useSyncExternalStore adapters. */
+export function subscribeSnapshot(fn) {
+  listeners.add(fn);
+  return () => listeners.delete(fn);
+}
+export function getSnapshotVersion() {
+  return version;
 }
 
 export function getSnapshot() {

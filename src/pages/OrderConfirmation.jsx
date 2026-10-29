@@ -1,12 +1,14 @@
 import { useEffect, useState } from "react";
 import { Link, Navigate, useParams } from "react-router-dom";
 import {
-  BadgeCheck, Check, ChevronRight, CircleCheck, Cloud, CloudOff,
-  Home as HomeIcon, Mail, MapPin, MessageCircle, Phone, Printer,
+  AlertCircle, BadgeCheck, Check, ChevronRight, CircleCheck, Cloud, CloudOff,
+  CreditCard, Home as HomeIcon, Mail, MapPin, MessageCircle, Phone, Printer,
   Receipt, ShieldCheck, Truck,
 } from "lucide-react";
 import { getOrder, STATUS_FLOW, STATUS_LABEL, ORDER_STATUS } from "../utils/orders.js";
 import { fetchOrderById } from "../lib/customerOrdersClient.js";
+import { isPaystackConfigured, payForExistingOrder } from "../lib/paystackClient.js";
+import { useStore } from "../context/StoreContext.jsx";
 import { naira } from "../utils/format.js";
 import { SITE } from "../config/site.js";
 
@@ -21,6 +23,46 @@ export default function OrderConfirmation() {
   const { id } = useParams();
   const [order, setOrder] = useState(() => getOrder(id));
   const [remoteChecked, setRemoteChecked] = useState(false);
+  const { completePaidOrder } = useStore();
+  const [paying, setPaying] = useState(false);
+  const [payNotice, setPayNotice] = useState("");
+  const awaitingPayment = order?.status === ORDER_STATUS.PENDING_PAYMENT;
+
+  // A pending_payment order may have been confirmed by the server since
+  // this device cached it (webhook after a closed tab, slow transfer).
+  // Re-read it once so we don't offer "Pay now" for a paid order.
+  const [pendingRefreshed, setPendingRefreshed] = useState(false);
+  useEffect(() => {
+    if (!awaitingPayment || pendingRefreshed) return;
+    let cancelled = false;
+    (async () => {
+      const res = await fetchOrderById(id);
+      if (cancelled) return;
+      if (res.order && res.source === "supabase") setOrder(res.order);
+      setPendingRefreshed(true);
+    })();
+    return () => { cancelled = true; };
+  }, [id, awaitingPayment, pendingRefreshed]);
+
+  async function onPayNow() {
+    setPaying(true);
+    setPayNotice("");
+    try {
+      const { outcome } = await payForExistingOrder(order);
+      if (outcome === "paid") {
+        completePaidOrder(order.id, { clearCart: false, order });
+        setOrder(getOrder(order.id) || { ...order, paymentStatus: "paid", status: ORDER_STATUS.CONFIRMED });
+      } else if (outcome === "cancelled") {
+        setPayNotice("Payment not completed. You can try again, or contact us on WhatsApp to switch to Pay on Delivery.");
+      } else {
+        setPayNotice("We couldn't confirm your payment yet. If you were charged, this order will be confirmed automatically within a few minutes — please contact support before paying again.");
+      }
+    } catch (err) {
+      setPayNotice(err.message || "Payment could not start. Please try again.");
+    } finally {
+      setPaying(false);
+    }
+  }
 
   useEffect(() => {
     if (order || remoteChecked) return;
@@ -70,17 +112,53 @@ export default function OrderConfirmation() {
     <main className="wrap">
       {/* Confirmation hero */}
       <section className="conf-hero">
-        <span className="conf-hero__check"><CircleCheck size={56} /></span>
-        <h1>Order Confirmed</h1>
-        <p>Thank you, {order.contact.name.split(" ")[0]}! Your order has been received and we'll be in touch shortly.</p>
+        {awaitingPayment ? (
+          <>
+            <span className="conf-hero__check" style={{ color: "var(--warn)" }}><AlertCircle size={56} /></span>
+            <h1>Payment not completed</h1>
+            <p>
+              {order.contact.name.split(" ")[0]}, we've saved your order but haven't received payment yet.
+              It will be confirmed and prepared for delivery once payment goes through.
+            </p>
+          </>
+        ) : (
+          <>
+            <span className="conf-hero__check"><CircleCheck size={56} /></span>
+            <h1>Order Confirmed</h1>
+            <p>Thank you, {order.contact.name.split(" ")[0]}! Your order has been received and we'll be in touch shortly.</p>
+          </>
+        )}
         <div className="conf-hero__id">
           <Receipt size={14} /> Order ID: <b className="mono">{order.id}</b>
           <SyncPill synced={!!order.syncedAt} />
         </div>
 
+        {awaitingPayment && (
+          <div className="conf-hero__actions">
+            {isPaystackConfigured() ? (
+              <button
+                type="button"
+                className="conf-hero__actionbtn conf-hero__actionbtn--primary"
+                onClick={onPayNow}
+                disabled={paying}
+              >
+                <CreditCard size={16} /> {paying ? "Processing secure payment…" : <>Pay now · {naira(order.totals?.grand || 0)}</>}
+              </button>
+            ) : (
+              <a className="conf-hero__actionbtn conf-hero__actionbtn--primary" href={SITE.whatsappLink} target="_blank" rel="noreferrer">
+                <MessageCircle size={16} /> Contact us to complete payment
+              </a>
+            )}
+          </div>
+        )}
+        {payNotice && (
+          <p role="alert" style={{ marginTop: 12 }}><small>{payNotice}</small></p>
+        )}
+
         {/* NEW: Receipt actions right below the hero \u2014 most
             visible spot for the primary "get my receipt" action
             since customers land here immediately after paying. */}
+        {!awaitingPayment && (
         <div className="conf-hero__actions">
           <Link to={receiptUrl} className="conf-hero__actionbtn conf-hero__actionbtn--primary">
             <Receipt size={16} /> View Official Receipt
@@ -89,6 +167,7 @@ export default function OrderConfirmation() {
             <Printer size={16} /> Print / Save PDF
           </Link>
         </div>
+        )}
       </section>
 
       {/* Invisible-signup banner */}
@@ -201,7 +280,9 @@ export default function OrderConfirmation() {
                 ? "Payment confirmed. Transaction secured."
                 : (order.payment?.method || order.payment) === "pod"
                   ? "You'll pay when your order arrives. Have the exact amount ready."
-                  : "Awaiting payment confirmation. We'll update this order as soon as Paystack confirms it."}
+                  : awaitingPayment
+                    ? "Payment not completed. Use \"Pay now\" above to finish paying."
+                    : "Awaiting payment confirmation. We'll update this order as soon as Paystack confirms it."}
             </small>
           </p>
         </section>

@@ -8,9 +8,12 @@
 --  Without this guard anyone holding the anon key could PATCH an
 --  order to payment_status = 'paid', or lower its total before paying.
 --
+--  Prerequisite (done separately, not in this file): the
+--  payment_status CHECK constraint must allow
+--  unpaid, pending, paid, failed, refunded.
+--
 --  What it does:
---    1. Allows payment_status = 'pending' (online order awaiting Paystack).
---    2. Adds a trigger so that only the service role (our Netlify
+--    1. Adds a trigger so that only the service role (our Netlify
 --       paystack-verify / paystack-webhook functions) or a direct
 --       SQL-editor session can set payment_status = 'paid'.
 --       Browser (anon / authenticated) writes:
@@ -21,35 +24,7 @@
 --  Safe to re-run.
 -- ============================================================
 
--- 1. Allow 'pending' -------------------------------------------------
-do $$
-declare
-  col_type text;
-  col_udt  text;
-  con      record;
-begin
-  select data_type, udt_name into col_type, col_udt
-  from information_schema.columns
-  where table_schema = 'public' and table_name = 'orders' and column_name = 'payment_status';
-
-  if col_type = 'USER-DEFINED' then
-    execute format('alter type %I add value if not exists %L', col_udt, 'pending');
-  else
-    for con in
-      select conname from pg_constraint
-      where conrelid = 'public.orders'::regclass
-        and contype = 'c'
-        and pg_get_constraintdef(oid) ilike '%payment_status%'
-    loop
-      execute format('alter table public.orders drop constraint %I', con.conname);
-    end loop;
-    alter table public.orders
-      add constraint orders_payment_status_check
-      check (payment_status in ('unpaid', 'pending', 'paid', 'failed', 'refunded'));
-  end if;
-end $$;
-
--- 2. Guard trigger ---------------------------------------------------
+-- 1. Guard trigger ---------------------------------------------------
 -- NOT security definer: current_user must be the caller's role
 -- (PostgREST switches to 'service_role' for the service key).
 create or replace function public.orders_guard_payment_fields()
@@ -92,7 +67,7 @@ create trigger orders_guard_payment_fields
   before insert or update on public.orders
   for each row execute function public.orders_guard_payment_fields();
 
--- 3. OPTIONAL one-off data fix ----------------------------------------
+-- 2. OPTIONAL one-off data fix ----------------------------------------
 -- Before this release a storefront bug saved every order's
 -- payment_method as 'transfer'. Online payment was disabled then, so
 -- those orders were really Pay on Delivery. Review, then uncomment:

@@ -125,6 +125,36 @@ export async function verifyPaystackPayment(reference) {
 }
 
 /**
+ * Retry payment for an order that already exists (status
+ * pending_payment), e.g. from "Pay now" on the order page. Charges
+ * exactly the stored order total under a fresh reference for the
+ * same order id, then asks the server to verify.
+ *
+ * Resolves with { outcome: 'paid' | 'cancelled' | 'unconfirmed' }.
+ * Rejects only if the popup can't start.
+ */
+export async function payForExistingOrder(order) {
+  const method = order.payment?.method || order.payment;
+  const channel = paystackChannelFor(method);
+  const phone = order.contact?.phone || "";
+  const result = await openPaystack({
+    amountKobo: Math.round(Number(order.totals?.grand || 0)) * 100,
+    email: order.contact?.email || `${phone.replace(/\D/g, "")}@mynaven.com`,
+    reference: buildPaystackReference(order.id),
+    channels: channel ? [channel] : [],
+    metadata: {
+      orderId: order.id,
+      customerName: order.contact?.name || "",
+      customerPhone: phone,
+      method,
+    },
+  });
+  if (!result.ok) return { outcome: "cancelled" };
+  const { paymentStatus } = await verifyPaystackPayment(result.ref);
+  return { outcome: paymentStatus === "paid" ? "paid" : "unconfirmed" };
+}
+
+/**
  * Map our internal payment method id to Paystack's channel string.
  * Returns null if the method shouldn't route through Paystack (pod).
  */

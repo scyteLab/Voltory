@@ -179,11 +179,12 @@ export async function trackOrder({ orderId, phone }) {
 
 /**
  * Human-readable status label + color hint.
- * Status values observed: pending, paid, cancelled, delivered,
- * shipped, refunded, plus payment_status separately.
+ * Status values observed: pending_payment, pending, paid, cancelled,
+ * delivered, shipped, refunded, plus payment_status separately.
  */
 export function statusInfo(status) {
   const map = {
+    pending_payment: { label: "Awaiting payment", tone: "warn" },
     pending:   { label: "Pending",   tone: "warn"  },
     paid:      { label: "Paid",      tone: "info"  },
     confirmed: { label: "Confirmed", tone: "info"  },
@@ -210,6 +211,7 @@ export function estimateEta(order) {
   if (status === "delivered")  return { text: "Delivered", isPast: true };
   if (status === "cancelled")  return { text: "Cancelled", isPast: true };
   if (status === "refunded")   return { text: "Refunded",  isPast: true };
+  if (status === "pending_payment") return { text: "After payment is confirmed", isPast: false };
 
   /* Extract state from address JSONB to guess ETA */
   const state = String(order.address?.state || "").toLowerCase();

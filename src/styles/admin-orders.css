@@ -185,7 +185,8 @@
   border-color: var(--adm-err);
   color: var(--adm-err);
 }
-.adm-timeline--refunded {
+.adm-timeline--refunded,
+.adm-timeline--pending-payment {
   background: var(--adm-warn-bg);
   border-color: var(--adm-warn);
   color: var(--adm-warn);

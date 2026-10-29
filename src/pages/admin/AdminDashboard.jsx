@@ -34,6 +34,7 @@ function timeAgo(iso) {
 }
 
 const STATUS_STYLES = {
+  pending_payment: { label: "Awaiting payment", cls: "adm-chip--warn" },
   confirmed:  { label: "Confirmed",  cls: "adm-chip--info" },
   processing: { label: "Processing", cls: "adm-chip--warn" },
   shipped:    { label: "Shipped",    cls: "adm-chip--info" },

@@ -99,6 +99,7 @@ export function formatVatRate(rate) {
 export function receiptStatus(order) {
   const s = String(order?.status || "").toLowerCase();
   if (["cancelled", "refunded"].includes(s)) return "cancelled";
+  if (s === "pending_payment") return "pending";
   if (["confirmed", "processing", "shipped", "delivered", "paid"].includes(s)) return "paid";
   return "pending";
 }

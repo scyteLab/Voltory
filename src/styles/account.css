@@ -283,6 +283,7 @@ a.ovw-stat:hover { border-color: var(--p-line); background: var(--p-soft); }
   text-transform: uppercase;
   letter-spacing: 0.03em;
 }
+.ovw-status--pending_payment { background: var(--warn-bg); color: var(--warn); }
 .ovw-status--confirmed       { background: var(--p-soft); color: var(--p); }
 .ovw-status--processing      { background: var(--warn-bg); color: var(--warn); }
 .ovw-status--out_for_delivery{ background: #ffe6cc; color: #b35900; }
