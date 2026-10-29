@@ -5,7 +5,7 @@ import {
   Phone, RefreshCw, RotateCcw, ShoppingCart, User,
 } from "lucide-react";
 import { fetchOrderWithItems, setOrderStatus } from "../../hooks/useOrders.js";
-import { ORDER_STATUSES, PAYMENT_LABELS, STATUS_TRANSITIONS } from "../../config/orderStatus.js";
+import { ORDER_STATUSES, PAYMENT_LABELS, STATUS_TRANSITIONS, paymentStateChip } from "../../config/orderStatus.js";
 import OrderStatusTimeline from "../../components/admin/OrderStatusTimeline.jsx";
 
 function naira(n) { return "₦" + Number(n || 0).toLocaleString("en-NG"); }
@@ -262,6 +262,16 @@ export default function AdminOrderDetail() {
                   <span aria-hidden="true">₦</span>
                   <span><b>{naira(order.total)}</b></span>
                 </li>
+                <li>
+                  <span aria-hidden="true">○</span>
+                  <span className={"adm-chip " + paymentStateChip(order).chip}>{paymentStateChip(order).label}</span>
+                </li>
+                {order.paystack_ref && (
+                  <li>
+                    <span aria-hidden="true">#</span>
+                    <span className="adm-mono" style={{ fontSize: 11.5, wordBreak: "break-all" }}>{order.paystack_ref}</span>
+                  </li>
+                )}
               </ul>
             </div>
           </div>

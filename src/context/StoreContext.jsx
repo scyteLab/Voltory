@@ -3,7 +3,7 @@ import { SITE } from "../config/site.js";
 import { snapshotBySku } from "../lib/catalogSnapshot.js";
 import { getStoredCart, saveCart, clearStoredCart } from "../utils/cartPersistence.js";
 import {
-  generateOrderId, saveOrder, ORDER_STATUS,
+  generateOrderId, saveOrder, getOrder, ORDER_STATUS,
   markOrderSynced, getUnsyncedOrders,
 } from "../utils/orders.js";
 import { insertOrderToSupabase } from "../lib/ordersClient.js";
@@ -337,11 +337,14 @@ export function StoreProvider({ children }) {
        · Warehouse can see what to physically include with the order
        · Receipt template can render gifts as separate FREE lines
   */
-  const placeOrder = ({
-    contact, address, payment, installation, paystackRef = null, paymentStatus = null,
-    deliveryFee: deliveryFeeOverride = null,
+  const buildOrder = ({
+    contact, address, payment, installation, paystackRef = null, paymentStatus = "unpaid",
+    deliveryFee: deliveryFeeOverride = null, orderId = null,
   }) => {
-    const id = generateOrderId();
+    // Retrying payment reuses the same order id (and its original
+    // createdAt) so a failed attempt doesn't leave a duplicate order.
+    const previous = orderId ? getOrder(orderId) : null;
+    const id = orderId || generateOrderId();
     const items = cart.map((i) => {
       if (i.isGift) {
         return {
@@ -385,15 +388,9 @@ export function StoreProvider({ children }) {
     persistAccount(next);
     setAccount(next);
 
-    // If Paystack succeeded, payment_status was passed in. Otherwise
-    // infer from method: pod = unpaid until delivery; all others =
-    // unpaid unless the caller passes paid. This lets non-Paystack
-    // flows (e.g. bank transfer confirmations from admin) keep working.
-    const finalPaymentStatus = paymentStatus || "unpaid";
-
-    const order = {
+    return {
       id,
-      createdAt: new Date().toISOString(),
+      createdAt: previous?.createdAt || new Date().toISOString(),
       status: ORDER_STATUS.CONFIRMED,
       items,
       contact,
@@ -403,14 +400,36 @@ export function StoreProvider({ children }) {
       totals: { subtotal, discount, deliveryFee, installationFee: installFee, grand },
       account: { phone: next.phone, name: next.name },
       accountCreated,
-      customer_id: null, // filled by the silent upsert below; may stay null if Supabase is unreachable
+      customer_id: null, // filled by syncOrder below; may stay null if Supabase is unreachable
       paystackRef,
-      paymentStatus: finalPaymentStatus,
-      // syncedAt gets stamped when the background insert lands
+      // The browser only ever writes 'unpaid' or 'pending'. 'paid' is
+      // set server-side by the paystack-verify / paystack-webhook functions.
+      paymentStatus: paymentStatus === "pending" ? "pending" : "unpaid",
+      // syncedAt gets stamped when the Supabase insert lands
     };
+  };
 
-    // Write-through cache: localStorage now, Supabase in background.
-    // The customer never waits on the network for their confirmation.
+  // Silently create-or-find the customer record, link this order to
+  // it, then upsert the order into Supabase. If the customer link
+  // fails the order still syncs (just without a customer_id). Resolves
+  // with the insert result; never rejects.
+  const syncOrder = (order) =>
+    upsertFromCheckout({ phone: order.contact.phone, name: order.contact.name, email: order.contact.email })
+      .then((res) => (res.ok && res.id ? { ...order, customer_id: res.id } : order))
+      .catch(() => order)
+      .then((o) => {
+        if (o !== order) saveOrder(o);
+        return insertOrderToSupabase(o).then((r) => {
+          if (r.ok) markOrderSynced(o.id);
+          return r;
+        });
+      });
+
+  // Pay on Delivery (and any flow that doesn't go through Paystack).
+  // Write-through cache: localStorage now, Supabase in background.
+  // The customer never waits on the network for their confirmation.
+  const placeOrder = ({ paystackRef: _ignoredRef, paymentStatus: _ignoredStatus, ...args }) => {
+    const order = buildOrder({ ...args, paystackRef: null, paymentStatus: "unpaid" });
     saveOrder(order);
     clearCart();
 
@@ -423,34 +442,35 @@ export function StoreProvider({ children }) {
       console.warn("[placeOrder] email dispatch error:", err);
     });
 
-    // Silently create-or-find the customer record and link this order
-    // to it. Fire in the background — if it fails, the order still
-    // exists (just without a customer_id), and next boot will retry
-    // the order sync but not the customer link. Acceptable at this
-    // scale; Session 32 formalises with real auth.
-    upsertFromCheckout({ phone: contact.phone, name: contact.name, email: contact.email })
-      .then((res) => {
-        if (res.ok && res.id) {
-          // Attach to the local order so the sync sweep has it
-          const patched = { ...order, customer_id: res.id };
-          saveOrder(patched);
-          insertOrderToSupabase(patched).then((r) => {
-            if (r.ok) markOrderSynced(id);
-          });
-        } else {
-          // Couldn't create the customer — still sync the order without a link
-          insertOrderToSupabase(order).then((r) => {
-            if (r.ok) markOrderSynced(id);
-          });
-        }
-      })
-      .catch(() => {
-        insertOrderToSupabase(order).then((r) => {
-          if (r.ok) markOrderSynced(id);
-        });
-      });
+    syncOrder(order);
+    return order.id;
+  };
 
-    return id;
+  // Card / Transfer / USSD: the order must exist in Supabase (as
+  // 'pending') BEFORE the Paystack popup opens, so the server can
+  // look it up when verifying. Unlike placeOrder this waits for the
+  // insert, keeps the cart (the customer may retry or switch to POD)
+  // and sends no emails yet.
+  const createPendingPaymentOrder = async ({ paystackRef, ...args }) => {
+    const order = buildOrder({ ...args, paystackRef, paymentStatus: "pending" });
+    saveOrder(order);
+    const res = await syncOrder(order);
+    return res.ok ? { ok: true, order } : { ok: false, error: res.error };
+  };
+
+  // Called only after the SERVER has confirmed payment with Paystack.
+  // Mirrors the server's answer into the local cache for display,
+  // clears the cart and fires the order emails.
+  const completePaidOrder = (orderId) => {
+    const order = getOrder(orderId);
+    if (!order) return;
+    const paid = { ...order, paymentStatus: "paid" };
+    saveOrder(paid);
+    clearCart();
+    sendOrderEmails(paid).catch((err) => {
+      // eslint-disable-next-line no-console
+      console.warn("[completePaidOrder] email dispatch error:", err);
+    });
   };
 
   return (
@@ -461,7 +481,7 @@ export function StoreProvider({ children }) {
         coupon, setCoupon, totals, count,
         toast, dismissToast,
         callConfirm, requestCall, cancelCall, confirmCall,
-        account, signIn, signOut, placeOrder,
+        account, signIn, signOut, placeOrder, createPendingPaymentOrder, completePaidOrder,
         wishlist, toggleWishlist, isInWishlist, wishlistCount,
         compare, toggleCompare, isInComparison, removeFromComparison, clearComparison, compareCount,
         productOffers,

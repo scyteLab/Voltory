@@ -60,3 +60,22 @@ export const PAYMENT_LABELS = {
   pod:      "Pay on Delivery",
   ussd:     "USSD",
 };
+
+/**
+ * Payment-state chip for an order row. 'paid' is only ever written
+ * by the paystack-verify / paystack-webhook server functions, so a
+ * "Paid" chip means Paystack confirmed the money. Online orders that
+ * haven't been confirmed must never look paid.
+ */
+export function paymentStateChip(row) {
+  if (row?.payment_status === "paid") {
+    return { label: "Paid", chip: "adm-chip--ok" };
+  }
+  if (row?.payment_method === "pod" || row?.payment_method === "pay_on_delivery") {
+    return { label: "Pay on Delivery", chip: "adm-chip--info" };
+  }
+  if (row?.payment_status === "pending") {
+    return { label: "Pending payment", chip: "adm-chip--warn" };
+  }
+  return { label: "Unpaid", chip: "adm-chip--err" };
+}

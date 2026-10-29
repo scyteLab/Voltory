@@ -197,9 +197,11 @@ export default function OrderConfirmation() {
           <p className="conf-payment">
             <b>{PAYMENT_LABEL[order.payment?.method || order.payment] || order.payment}</b><br />
             <small>
-              {(order.payment?.method || order.payment) === "pod"
-                ? "You'll pay when your order arrives. Have the exact amount ready."
-                : "Payment confirmed. Transaction secured."}
+              {order.paymentStatus === "paid"
+                ? "Payment confirmed. Transaction secured."
+                : (order.payment?.method || order.payment) === "pod"
+                  ? "You'll pay when your order arrives. Have the exact amount ready."
+                  : "Awaiting payment confirmation. We'll update this order as soon as Paystack confirms it."}
             </small>
           </p>
         </section>

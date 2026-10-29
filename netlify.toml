@@ -15,7 +15,17 @@
   to   = "/.netlify/functions/send-email"
   status = 200
 
-# SPA fallback — MUST be after the /api rewrite so it doesn't swallow
+[[redirects]]
+  from = "/api/paystack-verify"
+  to   = "/.netlify/functions/paystack-verify"
+  status = 200
+
+[[redirects]]
+  from = "/api/paystack-webhook"
+  to   = "/.netlify/functions/paystack-webhook"
+  status = 200
+
+# SPA fallback — MUST be after the /api rewrites so it doesn't swallow
 # API paths.
 [[redirects]]
   from = "/*"

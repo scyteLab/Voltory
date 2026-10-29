@@ -1,6 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import { ArrowDown, ArrowUp, ChevronLeft, ChevronRight, ExternalLink } from "lucide-react";
-import { ORDER_STATUSES, PAYMENT_LABELS } from "../../config/orderStatus.js";
+import { ORDER_STATUSES, PAYMENT_LABELS, paymentStateChip } from "../../config/orderStatus.js";
 
 function naira(n) { return "₦" + Number(n || 0).toLocaleString("en-NG"); }
 
@@ -20,7 +20,7 @@ const COLUMNS = [
   { key: "customer_name", label: "Customer",  sortable: true,  width: "minmax(200px, 1fr)" },
   { key: "created_at",    label: "Placed",    sortable: true,  width: "140px" },
   { key: "total",         label: "Total",     sortable: true,  width: "110px", align: "right" },
-  { key: "payment_method",label: "Payment",   sortable: false, width: "120px" },
+  { key: "payment_method",label: "Payment",   sortable: false, width: "150px" },
   { key: "status",        label: "Status",    sortable: true,  width: "110px" },
   { key: "_open",         label: "",          sortable: false, width: "44px" },
 ];
@@ -80,6 +80,7 @@ export default function OrdersTable({
         <div className="adm-ptbl__body">
           {rows.map((row) => {
             const st = ORDER_STATUSES[row.status] || { label: row.status, chip: "adm-chip--info" };
+            const pay = paymentStateChip(row);
             return (
               <div
                 key={row.id}
@@ -98,7 +99,12 @@ export default function OrdersTable({
 
                 <span className="adm-ptbl__cell">{fmtDate(row.created_at)}</span>
                 <span className="adm-ptbl__cell" style={{ textAlign: "right", fontWeight: 700 }}>{naira(row.total)}</span>
-                <span className="adm-ptbl__cell">{PAYMENT_LABELS[row.payment_method] || row.payment_method}</span>
+                <span className="adm-ptbl__cell" style={{ display: "flex", flexDirection: "column", alignItems: "flex-start", gap: 3 }}>
+                  <span className={"adm-chip " + pay.chip}>{pay.label}</span>
+                  {row.payment_method !== "pod" && (
+                    <small style={{ color: "var(--adm-ink-3)" }}>{PAYMENT_LABELS[row.payment_method] || row.payment_method}</small>
+                  )}
+                </span>
                 <span className="adm-ptbl__cell">
                   <span className={"adm-chip " + st.chip}>{st.label}</span>
                 </span>

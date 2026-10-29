@@ -10,7 +10,11 @@ import { useCustomerAuth } from "../context/AuthContext.jsx";
 import { useCustomerAddresses } from "../hooks/useCustomerAddresses.js";
 import { useCheckoutSettings } from "../hooks/useCheckoutSettings.js";
 import AddressPicker from "../components/checkout/AddressPicker.jsx";
-import { openPaystack, paystackChannelFor, isPaystackConfigured } from "../lib/paystackClient.js";
+import {
+  openPaystack, paystackChannelFor, isPaystackConfigured,
+  buildPaystackReference, verifyPaystackPayment,
+} from "../lib/paystackClient.js";
+import { generateOrderId } from "../utils/orders.js";
 import { naira } from "../utils/format.js";
 import { SITE } from "../config/site.js";
 
@@ -28,7 +32,7 @@ const PAYMENT_METHODS = [
 ];
 
 export default function Checkout() {
-  const { cart, totals, placeOrder, requestCall } = useStore();
+  const { cart, totals, placeOrder, createPendingPaymentOrder, completePaidOrder, requestCall } = useStore();
   const { customer } = useCustomerAuth();
   const { bySku } = useCatalog();
   const { get: getCheckoutSetting } = useCheckoutSettings();
@@ -61,6 +65,10 @@ export default function Checkout() {
   const [installation, setInstallation] = useState(false);
   const [errors, setErrors] = useState({});
   const [submitting, setSubmitting] = useState(false);
+  // Online-payment order awaiting confirmation: { id, grand, reference }.
+  // Kept so a retry (or a switch to POD) reuses the same order.
+  const [pendingOrder, setPendingOrder] = useState(null);
+  const [paymentNotice, setPaymentNotice] = useState("");
 
   const installFee = installation ? SITE.installationFee : 0;
   // Delivery fee neutralised 2026-10-19 — policy pending CGCL decision.
@@ -136,19 +144,40 @@ export default function Checkout() {
       }).catch(() => { /* silent; not order-blocking */ });
     }
 
-    const chargeAmount = grand;
-    const needsPaystack = payment !== "pod" && isPaystackConfigured();
+    const needsPaystack = payment !== "pod" && paystackReady;
+    setPaymentNotice("");
+    setErrors({});
 
     if (needsPaystack) {
-      const orderIdForRef = "PAY-" + Date.now().toString(36).toUpperCase();
+      // Retry reuses the same pending order, unless the amount changed
+      // (e.g. installation toggled) — then it's a different charge and
+      // needs a fresh order so the stored total matches what we bill.
+      const orderId = pendingOrder && pendingOrder.grand === grand ? pendingOrder.id : generateOrderId();
+      const reference = buildPaystackReference(orderId);
       const channel = paystackChannelFor(payment);
+
+      // 1. Create (or refresh) the order in Supabase as 'pending' FIRST.
+      const created = await createPendingPaymentOrder({
+        contact, address, payment, installation, deliveryFee,
+        orderId, paystackRef: reference,
+      });
+      if (!created.ok) {
+        setSubmitting(false);
+        setErrors({ payment: "We couldn't start your payment. Please check your connection and try again, or choose Pay on Delivery." });
+        return;
+      }
+      setPendingOrder({ id: orderId, grand, reference });
+
+      // 2. Open Paystack for exactly the stored order total, in kobo.
+      const amountKobo = Math.round(created.order.totals.grand) * 100;
       try {
         const result = await openPaystack({
-          amount: chargeAmount,
+          amountKobo,
           email: contact.email || `${contact.phone.replace(/\D/g, "")}@mynaven.com`,
-          reference: orderIdForRef,
+          reference,
           channels: channel ? [channel] : [],
           metadata: {
+            orderId,
             customerName: contact.name,
             customerPhone: contact.phone,
             method: payment,
@@ -156,18 +185,22 @@ export default function Checkout() {
         });
         if (!result.ok) {
           setSubmitting(false);
-          if (!result.cancelled) {
-            setErrors({ payment: "Payment could not be completed. Please try again." });
-          }
+          setPaymentNotice("Payment not completed. You can try again or choose Pay on Delivery.");
           return;
         }
-        const id = placeOrder({
-          contact, address, payment, installation,
-          paystackRef: result.ref,
-          paymentStatus: "paid",
-          deliveryFee,
-        });
-        navigate(`/order/${id}`);
+
+        // 3. Popup success is not proof of payment — ask our server,
+        //    which asks Paystack and is the only thing that marks paid.
+        const { paymentStatus } = await verifyPaystackPayment(result.ref);
+        if (paymentStatus === "paid") {
+          completePaidOrder(orderId);
+          navigate(`/order/${orderId}`);
+          return;
+        }
+        setSubmitting(false);
+        setPaymentNotice(
+          `We couldn't confirm your payment yet. If you were charged, order ${orderId} will be confirmed automatically within a few minutes — please contact support before paying again.`
+        );
       } catch (err) {
         setSubmitting(false);
         // eslint-disable-next-line no-console
@@ -177,11 +210,23 @@ export default function Checkout() {
       return;
     }
 
+    // Switching to Pay on Delivery after an unfinished online attempt:
+    // check that attempt first (a late transfer may have gone through),
+    // otherwise convert that same order to POD instead of duplicating it.
+    if (pendingOrder) {
+      const { paymentStatus } = await verifyPaystackPayment(pendingOrder.reference);
+      if (paymentStatus === "paid") {
+        completePaidOrder(pendingOrder.id);
+        navigate(`/order/${pendingOrder.id}`);
+        return;
+      }
+    }
+
     setTimeout(() => {
       const id = placeOrder({
         contact, address, payment, installation,
-        paymentStatus: "unpaid",
         deliveryFee,
+        orderId: pendingOrder?.id || null,
       });
       navigate(`/order/${id}`);
     }, 400);
@@ -437,10 +482,16 @@ export default function Checkout() {
               </div>
             </dl>
 
+            {(paymentNotice || errors.payment) && (
+              <p className="ck-card__hint" role="alert" style={{ marginBottom: 12, color: errors.payment ? "var(--err)" : undefined }}>
+                <Info size={13} /> {errors.payment || paymentNotice}
+              </p>
+            )}
+
             <button type="submit" className="ck-place" disabled={submitting}>
               {submitting
-                ? (payment !== "pod" && isPaystackConfigured() ? "Opening secure payment…" : "Placing Order…")
-                : (payment !== "pod" && isPaystackConfigured()
+                ? (payment !== "pod" && paystackReady ? "Processing secure payment…" : "Placing Order…")
+                : (payment !== "pod" && paystackReady
                     ? <>Pay {naira(grand)}</>
                     : <>Place Order · {naira(grand)}</>)}
             </button>

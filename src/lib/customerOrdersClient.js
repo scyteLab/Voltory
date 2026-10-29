@@ -52,6 +52,8 @@ function toStorefrontShape(row) {
     },
     address: row.address || {},
     payment: { method: row.payment_method },
+    paymentStatus: row.payment_status || "unpaid",
+    paystackRef: row.paystack_ref || null,
     installation: (row.installation_fee || 0) > 0,
     totals: {
       subtotal:        row.subtotal || 0,

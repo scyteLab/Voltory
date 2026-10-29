@@ -40,7 +40,9 @@ import { supabase, supabaseConfigured } from "./supabaseClient.js";
  *   order_items(order_id, sku, qty, unit_price, line_total, product_name)
  */
 function toSupabaseShape(order) {
-  const paymentMethod = mapPaymentMethod(order.payment?.method);
+  // Checkout stores payment as a plain string ("card"); orders read
+  // back from Supabase carry { method }. Accept both.
+  const paymentMethod = mapPaymentMethod(order.payment?.method || order.payment);
   const orderRow = {
     id: order.id,
     created_at: order.createdAt,
@@ -57,9 +59,15 @@ function toSupabaseShape(order) {
     installation_fee: Math.round(order.totals?.installationFee ?? 0),
     total:            Math.round(order.totals?.grand         ?? 0),
     notes: order.notes || null,
-    paystack_ref:   order.paystackRef   || null,
-    payment_status: order.paymentStatus || "unpaid",
   };
+  // SECURITY: the browser never writes payment_status = 'paid'. Only
+  // the paystack-verify / paystack-webhook functions may. Once the
+  // server has marked an order paid we stop sending payment fields
+  // at all, so a later retry-sweep upsert can't overwrite them.
+  if (order.paymentStatus !== "paid") {
+    orderRow.paystack_ref   = order.paystackRef || null;
+    orderRow.payment_status = order.paymentStatus === "pending" ? "pending" : "unpaid";
+  }
   const itemRows = (order.items || []).map((i) => ({
     order_id: order.id,
     sku: i.sku,
