@@ -1,4 +1,3 @@
-import { useEffect } from "react";
 import { Link } from "react-router-dom";
 import {
   ChevronRight, Home as HomeIcon, Plus, Repeat, ShoppingCart, Trash2, X,
@@ -9,6 +8,7 @@ import { naira, stockState } from "../utils/format.js";
 import { MAX_COMPARE } from "../utils/comparison.js";
 import { SITE } from "../config/site.js";
 import RatingStars from "../components/product/RatingStars.jsx";
+import SEOHead from "../components/seo/SEOHead.jsx";
 
 /**
  * Compare page — up to 4 products side-by-side.
@@ -36,11 +36,6 @@ export default function Compare() {
   const items = compare.map((sku) => bySku(sku)).filter(Boolean);
   const slots = Array.from({ length: MAX_COMPARE }, (_, i) => items[i] || null);
 
-  useEffect(() => {
-    const prev = document.title;
-    document.title = `Compare Products — ${SITE.name}`;
-    return () => { document.title = prev; };
-  }, []);
 
   // Decide which attribute rows to show: only rows where at least
   // one product has the value, OR rows that are "always shown" (price,
@@ -63,6 +58,10 @@ export default function Compare() {
 
   return (
     <main className="wrap cmp-page">
+      <SEOHead
+        title="Compare Products"
+        description="Compare appliances side-by-side at NAVEN. Make informed buying decisions on fridges, ACs, TVs, and more."
+      />
       <nav className="crumb" aria-label="Breadcrumb">
         <Link to="/"><HomeIcon size={13} /> Home</Link>
         <ChevronRight size={12} />

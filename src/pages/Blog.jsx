@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Link } from "react-router-dom";
 import {
   AirVent, BookOpen, CheckCircle2, ChevronRight, Hammer,
@@ -6,6 +6,7 @@ import {
 } from "lucide-react";
 import { SITE } from "../config/site.js";
 import { addSubscriber } from "../utils/newsletterSubscribers.js";
+import SEOHead from "../components/seo/SEOHead.jsx";
 
 /**
  * Blog — Coming Soon page with newsletter capture and topic
@@ -28,11 +29,6 @@ export default function Blog() {
   const [submitted, setSubmitted] = useState(false);
   const [error, setError] = useState(null);
 
-  useEffect(() => {
-    const prev = document.title;
-    document.title = `Blog — ${SITE.name}`;
-    return () => { document.title = prev; };
-  }, []);
 
   function toggleTopic(id) {
     setSelected((s) => {
@@ -63,6 +59,10 @@ export default function Blog() {
 
   return (
     <main className="wrap blog-page">
+      <SEOHead
+        title="Blog"
+        description="Appliance buying guides, product reviews, and tips from NAVEN — Nigeria's premium electronics store."
+      />
       <nav className="crumb" aria-label="Breadcrumb">
         <Link to="/"><HomeIcon size={13} /> Home</Link>
         <ChevronRight size={12} />

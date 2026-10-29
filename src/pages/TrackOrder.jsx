@@ -8,6 +8,7 @@ import { STATUS_FLOW, STATUS_LABEL, ORDER_STATUS } from "../utils/orders.js";
 import { fetchOrderByIdAndPhone } from "../lib/customerOrdersClient.js";
 import { naira } from "../utils/format.js";
 import { SITE } from "../config/site.js";
+import SEOHead from "../components/seo/SEOHead.jsx";
 
 /**
  * TrackOrder — public /track-order page
@@ -33,11 +34,6 @@ export default function TrackOrder() {
   const [looking, setLooking]       = useState(false);
   const [error, setError]           = useState(null);
 
-  useEffect(() => {
-    const prev = document.title;
-    document.title = `Track Order — ${SITE.name}`;
-    return () => { document.title = prev; };
-  }, []);
 
   /* Auto-submit if both params were in the URL */
   useEffect(() => {
@@ -87,6 +83,11 @@ export default function TrackOrder() {
 
   return (
     <main className="wrap support-page">
+      <SEOHead
+        title="Track Order"
+        description="Track your NAVEN order status. See delivery progress for guest and account orders."
+        noindex
+      />
       <nav className="crumb" aria-label="Breadcrumb">
         <Link to="/"><HomeIcon size={13} /> Home</Link>
         <ChevronRight size={12} />

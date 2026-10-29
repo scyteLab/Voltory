@@ -1,19 +1,18 @@
-import { useEffect } from "react";
 import { Link } from "react-router-dom";
 import { ChevronRight, Home as HomeIcon } from "lucide-react";
 import { SITE } from "../config/site.js";
 import { useStore } from "../context/StoreContext.jsx";
+import SEOHead from "../components/seo/SEOHead.jsx";
 
 export default function Terms() {
   const { requestCall } = useStore();
-  useEffect(() => {
-    const prev = document.title;
-    document.title = `Terms & Conditions — ${SITE.name}`;
-    return () => { document.title = prev; };
-  }, []);
 
   return (
     <main className="wrap mkt-page">
+      <SEOHead
+        title="Terms & Conditions"
+        description="NAVEN's Terms & Conditions — issued under the Federal Competition and Consumer Protection Act 2018 (FCCPC Act) and the Nigeria Data Protection Act 2023 (NDPA)."
+      />
       <nav className="crumb" aria-label="Breadcrumb">
         <Link to="/"><HomeIcon size={13} /> Home</Link>
         <ChevronRight size={12} />

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import {
   Award, ChevronRight, Home as HomeIcon, SlidersHorizontal, Star, X,
@@ -9,6 +9,7 @@ import { SITE } from "../config/site.js";
 import ProductCard from "../components/product/ProductCard.jsx";
 import FilterSidebar from "../components/category/FilterSidebar.jsx";
 import Pagination from "../components/ui/Pagination.jsx";
+import SEOHead from "../components/seo/SEOHead.jsx";
 
 const SORTS = [
   { id: "bestseller", label: "Most Popular" },
@@ -25,11 +26,6 @@ export default function BestSellers() {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const { products } = useCatalog();
 
-  useEffect(() => {
-    const prev = document.title;
-    document.title = `Best Sellers — ${SITE.name}`;
-    return () => { document.title = prev; };
-  }, []);
 
   // Bestseller proxy = review count descending. Backend will replace with
   // an order-count based ranking.
@@ -75,6 +71,10 @@ export default function BestSellers() {
 
   return (
     <main className="wrap">
+      <SEOHead
+        title="Best Sellers"
+        description="The most popular appliances on NAVEN. See what Nigerian customers are buying right now."
+      />
       <nav className="crumb" aria-label="Breadcrumb">
         <Link to="/"><HomeIcon size={13} /> Home</Link>
         <ChevronRight size={12} />

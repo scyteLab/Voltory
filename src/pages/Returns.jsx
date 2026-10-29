@@ -1,19 +1,18 @@
-import { useEffect } from "react";
 import { Link } from "react-router-dom";
 import { ChevronRight, Home as HomeIcon } from "lucide-react";
 import { SITE } from "../config/site.js";
 import { useStore } from "../context/StoreContext.jsx";
+import SEOHead from "../components/seo/SEOHead.jsx";
 
 export default function Returns() {
   const { requestCall } = useStore();
-  useEffect(() => {
-    const prev = document.title;
-    document.title = `Returns & Refunds — ${SITE.name}`;
-    return () => { document.title = prev; };
-  }, []);
 
   return (
     <main className="wrap mkt-page">
+      <SEOHead
+        title="Returns & Refunds"
+        description="Return and refund policy at NAVEN — aligned with the Federal Competition and Consumer Protection Act 2018."
+      />
       <nav className="crumb" aria-label="Breadcrumb">
         <Link to="/"><HomeIcon size={13} /> Home</Link>
         <ChevronRight size={12} />

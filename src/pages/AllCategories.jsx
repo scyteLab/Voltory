@@ -1,4 +1,3 @@
-import { useEffect } from "react";
 import { Link } from "react-router-dom";
 import {
   ArrowRight, ChevronRight, Flame, Home as HomeIcon, MessageCircle,
@@ -6,6 +5,7 @@ import {
 import { SITE } from "../config/site.js";
 import { useCatalog } from "../context/CatalogContext.jsx";
 import Icon from "../components/ui/Icon.jsx";
+import SEOHead from "../components/seo/SEOHead.jsx";
 
 const CAT_IMAGES = {
   "refrigerators-freezers": "/products/sbs_ref.png",
@@ -21,14 +21,13 @@ const CAT_IMAGES = {
 export default function AllCategories() {
   const { categories: CATEGORIES, brands: BRANDS, byCategory } = useCatalog();
 
-  useEffect(() => {
-    const prev = document.title;
-    document.title = `All Categories — ${SITE.name}`;
-    return () => { document.title = prev; };
-  }, []);
 
   return (
     <main className="wrap cats-page">
+      <SEOHead
+        title="All Categories"
+        description="Browse all appliance categories at NAVEN — fridges, air conditioners, TVs, washing machines, kitchen and small appliances."
+      />
       <nav className="crumb" aria-label="Breadcrumb">
         <Link to="/"><HomeIcon size={13} /> Home</Link>
         <ChevronRight size={12} />

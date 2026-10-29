@@ -1,4 +1,3 @@
-import { useEffect } from "react";
 import { Link } from "react-router-dom";
 import {
   ArrowRight, ChevronRight, Compass, Home as HomeIcon,
@@ -13,18 +12,18 @@ import { useCatalog } from "../context/CatalogContext.jsx";
 import Icon from "../components/ui/Icon.jsx";
 import BrandLogo from "../components/brand/BrandLogo.jsx";
 import Tagline from "../components/brand/Tagline.jsx";
+import SEOHead from "../components/seo/SEOHead.jsx";
 
 export default function About() {
   const { brands: BRANDS } = useCatalog();
 
-  useEffect(() => {
-    const prev = document.title;
-    document.title = `About — ${SITE.name}`;
-    return () => { document.title = prev; };
-  }, []);
 
   return (
     <main className="wrap mkt-page">
+      <SEOHead
+        title="About"
+        description="Learn about NAVEN, Nigeria's premium electronics retailer. Our mission, our brands, and our commitment to quality home appliances."
+      />
       <nav className="crumb" aria-label="Breadcrumb">
         <Link to="/"><HomeIcon size={13} /> Home</Link>
         <ChevronRight size={12} />

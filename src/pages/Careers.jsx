@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import {
   AtSign, Briefcase, CheckCircle2, ChevronDown, ChevronRight,
@@ -16,6 +16,7 @@ import {
   generateApplicationId, saveApplication, APPLICATION_STATUS,
 } from "../utils/careerApplications.js";
 import Icon from "../components/ui/Icon.jsx";
+import SEOHead from "../components/seo/SEOHead.jsx";
 
 const OPEN_APPLICATION = { id: "open", title: "Open Application — no specific role" };
 
@@ -37,11 +38,6 @@ export default function Careers() {
   const [errors, setErrors] = useState({});
   const [submitted, setSubmitted] = useState(null);
 
-  useEffect(() => {
-    const prev = document.title;
-    document.title = `Careers — ${SITE.name}`;
-    return () => { document.title = prev; };
-  }, []);
 
   function scrollToForm() {
     formRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -105,6 +101,10 @@ export default function Careers() {
 
   return (
     <main className="wrap mkt-page">
+      <SEOHead
+        title="Careers"
+        description="Join the NAVEN team. Open roles in Lagos, Nigeria across tech, operations, and customer service."
+      />
       <nav className="crumb" aria-label="Breadcrumb">
         <Link to="/"><HomeIcon size={13} /> Home</Link>
         <ChevronRight size={12} />

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Link } from "react-router-dom";
 import {
   AtSign, CheckCircle2, ChevronRight, Clock, Home as HomeIcon, Mail,
@@ -10,6 +10,7 @@ import { useCustomerAuth } from "../context/AuthContext.jsx";
 import {
   generateTicketId, saveTicket, TICKET_STATUS,
 } from "../utils/supportTickets.js";
+import SEOHead from "../components/seo/SEOHead.jsx";
 
 const SUBJECTS = [
   "General enquiry",
@@ -35,11 +36,6 @@ export default function Contact() {
   const [errors, setErrors] = useState({});
   const [submitted, setSubmitted] = useState(null); // { id }
 
-  useEffect(() => {
-    const prev = document.title;
-    document.title = `Contact Us — ${SITE.name}`;
-    return () => { document.title = prev; };
-  }, []);
 
   function onSubmit(e) {
     e.preventDefault();
@@ -77,6 +73,10 @@ export default function Contact() {
 
   return (
     <main className="wrap support-page">
+      <SEOHead
+        title="Contact Us"
+        description="Contact NAVEN — phone, WhatsApp, email. We're here to help with orders, product questions, and after-sales support."
+      />
       <nav className="crumb" aria-label="Breadcrumb">
         <Link to="/"><HomeIcon size={13} /> Home</Link>
         <ChevronRight size={12} />

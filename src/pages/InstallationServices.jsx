@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import {
   AtSign, CalendarDays, CheckCircle2, ChevronDown, ChevronRight,
@@ -18,6 +18,7 @@ import {
 import { naira } from "../utils/format.js";
 import Icon from "../components/ui/Icon.jsx";
 import Tagline from "../components/brand/Tagline.jsx";
+import SEOHead from "../components/seo/SEOHead.jsx";
 
 const NG_STATES = [
   "Abia", "Adamawa", "Akwa Ibom", "Anambra", "Bauchi", "Bayelsa", "Benue",
@@ -48,11 +49,6 @@ export default function InstallationServices() {
   const [errors, setErrors] = useState({});
   const [submitted, setSubmitted] = useState(null);
 
-  useEffect(() => {
-    const prev = document.title;
-    document.title = `Installation Services — ${SITE.name}`;
-    return () => { document.title = prev; };
-  }, []);
 
   function scrollToForm() {
     formRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -112,6 +108,10 @@ export default function InstallationServices() {
 
   return (
     <main className="wrap install-page">
+      <SEOHead
+        title="Installation Services"
+        description="Professional appliance installation across Lagos and Nigeria. Air conditioners, washing machines, cookers, and more."
+      />
       <nav className="crumb" aria-label="Breadcrumb">
         <Link to="/"><HomeIcon size={13} /> Home</Link>
         <ChevronRight size={12} />

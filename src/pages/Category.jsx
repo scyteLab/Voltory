@@ -16,6 +16,7 @@ import {
   fetchProductAttributesForCategory,
   buildProductAttributeMap,
 } from "../lib/productAttributesClient.js";
+import SEOHead from "../components/seo/SEOHead.jsx";
 
 const SORTS = [
   { id: "popular", label: "Popularity" },
@@ -76,13 +77,6 @@ export default function Category() {
   const page = Math.max(1, parseInt(searchParams.get("page") || "1", 10));
   const [drawerOpen, setDrawerOpen] = useState(false);
 
-  useEffect(() => {
-    if (category) {
-      const prev = document.title;
-      document.title = `${category.label} — ${SITE.name}`;
-      return () => { document.title = prev; };
-    }
-  }, [category]);
 
   const baseProducts = byCategory(categoryId);
   const filtered = applyAllFilters(baseProducts, filters, attrFilters, attributes, productAttrMap);
@@ -153,6 +147,10 @@ export default function Category() {
 
   return (
     <main className="wrap">
+      <SEOHead
+        title={category?.label}
+        description={`Shop ${category?.label || "appliances"} at NAVEN. Browse top brands with nationwide delivery across Nigeria.`}
+      />
       <nav className="crumb" aria-label="Breadcrumb">
         <Link to="/"><HomeIcon size={13} /> Home</Link>
         <ChevronRight size={12} />

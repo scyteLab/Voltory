@@ -4,6 +4,7 @@ import { ChevronRight, Home as HomeIcon, LayoutGrid } from "lucide-react";
 import { fetchCollectionBySlug } from "../lib/collectionsClient.js";
 import { SITE } from "../config/site.js";
 import ProductCard from "../components/product/ProductCard.jsx";
+import SEOHead from "../components/seo/SEOHead.jsx";
 
 /**
  * Collection — /collection/:slug
@@ -39,12 +40,6 @@ export default function Collection() {
     return () => { cancelled = true; };
   }, [slug]);
 
-  useEffect(() => {
-    if (!collection) return;
-    const prev = document.title;
-    document.title = `${collection.name} — ${SITE.name}`;
-    return () => { document.title = prev; };
-  }, [collection]);
 
   /* Loading state */
   if (loading) {
@@ -77,6 +72,10 @@ export default function Collection() {
 
   return (
     <>
+      <SEOHead
+        title={collection?.name}
+        description={`${collection?.name || "Curated collection"} at NAVEN. Hand-picked premium appliances for your home.`}
+      />
       {/* ---- Banner ---- */}
       {collection.banner_image && (
         <div className="collection-banner">

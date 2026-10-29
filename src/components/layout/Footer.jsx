@@ -2,8 +2,8 @@ import { useState } from "react";
 import { Link } from "react-router-dom";
 import {
   ArrowRight, BadgeCheck, Banknote, Check, CreditCard, Facebook,
-  Headphones, Instagram, Lock, Mail, MapPin, MessageCircle,
-  Phone, ShieldCheck, Truck, Twitter,
+  Headphones, Instagram, Lock, Mail, MapPin, MessageCircle, Music2,
+  Phone, ShieldCheck, Truck, Twitter, Youtube,
 } from "lucide-react";
 import { SITE } from "../../config/site.js";
 import { useStore } from "../../context/StoreContext.jsx";
@@ -81,9 +81,11 @@ export default function Footer() {
             <span><MapPin size={13} /> Lagos, Nigeria</span>
           </div>
           <div className="ftr__social">
-            <a href="#" aria-label="Facebook" className="ftr__social-icon"><Facebook size={15} /></a>
-            <a href="#" aria-label="Instagram" className="ftr__social-icon"><Instagram size={15} /></a>
-            <a href="#" aria-label="Twitter" className="ftr__social-icon"><Twitter size={15} /></a>
+            <a href="https://web.facebook.com/mynavenhq/" target="_blank" rel="noreferrer" aria-label="Facebook" className="ftr__social-icon"><Facebook size={15} /></a>
+            <a href="https://www.instagram.com/mynavenhq" target="_blank" rel="noreferrer" aria-label="Instagram" className="ftr__social-icon"><Instagram size={15} /></a>
+            <a href="https://x.com/mynavenhq" target="_blank" rel="noreferrer" aria-label="X (Twitter)" className="ftr__social-icon"><Twitter size={15} /></a>
+            <a href="https://www.tiktok.com/@mynavenhq" target="_blank" rel="noreferrer" aria-label="TikTok" className="ftr__social-icon"><Music2 size={15} /></a>
+            <a href="https://www.youtube.com/@mynavenhq" target="_blank" rel="noreferrer" aria-label="YouTube" className="ftr__social-icon"><Youtube size={15} /></a>
             <a href={SITE.whatsappLink} target="_blank" rel="noreferrer" aria-label="WhatsApp" className="ftr__social-icon"><MessageCircle size={15} /></a>
           </div>
         </div>

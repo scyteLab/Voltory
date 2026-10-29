@@ -9,6 +9,7 @@ import { getOrder } from "../utils/orders.js";
 import { SITE } from "../config/site.js";
 import ReceiptTemplate from "../components/receipt/ReceiptTemplate.jsx";
 import { downloadReceiptAsPdf } from "../lib/receiptPdf.js";
+import SEOHead from "../components/seo/SEOHead.jsx";
 
 /**
  * Receipt \u2014 /receipt/:id
@@ -40,11 +41,6 @@ export default function Receipt() {
   const [attempted, setAttempted] = useState(false);
   const [downloading, setDownloading] = useState(false);
 
-  useEffect(() => {
-    const prev = document.title;
-    document.title = `Receipt ${id} \u2014 ${SITE.name}`;
-    return () => { document.title = prev; };
-  }, [id]);
 
   useEffect(() => {
     if (order || !queryPhone) return;
@@ -152,6 +148,10 @@ export default function Receipt() {
   /* ---- Receipt loaded ---- */
   return (
     <main className="wrap receipt-page">
+      <SEOHead
+        title={`Receipt ${id}`}
+        noindex
+      />
       <div className="receipt-actions no-print">
         <Link to={`/order/${id}`} className="receipt-actions__back">
           <ArrowLeft size={14} /> Back to order

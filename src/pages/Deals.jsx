@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import {
   ChevronRight, Flame, Gift, Home as HomeIcon, LayoutGrid,
@@ -11,6 +11,7 @@ import ProductCard from "../components/product/ProductCard.jsx";
 import FilterSidebar from "../components/category/FilterSidebar.jsx";
 import CountdownTimer from "../components/home/CountdownTimer.jsx";
 import Pagination from "../components/ui/Pagination.jsx";
+import SEOHead from "../components/seo/SEOHead.jsx";
 
 const SORTS = [
   { id: "discount", label: "Biggest Discount First" },
@@ -41,11 +42,6 @@ export default function Deals() {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const { products, productOffers } = useCatalog();
 
-  useEffect(() => {
-    const prev = document.title;
-    document.title = `Deals & Offers — ${SITE.name}`;
-    return () => { document.title = prev; };
-  }, []);
 
   const activeTab = searchParams.get("tab") || TAB_ALL;
 
@@ -142,6 +138,10 @@ export default function Deals() {
 
   return (
     <main className="wrap">
+      <SEOHead
+        title="Deals & Offers"
+        description="Current deals on appliances at NAVEN. Discounts on fridges, ACs, TVs, washing machines — refreshed regularly."
+      />
       <nav className="crumb" aria-label="Breadcrumb">
         <Link to="/"><HomeIcon size={13} /> Home</Link>
         <ChevronRight size={12} />

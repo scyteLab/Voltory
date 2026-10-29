@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import {
   ArrowRight, ChevronRight, Compass, Home as HomeIcon,
@@ -6,6 +6,7 @@ import {
 } from "lucide-react";
 import { SITE } from "../config/site.js";
 import Tagline from "../components/brand/Tagline.jsx";
+import SEOHead from "../components/seo/SEOHead.jsx";
 
 /**
  * 404 page — mounted as the wildcard route inside <StoreLayout>,
@@ -24,11 +25,6 @@ export default function NotFound() {
   const navigate = useNavigate();
   const [q, setQ] = useState("");
 
-  useEffect(() => {
-    const prev = document.title;
-    document.title = `Page not found — ${SITE.name}`;
-    return () => { document.title = prev; };
-  }, []);
 
   function onSearch(e) {
     e.preventDefault();
@@ -39,6 +35,10 @@ export default function NotFound() {
 
   return (
     <main className="wrap notfound">
+      <SEOHead
+        title="Page Not Found"
+        noindex
+      />
       <section className="nf-hero">
         <span className="nf-hero__code">404</span>
         <img className="nf-hero__img" src="/banners/nf-hero.png" alt="" />

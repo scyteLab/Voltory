@@ -7,17 +7,13 @@ import {
 import { HELP_TOPICS } from "../config/helpCenter.js";
 import { SITE } from "../config/site.js";
 import Icon from "../components/ui/Icon.jsx";
+import SEOHead from "../components/seo/SEOHead.jsx";
 
 export default function HelpCenter() {
   const [query, setQuery] = useState("");
   const [activeTopicId, setActiveTopicId] = useState(null); // null = all
   const [openItems, setOpenItems] = useState({}); // { "topic.q-index": true }
 
-  useEffect(() => {
-    const prev = document.title;
-    document.title = `Help Center — ${SITE.name}`;
-    return () => { document.title = prev; };
-  }, []);
 
   // Filter logic: substring match across question + answer.
   const filtered = useMemo(() => {
@@ -50,6 +46,10 @@ export default function HelpCenter() {
 
   return (
     <main className="wrap support-page">
+      <SEOHead
+        title="Help Center"
+        description="Help Center at NAVEN. FAQs on orders, delivery, returns, warranty, and after-sales support."
+      />
       <nav className="crumb" aria-label="Breadcrumb">
         <Link to="/"><HomeIcon size={13} /> Home</Link>
         <ChevronRight size={12} />

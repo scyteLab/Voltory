@@ -1,0 +1,24 @@
+# NAVEN robots.txt
+# https://mynaven.com
+
+User-agent: *
+Allow: /
+
+# Block admin and auth areas
+# (/admin and /account without a trailing slash so the /admin login page
+# and the /account landing page are covered too, not just their sub-pages)
+Disallow: /admin
+Disallow: /account
+Disallow: /cart
+Disallow: /checkout
+Disallow: /order/
+Disallow: /receipt/
+Disallow: /login
+Disallow: /signup
+
+# Allow Google's image crawler full access
+User-agent: Googlebot-Image
+Allow: /
+
+# Sitemap location
+Sitemap: https://mynaven.com/sitemap.xml

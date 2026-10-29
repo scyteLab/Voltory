@@ -1,10 +1,11 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Eye, EyeOff, KeyRound, Phone } from "lucide-react";
 import { useCustomerAuth } from "../context/AuthContext.jsx";
 import AuthShell from "../components/auth/AuthShell.jsx";
 import { SITE } from "../config/site.js";
 import Tagline from "../components/brand/Tagline.jsx";
+import SEOHead from "../components/seo/SEOHead.jsx";
 
 /**
  * Login  \u2014  /login
@@ -26,11 +27,6 @@ export default function Login() {
   const [needsSignup, setNeedsSignup] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
-  useEffect(() => {
-    const prev = document.title;
-    document.title = "Sign in \u2014 NAVEN";
-    return () => { document.title = prev; };
-  }, []);
 
   async function onSubmit(e) {
     e.preventDefault();
@@ -51,6 +47,10 @@ export default function Login() {
 
   return (
     <AuthShell>
+      <SEOHead
+        title="Sign In"
+        noindex
+      />
       <div className="ashell-form__inner">
         <div className="ashell-form__tabs" role="tablist">
           <Link

@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from "react";
+import { useMemo } from "react";
 import { Link } from "react-router-dom";
 import {
   ArrowRight, BadgeCheck, ChevronRight, Home as HomeIcon,
@@ -8,6 +8,7 @@ import { useCatalog } from "../context/CatalogContext.jsx";
 import { BRAND_PAGES } from "../config/brandPages.js";
 import { SITE } from "../config/site.js";
 import BrandLogo from "../components/brand/BrandLogo.jsx";
+import SEOHead from "../components/seo/SEOHead.jsx";
 
 /**
  * Brands directory  —  /brands
@@ -29,11 +30,6 @@ import BrandLogo from "../components/brand/BrandLogo.jsx";
  * about who Voltory partners with, not what's on sale.
  */
 export default function Brands() {
-  useEffect(() => {
-    const prev = document.title;
-    document.title = `Our Brand Partners — ${SITE.name || "NAVEN"}`;
-    return () => { document.title = prev; };
-  }, []);
 
   const { products, brands, categories } = useCatalog();
 
@@ -105,6 +101,10 @@ export default function Brands() {
 
   return (
     <main className="wrap bd-page">
+      <SEOHead
+        title="Our Brand Partners"
+        description="The brands we stock at NAVEN — Scanfrost, Midea, Samsung, Sony, Panasonic, Kenwood and more. Shop premium Nigerian appliances."
+      />
       <nav className="crumb" aria-label="Breadcrumb">
         <Link to="/"><HomeIcon size={13} /> Home</Link>
         <ChevronRight size={12} />

@@ -1,19 +1,18 @@
-import { useEffect } from "react";
 import { Link } from "react-router-dom";
 import { ChevronRight, Home as HomeIcon } from "lucide-react";
 import { SITE } from "../config/site.js";
 import { useStore } from "../context/StoreContext.jsx";
+import SEOHead from "../components/seo/SEOHead.jsx";
 
 export default function Privacy() {
   const { requestCall } = useStore();
-  useEffect(() => {
-    const prev = document.title;
-    document.title = `Privacy Policy — ${SITE.name}`;
-    return () => { document.title = prev; };
-  }, []);
 
   return (
     <main className="wrap mkt-page">
+      <SEOHead
+        title="Privacy Policy"
+        description="How NAVEN collects, uses, and protects your personal data under the Nigeria Data Protection Act 2023 (NDPA)."
+      />
       <nav className="crumb" aria-label="Breadcrumb">
         <Link to="/"><HomeIcon size={13} /> Home</Link>
         <ChevronRight size={12} />

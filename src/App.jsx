@@ -1,4 +1,5 @@
 import { BrowserRouter, Link, Navigate, Outlet, Route, Routes } from "react-router-dom";
+import { HelmetProvider } from "react-helmet-async";
 import { StoreProvider } from "./context/StoreContext.jsx";
 import { AdminProvider } from "./context/AdminContext.jsx";
 import { CatalogProvider } from "./context/CatalogContext.jsx";
@@ -151,111 +152,113 @@ function AuthLayout() {
 
 export default function App() {
   return (
-    <StoreProvider>
-      <AdminProvider>
-        <CatalogProvider>
-          <AuthProvider>
-            <SiteSectionsProvider>
-        <BrowserRouter>
-          <ScrollToTop />
-          <Routes>
-            <Route element={<StoreLayout />}>
-              <Route path="/" element={<Home />} />
-              <Route path="/search" element={<Search />} />
-              <Route path="/categories" element={<AllCategories />} />
-              <Route path="/category/:id" element={<Category />} />
-              <Route path="/collection/:slug" element={<Collection />} />
-              <Route path="/product/:slug" element={<Product />} />
-              <Route path="/brands" element={<Brands />} />
-              <Route path="/brand/:id" element={<Brand />} />
-              <Route path="/deals" element={<Deals />} />
-              <Route path="/new" element={<NewArrivals />} />
-              <Route path="/best-sellers" element={<BestSellers />} />
-              <Route path="/compare" element={<Compare />} />
-              <Route path="/cart" element={<Cart />} />
-              <Route path="/checkout" element={<Checkout />} />
-              <Route path="/order/:id" element={<OrderConfirmation />} />
-              <Route path="/receipt/:id" element={<Receipt />} />
-              <Route path="/track-order" element={<TrackOrder />} />
-              <Route path="/help" element={<HelpCenter />} />
-              <Route path="/contact" element={<Contact />} />
-              <Route path="/services/installation" element={<InstallationServices />} />
-              <Route path="/blog" element={<Blog />} />
-              <Route path="/about" element={<About />} />
-              <Route path="/careers" element={<Careers />} />
-              <Route path="/reviews-guidelines" element={<ReviewGuidelines />} />
-              <Route path="/affiliate" element={<Affiliate />} />
-              <Route path="/terms" element={<Terms />} />
-              <Route path="/privacy" element={<Privacy />} />
-              <Route path="/returns" element={<Returns />} />
+    <HelmetProvider>
+      <StoreProvider>
+        <AdminProvider>
+          <CatalogProvider>
+            <AuthProvider>
+              <SiteSectionsProvider>
+          <BrowserRouter>
+            <ScrollToTop />
+            <Routes>
+              <Route element={<StoreLayout />}>
+                <Route path="/" element={<Home />} />
+                <Route path="/search" element={<Search />} />
+                <Route path="/categories" element={<AllCategories />} />
+                <Route path="/category/:id" element={<Category />} />
+                <Route path="/collection/:slug" element={<Collection />} />
+                <Route path="/product/:slug" element={<Product />} />
+                <Route path="/brands" element={<Brands />} />
+                <Route path="/brand/:id" element={<Brand />} />
+                <Route path="/deals" element={<Deals />} />
+                <Route path="/new" element={<NewArrivals />} />
+                <Route path="/best-sellers" element={<BestSellers />} />
+                <Route path="/compare" element={<Compare />} />
+                <Route path="/cart" element={<Cart />} />
+                <Route path="/checkout" element={<Checkout />} />
+                <Route path="/order/:id" element={<OrderConfirmation />} />
+                <Route path="/receipt/:id" element={<Receipt />} />
+                <Route path="/track-order" element={<TrackOrder />} />
+                <Route path="/help" element={<HelpCenter />} />
+                <Route path="/contact" element={<Contact />} />
+                <Route path="/services/installation" element={<InstallationServices />} />
+                <Route path="/blog" element={<Blog />} />
+                <Route path="/about" element={<About />} />
+                <Route path="/careers" element={<Careers />} />
+                <Route path="/reviews-guidelines" element={<ReviewGuidelines />} />
+                <Route path="/affiliate" element={<Affiliate />} />
+                <Route path="/terms" element={<Terms />} />
+                <Route path="/privacy" element={<Privacy />} />
+                <Route path="/returns" element={<Returns />} />
 
-              <Route path="/account" element={<AuthGuard><AccountLayout /></AuthGuard>}>
-                <Route index element={<AccountOverview />} />
-                <Route path="orders" element={<AccountOrders />} />
-                <Route path="orders/:id" element={<OrderConfirmation />} />
-                <Route path="addresses" element={<AccountAddresses />} />
-                <Route path="reviews"   element={<AccountReviews />} />
-                <Route path="wishlist" element={<AccountWishlist />} />
+                <Route path="/account" element={<AuthGuard><AccountLayout /></AuthGuard>}>
+                  <Route index element={<AccountOverview />} />
+                  <Route path="orders" element={<AccountOrders />} />
+                  <Route path="orders/:id" element={<OrderConfirmation />} />
+                  <Route path="addresses" element={<AccountAddresses />} />
+                  <Route path="reviews"   element={<AccountReviews />} />
+                  <Route path="wishlist" element={<AccountWishlist />} />
+                </Route>
+
+                <Route path="*" element={<NotFound />} />
+              </Route>
+              {/* Login and SignUp are both fully self-contained pages now
+                  (each wraps its form in <AuthShell>, which renders its
+                  own brand showcase panel) — nesting them in AuthLayout
+                  would render a second brand panel around them. VerifyOtp
+                  still uses the plain .auth-card design, so it keeps
+                  relying on AuthLayout for the brand panel. */}
+              <Route path="/login" element={<Login />} />
+              <Route path="/signup" element={<SignUp />} />
+              <Route element={<AuthLayout />}>
               </Route>
 
-              <Route path="*" element={<NotFound />} />
-            </Route>
-            {/* Login and SignUp are both fully self-contained pages now
-                (each wraps its form in <AuthShell>, which renders its
-                own brand showcase panel) — nesting them in AuthLayout
-                would render a second brand panel around them. VerifyOtp
-                still uses the plain .auth-card design, so it keeps
-                relying on AuthLayout for the brand panel. */}
-            <Route path="/login" element={<Login />} />
-            <Route path="/signup" element={<SignUp />} />
-            <Route element={<AuthLayout />}>
-            </Route>
-
-            <Route path="/admin/login" element={<AdminLogin />} />
-            <Route element={<AdminGuard><AdminShell /></AdminGuard>}>
-              <Route path="/admin" element={<AdminDashboard />} />
-              <Route path="/admin/products/import" element={<CatalogProductsImport />} />
-              <Route path="/admin/inventory" element={<AdminInventory />} />
-              <Route path="/admin/inventory/update" element={<CatalogStockImport />} />
-              <Route path="/admin/pricing" element={<Navigate to="/admin/pricing/update" replace />} />
-              <Route path="/admin/pricing/update" element={<CatalogPriceImport />} />
-              <Route path="/admin/specs/update" element={<CatalogSpecsImport />} />
-              <Route path="/admin/specs" element={<Navigate to="/admin/specs/update" replace />} />
-              <Route path="/admin/exports" element={<AdminExports />} />
-              <Route path="/admin/marketing" element={<AdminMarketing />} />
-              <Route path="/admin/gm-portal" element={<GMPortal />} />
-              <Route path="/admin/gm-setup" element={<GMSetup />} />
-              <Route path="/admin/products" element={<CatalogProducts />} />
-              <Route path="/admin/catalog/categories" element={<AdminCategories />} />
-              <Route path="/admin/catalog/brands" element={<AdminBrands />} />
-              <Route path="/admin/collections" element={<AdminCollections />} />
-              <Route path="/admin/collections/:id" element={<AdminCollectionEdit />} />
-              <Route path="/admin/offers" element={<AdminOffers />} />
-              <Route path="/admin/offers/:id" element={<AdminOfferEdit />} />
-              <Route path="/admin/attributes" element={<AdminAttributes />} />
-              <Route path="/admin/attributes/:id" element={<AdminAttributeEdit />} />
-              <Route path="/admin/orders" element={<AdminOrders />} />
-              <Route path="/admin/orders/:id" element={<AdminOrderDetail />} />
-              <Route path="/admin/receipts" element={<AdminReceipts />} />
-              <Route path="/admin/receipts/:id" element={<AdminReceiptDetail />} />
-              <Route path="/admin/customers" element={<AdminCustomers />} />
-              <Route path="/admin/customers/:phone" element={<AdminCustomerDetail />} />
-              <Route path="/admin/team" element={<AdminTeam />} />
-              <Route path="/admin/warranty" element={<AdminWarranty />} />
-              <Route path="/admin/warranty/:id" element={<AdminWarrantyDetail />} />
-              <Route path="/admin/reports" element={<AdminReports />} />
-              <Route path="/admin/homepage" element={<AdminHomepage />} />
-              <Route path="/admin/reviews" element={<AdminReviews />} />
-              <Route path="/admin/whatsapp-quotes" element={<AdminWhatsappQuotes />} />
-              <Route path="/admin/whatsapp-quotes/:id" element={<AdminWhatsappQuoteDetail />} />
-              <Route path="/admin/settings" element={<AdminSettings />} />
-            </Route>
-          </Routes>
-        </BrowserRouter>
-            </SiteSectionsProvider>
-          </AuthProvider>
-        </CatalogProvider>
-      </AdminProvider>
-    </StoreProvider>
+              <Route path="/admin/login" element={<AdminLogin />} />
+              <Route element={<AdminGuard><AdminShell /></AdminGuard>}>
+                <Route path="/admin" element={<AdminDashboard />} />
+                <Route path="/admin/products/import" element={<CatalogProductsImport />} />
+                <Route path="/admin/inventory" element={<AdminInventory />} />
+                <Route path="/admin/inventory/update" element={<CatalogStockImport />} />
+                <Route path="/admin/pricing" element={<Navigate to="/admin/pricing/update" replace />} />
+                <Route path="/admin/pricing/update" element={<CatalogPriceImport />} />
+                <Route path="/admin/specs/update" element={<CatalogSpecsImport />} />
+                <Route path="/admin/specs" element={<Navigate to="/admin/specs/update" replace />} />
+                <Route path="/admin/exports" element={<AdminExports />} />
+                <Route path="/admin/marketing" element={<AdminMarketing />} />
+                <Route path="/admin/gm-portal" element={<GMPortal />} />
+                <Route path="/admin/gm-setup" element={<GMSetup />} />
+                <Route path="/admin/products" element={<CatalogProducts />} />
+                <Route path="/admin/catalog/categories" element={<AdminCategories />} />
+                <Route path="/admin/catalog/brands" element={<AdminBrands />} />
+                <Route path="/admin/collections" element={<AdminCollections />} />
+                <Route path="/admin/collections/:id" element={<AdminCollectionEdit />} />
+                <Route path="/admin/offers" element={<AdminOffers />} />
+                <Route path="/admin/offers/:id" element={<AdminOfferEdit />} />
+                <Route path="/admin/attributes" element={<AdminAttributes />} />
+                <Route path="/admin/attributes/:id" element={<AdminAttributeEdit />} />
+                <Route path="/admin/orders" element={<AdminOrders />} />
+                <Route path="/admin/orders/:id" element={<AdminOrderDetail />} />
+                <Route path="/admin/receipts" element={<AdminReceipts />} />
+                <Route path="/admin/receipts/:id" element={<AdminReceiptDetail />} />
+                <Route path="/admin/customers" element={<AdminCustomers />} />
+                <Route path="/admin/customers/:phone" element={<AdminCustomerDetail />} />
+                <Route path="/admin/team" element={<AdminTeam />} />
+                <Route path="/admin/warranty" element={<AdminWarranty />} />
+                <Route path="/admin/warranty/:id" element={<AdminWarrantyDetail />} />
+                <Route path="/admin/reports" element={<AdminReports />} />
+                <Route path="/admin/homepage" element={<AdminHomepage />} />
+                <Route path="/admin/reviews" element={<AdminReviews />} />
+                <Route path="/admin/whatsapp-quotes" element={<AdminWhatsappQuotes />} />
+                <Route path="/admin/whatsapp-quotes/:id" element={<AdminWhatsappQuoteDetail />} />
+                <Route path="/admin/settings" element={<AdminSettings />} />
+              </Route>
+            </Routes>
+          </BrowserRouter>
+              </SiteSectionsProvider>
+            </AuthProvider>
+          </CatalogProvider>
+        </AdminProvider>
+      </StoreProvider>
+    </HelmetProvider>
   );
 }

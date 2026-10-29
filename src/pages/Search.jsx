@@ -10,6 +10,7 @@ import { SITE } from "../config/site.js";
 import ProductCard from "../components/product/ProductCard.jsx";
 import FilterSidebar from "../components/category/FilterSidebar.jsx";
 import Pagination from "../components/ui/Pagination.jsx";
+import SEOHead from "../components/seo/SEOHead.jsx";
 
 const SORTS = [
   { id: "relevance", label: "Best Match" },
@@ -39,9 +40,6 @@ export default function Search() {
   // ---- record the search the first time we land on this page ----
   useEffect(() => {
     if (q) addRecentSearch(q);
-    const prev = document.title;
-    document.title = q ? `"${q}" — ${SITE.name}` : `Search — ${SITE.name}`;
-    return () => { document.title = prev; };
   }, [q]);
 
   // ---- find the full set of matching products (search engine handles scoring) ----
@@ -107,6 +105,11 @@ export default function Search() {
   // ---- main render ----
   return (
     <main className="wrap">
+      <SEOHead
+        title={q ? `Search: ${q}` : "Search"}
+        description={`Search results on NAVEN${q ? " for " + q : ""}. Find appliances from top brands across Nigeria.`}
+        noindex
+      />
       <nav className="crumb" aria-label="Breadcrumb">
         <Link to="/"><HomeIcon size={13} /> Home</Link>
         <ChevronRight size={12} />

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import {
   ChevronRight, Home as HomeIcon, Sparkles, SlidersHorizontal, X,
@@ -9,6 +9,7 @@ import { SITE } from "../config/site.js";
 import ProductCard from "../components/product/ProductCard.jsx";
 import FilterSidebar from "../components/category/FilterSidebar.jsx";
 import Pagination from "../components/ui/Pagination.jsx";
+import SEOHead from "../components/seo/SEOHead.jsx";
 
 const SORTS = [
   { id: "newest", label: "Newest First" },
@@ -61,11 +62,6 @@ export default function NewArrivals() {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const { products } = useCatalog();
 
-  useEffect(() => {
-    const prev = document.title;
-    document.title = `New Arrivals — ${SITE.name}`;
-    return () => { document.title = prev; };
-  }, []);
 
   const all = useMemo(() => freshestInStock(products), [products]);
 
@@ -106,6 +102,10 @@ export default function NewArrivals() {
 
   return (
     <main className="wrap">
+      <SEOHead
+        title="New Arrivals"
+        description="The freshest in-stock arrivals at NAVEN. Just-added products and recently restocked favourites across every category."
+      />
       <nav className="crumb" aria-label="Breadcrumb">
         <Link to="/"><HomeIcon size={13} /> Home</Link>
         <ChevronRight size={12} />

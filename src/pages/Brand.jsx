@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { Link, useParams, useSearchParams } from "react-router-dom";
 import {
   BadgeCheck, ChevronRight, Home as HomeIcon, MessageCircle,
@@ -12,6 +12,7 @@ import ProductCard from "../components/product/ProductCard.jsx";
 import FilterSidebar from "../components/category/FilterSidebar.jsx";
 import Pagination from "../components/ui/Pagination.jsx";
 import BrandLogo from "../components/brand/BrandLogo.jsx";
+import SEOHead from "../components/seo/SEOHead.jsx";
 
 const SORTS = [
   { id: "popular", label: "Popularity" },
@@ -40,13 +41,6 @@ export default function Brand() {
   const allProducts = useMemo(() => brand ? byBrand(brand.name) : [], [brand, byBrand]);
   const filters = useMemo(() => readFiltersFromUrl(searchParams), [searchParams]);
 
-  useEffect(() => {
-    if (brand) {
-      const prev = document.title;
-      document.title = `${brand.name} — ${SITE.name}`;
-      return () => { document.title = prev; };
-    }
-  }, [brand]);
 
   if (!brand) return loading ? <CatalogLoading label="Loading brand" /> : <BrandNotFound id={brandId} />;
   const sort = searchParams.get("sort") || "popular";
@@ -92,6 +86,10 @@ export default function Brand() {
 
   return (
     <main className="wrap">
+      <SEOHead
+        title={brand?.name}
+        description={`Shop ${brand?.name || "top brand"} appliances at NAVEN. Nationwide delivery across Nigeria.`}
+      />
       <nav className="crumb" aria-label="Breadcrumb">
         <Link to="/"><HomeIcon size={13} /> Home</Link>
         <ChevronRight size={12} />

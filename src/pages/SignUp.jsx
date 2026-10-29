@@ -1,8 +1,9 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Eye, EyeOff, KeyRound, Mail, Phone, User } from "lucide-react";
 import { useCustomerAuth } from "../context/AuthContext.jsx";
 import AuthShell from "../components/auth/AuthShell.jsx";
+import SEOHead from "../components/seo/SEOHead.jsx";
 
 /**
  * SignUp  \u2014  /signup
@@ -25,11 +26,6 @@ export default function SignUp() {
   const [error, setError]           = useState(null);
   const [submitting, setSubmitting] = useState(false);
 
-  useEffect(() => {
-    const prev = document.title;
-    document.title = "Create account \u2014 NAVEN";
-    return () => { document.title = prev; };
-  }, []);
 
   async function onSubmit(e) {
     e.preventDefault();
@@ -53,6 +49,10 @@ export default function SignUp() {
 
   return (
     <AuthShell>
+      <SEOHead
+        title="Create Account"
+        noindex
+      />
       <div className="ashell-form__inner">
         <div className="ashell-form__tabs" role="tablist">
           <Link

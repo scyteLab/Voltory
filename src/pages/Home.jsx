@@ -1,6 +1,7 @@
-import { useEffect } from "react";
 import { SITE } from "../config/site.js";
 import HomeRenderer from "../components/home/HomeRenderer.jsx";
+import SEOHead from "../components/seo/SEOHead.jsx";
+import { organizationSchema, websiteSchema } from "../lib/seo/structuredData.js";
 
 /**
  * Home — the storefront landing page.
@@ -15,11 +16,14 @@ import HomeRenderer from "../components/home/HomeRenderer.jsx";
  * rearrange, hide, and edit sections.
  */
 export default function Home() {
-  useEffect(() => {
-    const prev = document.title;
-    document.title = SITE.name;
-    return () => { document.title = prev; };
-  }, []);
 
-  return <HomeRenderer />;
+  return (
+    <>
+      <SEOHead
+        description="NAVEN — The Premium Electronics. Shop fridges, air conditioners, TVs, washing machines and premium appliances from Scanfrost, Midea, Samsung, Sony, Panasonic, Kenwood. Nationwide delivery, pay-on-delivery available."
+        jsonLd={[organizationSchema(), websiteSchema()]}
+      />
+      <HomeRenderer />
+    </>
+  );
 }

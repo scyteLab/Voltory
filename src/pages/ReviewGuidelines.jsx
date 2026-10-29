@@ -1,9 +1,9 @@
-import { useEffect } from "react";
 import { Link } from "react-router-dom";
 import {
   BadgeCheck, CheckCircle2, Flag, MessageSquare, Shield, XCircle,
 } from "lucide-react";
 import { SITE } from "../config/site.js";
+import SEOHead from "../components/seo/SEOHead.jsx";
 
 /**
  * Review Guidelines — /reviews-guidelines
@@ -17,14 +17,13 @@ import { SITE } from "../config/site.js";
  * and don't accidentally publish an unfinished draft.
  */
 export default function ReviewGuidelines() {
-  useEffect(() => {
-    const prev = document.title;
-    document.title = `Review Guidelines — ${SITE.name}`;
-    return () => { document.title = prev; };
-  }, []);
 
   return (
     <main className="wrap rg-page">
+      <SEOHead
+        title="Review Guidelines"
+        description="How to write helpful product reviews on NAVEN. Our community guidelines for honest, useful feedback."
+      />
       <nav className="crumbs">
         <Link to="/">Home</Link> <span>/</span> <b>Review Guidelines</b>
       </nav>

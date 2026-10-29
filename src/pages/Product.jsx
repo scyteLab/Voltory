@@ -21,6 +21,8 @@ import AddToCartBar from "../components/product/AddToCartBar.jsx";
 import ProductCard from "../components/product/ProductCard.jsx";
 import LastViewed from "../components/home/LastViewed.jsx";
 import OfferBadge from "../components/product/OfferBadge.jsx";
+import SEOHead from "../components/seo/SEOHead.jsx";
+import { productSchema, breadcrumbSchema } from "../lib/seo/structuredData.js";
 
 function NotFound({ slug }) {
   return (
@@ -74,33 +76,6 @@ function ProductLoadError({ onRetry }) {
   );
 }
 
-function ProductJsonLd({ product }) {
-  const json = {
-    "@context": "https://schema.org",
-    "@type": "Product",
-    name: product.name,
-    image: product.image ? [new URL(product.image, window.location.origin).href] : [],
-    description: product.description || product.name,
-    sku: product.sku,
-    brand: { "@type": "Brand", name: product.brand },
-    offers: {
-      "@type": "Offer",
-      url: window.location.href,
-      priceCurrency: SITE.currency,
-      price: product.price,
-      availability: product.stock > 0
-        ? "https://schema.org/InStock"
-        : "https://schema.org/OutOfStock",
-    },
-    aggregateRating: product.reviews
-      ? { "@type": "AggregateRating", ratingValue: product.rating, reviewCount: product.reviews }
-      : undefined,
-  };
-  return (
-    // eslint-disable-next-line react/no-danger
-    <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(json) }} />
-  );
-}
 
 export default function Product() {
   const { slug } = useParams();
@@ -120,9 +95,6 @@ export default function Product() {
   useEffect(() => {
     if (!product) return;
     addRecentlyViewed(product.sku);
-    const prev = document.title;
-    document.title = `${product.name} — ${SITE.name}`;
-    return () => { document.title = prev; };
   }, [product]);
 
   if (!product) {
@@ -159,7 +131,17 @@ export default function Product() {
 
   return (
     <main className="wrap">
-      <ProductJsonLd product={product} />
+      <SEOHead
+        title={product?.name}
+        description={product ? `Buy ${product.name} at NAVEN. ${(product.description || "").slice(0, 100)}` : undefined}
+        image={product?.image}
+        type="product"
+        jsonLd={product ? [productSchema(product), breadcrumbSchema([
+          { name: "Home", url: "/" },
+          { name: "Products", url: "/categories" },
+          { name: product.name, url: `/product/${product.slug}` },
+        ])] : []}
+      />
 
       <nav className="crumb" aria-label="Breadcrumb">
         <Link to="/"><HomeIcon size={13} /> Home</Link>
