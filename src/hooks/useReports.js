@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "../lib/supabaseClient.js";
+import { NON_REVENUE_STATUSES } from "../config/orderStatus.js";
+import { lagosDay } from "../utils/format.js";
 
 /**
  * Reports data hook. Reads:
@@ -29,9 +31,9 @@ export function useReports(rangeDays = 30, refreshTick = 0) {
           supabase.from("orders")
             .select("id, total, status, created_at")
             .gte("created_at", sinceIso)
-            // Revenue excludes cancelled orders and online orders whose
-            // payment Paystack hasn't confirmed yet.
-            .not("status", "in", "(cancelled,pending_payment)")
+            // Same definition as the dashboard views: no cancelled,
+            // refunded, or unpaid online (pending_payment) orders.
+            .not("status", "in", `(${NON_REVENUE_STATUSES.join(",")})`)
             .order("created_at", { ascending: true }),
           supabase.from("top_products_by_units").select("*").limit(10),
           supabase.from("orders_status_breakdown").select("*"),
@@ -44,16 +46,16 @@ export function useReports(rangeDays = 30, refreshTick = 0) {
 
         const orders = ordersRes.data || [];
 
-        // Aggregate orders by day
+        // Aggregate orders by Nigerian calendar day
         const dailyMap = new Map();
         for (let i = 0; i <= rangeDays; i++) {
           const d = new Date();
           d.setDate(d.getDate() - (rangeDays - i));
-          const key = d.toISOString().slice(0, 10);
+          const key = lagosDay(d);
           dailyMap.set(key, { day: key, revenue: 0, orders: 0 });
         }
         for (const o of orders) {
-          const key = String(o.created_at).slice(0, 10);
+          const key = lagosDay(o.created_at);
           const bucket = dailyMap.get(key);
           if (bucket) {
             bucket.revenue += Number(o.total || 0);

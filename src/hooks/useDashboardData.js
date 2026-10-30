@@ -1,5 +1,27 @@
 import { useEffect, useState } from "react";
 import { supabase } from "../lib/supabaseClient.js";
+import { lagosDay } from "../utils/format.js";
+
+const SPARK_DAYS = 30;
+
+/**
+ * One point per day for the last 30 Nigerian days, oldest first, with
+ * 0 for days that had no sales. The fixed sales_by_day view already
+ * returns that; the old one skipped empty days and wasn't ordered,
+ * which squashed the sparkline. Doing it here keeps both working.
+ */
+function fillSalesDays(rows) {
+  const byDay = new Map(rows.map((r) => [String(r.day).slice(0, 10), r]));
+  const out = [];
+  for (let i = SPARK_DAYS - 1; i >= 0; i--) {
+    const d = new Date();
+    d.setDate(d.getDate() - i);
+    const key = lagosDay(d);
+    const r = byDay.get(key);
+    out.push({ day: key, revenue: Number(r?.revenue) || 0, order_count: Number(r?.order_count) || 0 });
+  }
+  return out;
+}
 
 /**
  * Single hook that fetches everything the dashboard needs.
@@ -41,7 +63,7 @@ export function useDashboardData(refreshTick = 0) {
           error: null,
           data: {
             kpis: kpisRes.data || {},
-            sales: salesRes.data || [],
+            sales: fillSalesDays(salesRes.data || []),
             recentOrders: recentOrdersRes.data || [],
             lowStock: lowStockRes.data || [],
             openWarranty: warrantyRes.data || [],

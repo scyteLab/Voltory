@@ -14,6 +14,8 @@ import { ArrowDown, ArrowUp, Minus } from "lucide-react";
  *                 controls the icon tile background
  *   delta      — { pct: 12.4, direction: "up"|"down"|"flat" } | null
  *   deltaLabel — e.g. "vs last month"
+ *   note       — plain caption shown instead of a % delta, for counts
+ *                ("3 new this month") that aren't percentages
  *   sparkline  — array of numbers to render as an SVG mini-chart
  */
 const ACCENT_STYLES = {
@@ -70,6 +72,7 @@ export default function KpiCard({
   accent = "brand",
   delta,
   deltaLabel = "vs last month",
+  note,
   sparkline,
 }) {
   const s = ACCENT_STYLES[accent] || ACCENT_STYLES.brand;
@@ -87,7 +90,9 @@ export default function KpiCard({
         )}
       </header>
       <p className="adm-kpi__value">{value}</p>
-      <DeltaBadge delta={delta} label={deltaLabel} />
+      {note != null
+        ? <small className="adm-kpi__delta adm-kpi__delta--flat">{note}</small>
+        : <DeltaBadge delta={delta} label={deltaLabel} />}
     </article>
   );
 }

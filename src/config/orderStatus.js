@@ -49,6 +49,14 @@ export const STATUS_TRANSITIONS = {
 export const TIMELINE_ORDER = ["confirmed", "processing", "shipped", "delivered"];
 
 /**
+ * Statuses left out of "Revenue" and "Orders" everywhere (dashboard,
+ * reports, and the dashboard_kpis / sales_by_day /
+ * top_products_by_units views — keep supabase/dashboard_views_fix.sql
+ * in sync with this list).
+ */
+export const NON_REVENUE_STATUSES = ["cancelled", "refunded", "pending_payment"];
+
+/**
  * Format an order id for display: keep only the trailing chunk.
  * VLT-202601180430-A9F3 → "…-A9F3" for compact table view.
  */

@@ -81,8 +81,15 @@ export default function AdminDashboard() {
   }
 
   const k = data.kpis;
-  const revenueDelta = computeDelta(k.revenue_this_month, k.revenue_last_month);
-  const ordersDelta  = computeDelta(k.orders_this_month,  k.orders_last_month);
+  // Revenue / Orders exclude cancelled, refunded and pending_payment
+  // (see supabase/dashboard_views_fix.sql). "vs prior" compares this
+  // month-to-date with the same days of last month.
+  // Until that SQL is run the view lacks these columns — show "—"
+  // rather than a misleading ₦0.
+  const kpisReady = k.revenue_this_month !== undefined;
+  const revenueDelta = computeDelta(k.revenue_this_month, k.revenue_prev_month_to_date);
+  const ordersDelta  = computeDelta(k.orders_this_month,  k.orders_prev_month_to_date);
+  const newClaims = Number(k.new_warranty_claims_this_month || 0);
 
   // Turn sales_by_day into a sparkline series
   const revenueSpark = (data.sales || []).map((r) => Number(r.revenue) || 0);
@@ -95,19 +102,23 @@ export default function AdminDashboard() {
       {/* ---- KPI row ---- */}
       <section className="adm-kpi-row">
         <KpiCard
-          label="Total Revenue"
-          value={naira(k.revenue_this_month)}
+          label="Revenue (this month)"
+          value={kpisReady ? naira(k.revenue_this_month) : "—"}
           icon={Banknote}
           accent="brand"
           delta={revenueDelta}
+          deltaLabel="vs same period last month"
+          note={kpisReady ? undefined : "Dashboard views need updating"}
           sparkline={revenueSpark}
         />
         <KpiCard
-          label="Total Orders"
-          value={Number(k.orders_this_month || 0).toLocaleString()}
+          label="Orders (this month)"
+          value={kpisReady ? Number(k.orders_this_month || 0).toLocaleString() : "—"}
           icon={ShoppingCart}
           accent="info"
           delta={ordersDelta}
+          deltaLabel="vs same period last month"
+          note={kpisReady ? undefined : "Dashboard views need updating"}
           sparkline={ordersSpark}
         />
         <KpiCard
@@ -115,20 +126,14 @@ export default function AdminDashboard() {
           value={Number(k.low_stock_count || 0).toLocaleString()}
           icon={PackageSearch}
           accent="warn"
-          delta={k.low_stock_count > 0 ? { pct: k.low_stock_count, direction: "up" } : null}
-          deltaLabel="products need reorder"
+          note={Number(k.low_stock_count || 0) > 0 ? "products need reorder" : "stock levels healthy"}
         />
         <KpiCard
           label="Warranty Claims"
           value={Number(k.open_warranty_claims || 0).toLocaleString()}
           icon={ShieldAlert}
           accent="err"
-          delta={
-            k.new_warranty_claims_this_month > 0
-              ? { pct: k.new_warranty_claims_this_month, direction: "up" }
-              : { pct: 0, direction: "flat" }
-          }
-          deltaLabel="new this month"
+          note={`open · ${newClaims} new this month`}
         />
       </section>
 
@@ -217,30 +222,33 @@ export default function AdminDashboard() {
         <div className="adm-catalog-summary__cell">
           <span className="adm-catalog-summary__label">Products in catalog</span>
           <span className="adm-catalog-summary__value">
-            <Package size={18} /> {Number(k.total_products || 0).toLocaleString()}
+            <Package size={18} /> {kpisReady ? Number(k.total_products || 0).toLocaleString() : "—"}
           </span>
           <small>{Number(k.total_active_products || 0)} active</small>
         </div>
         <div className="adm-catalog-summary__cell">
           <span className="adm-catalog-summary__label">Out of stock</span>
           <span className="adm-catalog-summary__value">
-            <Boxes size={18} /> {Number(k.out_of_stock_count || 0)}
+            <Boxes size={18} /> {kpisReady ? Number(k.out_of_stock_count || 0) : "—"}
           </span>
           <small>Currently unlistable</small>
         </div>
         <div className="adm-catalog-summary__cell">
-          <span className="adm-catalog-summary__label">Pending orders</span>
+          <span className="adm-catalog-summary__label">Orders needing action</span>
           <span className="adm-catalog-summary__value">
             <ShoppingCart size={18} /> {Number(k.pending_orders || 0)}
           </span>
-          <small>Confirmed or processing</small>
+          <small>
+            Confirmed or processing
+            {kpisReady && ` · ${Number(k.awaiting_payment || 0)} awaiting payment`}
+          </small>
         </div>
         <div className="adm-catalog-summary__cell">
           <span className="adm-catalog-summary__label">Total revenue (all time)</span>
           <span className="adm-catalog-summary__value">
-            <Banknote size={18} /> {naira(k.total_revenue)}
+            <Banknote size={18} /> {kpisReady ? naira(k.total_revenue) : "—"}
           </span>
-          <small>{Number(k.total_orders || 0)} completed orders</small>
+          <small>{Number(k.total_orders || 0)} orders · excl. cancelled, refunded, unpaid</small>
         </div>
       </section>
     </div>
