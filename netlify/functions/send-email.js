@@ -23,7 +23,8 @@
  *     to:      string,     // recipient email (customer for confirmation, admin for notify)
  *     subject: string,
  *     html:    string,     // HTML body
- *     text:    string      // plain-text fallback
+ *     text:    string,     // plain-text fallback
+ *     replyTo: string      // optional, e.g. the contact-form sender
  *   }
  *
  * Response:
@@ -67,7 +68,9 @@ export const handler = async (event) => {
     };
   }
 
-  const { type, to, subject, html, text } = payload;
+  const { type, to, subject, html, text, replyTo } = payload;
+  const validReplyTo =
+    typeof replyTo === "string" && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(replyTo) ? replyTo : null;
 
   // Basic validation
   if (!type || !to || !subject || !html) {
@@ -108,6 +111,7 @@ export const handler = async (event) => {
         subject,
         html,
         text: text || html.replace(/<[^>]+>/g, ""),
+        ...(validReplyTo ? { reply_to: validReplyTo } : {}),
       }),
     });
 

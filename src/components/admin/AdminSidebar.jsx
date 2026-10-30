@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Link, NavLink } from "react-router-dom";
 import {
-  Boxes, ChevronDown, Download, FileText, Gift, LayoutDashboard, LayoutGrid, LifeBuoy, Megaphone,
+  Boxes, ChevronDown, Download, FileText, Gift, Inbox, LayoutDashboard, LayoutGrid, LifeBuoy, Megaphone,
   MessageCircle, Package, Receipt, Settings as SettingsIcon, ShieldCheck,
   ShoppingCart, Star, Tag, Tags, UserCog, Users,
 } from "lucide-react";
@@ -30,6 +30,7 @@ const TOP_LINKS = [
   { label: "Orders",     icon: ShoppingCart, live: true,  to: "/admin/orders",    badgeKey: "pendingOrders" },
   { label: "Receipts",   icon: Receipt,      live: true,  to: "/admin/receipts" },
   { label: "WA Quotes",  icon: MessageCircle,live: true,  to: "/admin/whatsapp-quotes", badgeKey: "newQuotes" },
+  { label: "Messages",   icon: Inbox,        live: true,  to: "/admin/messages",  badgeKey: "newMessages" },
   { label: "Homepage",   icon: LayoutGrid,   live: true,  to: "/admin/homepage" },
   { label: "Customers",  icon: Users,        live: true,  to: "/admin/customers" },
   { label: "Team",       icon: UserCog,      live: true,  to: "/admin/team" },

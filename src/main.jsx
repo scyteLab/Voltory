@@ -38,6 +38,7 @@ import "./styles/admin-reviews.css";
 import "./styles/review-guidelines.css";
 import "./styles/whatsapp-quotes.css";
 import "./styles/admin-whatsapp.css";
+import "./styles/admin-messages.css";
 import "./styles/admin-import.css";
 import "./styles/admin-inventory.css";
 import "./styles/admin-marketing.css";

@@ -7,7 +7,8 @@ import { supabase } from "../lib/supabaseClient.js";
  * failure so a network hiccup doesn't clear the badges.
  *
  * Returns:
- *   { pendingOrders, openWarranty, pendingReviews, notifications }
+ *   { pendingOrders, openWarranty, pendingReviews, newQuotes,
+ *     newMessages, lowStock, notifications }
  */
 export function useAdminCounters() {
   const [counts, setCounts] = useState({
@@ -15,6 +16,7 @@ export function useAdminCounters() {
     openWarranty:   null,
     pendingReviews: null,
     newQuotes:      null,
+    newMessages:    null,
     lowStock:       null,
     notifications:  null,
   });
@@ -25,10 +27,17 @@ export function useAdminCounters() {
 
     async function pull() {
       try {
-        const { data } = await supabase
-          .from("dashboard_kpis")
-          .select("pending_orders, open_warranty_claims, low_stock_count, pending_reviews, new_whatsapp_quotes")
-          .maybeSingle();
+        const [{ data }, { count: newMessages }] = await Promise.all([
+          supabase
+            .from("dashboard_kpis")
+            .select("pending_orders, open_warranty_claims, low_stock_count, pending_reviews, new_whatsapp_quotes")
+            .maybeSingle(),
+          // Contact-form inbox; not in dashboard_kpis, so counted directly.
+          supabase
+            .from("contact_messages")
+            .select("id", { count: "exact", head: true })
+            .eq("status", "new"),
+        ]);
         if (stopped || !data) return;
         // Notifications badge = every actionable item the admin
         // needs to look at, summed.
@@ -37,12 +46,14 @@ export function useAdminCounters() {
           Number(data.open_warranty_claims || 0) +
           Number(data.low_stock_count || 0) +
           Number(data.pending_reviews || 0) +
-          Number(data.new_whatsapp_quotes || 0);
+          Number(data.new_whatsapp_quotes || 0) +
+          Number(newMessages || 0);
         setCounts({
           pendingOrders:  Number(data.pending_orders || 0),
           openWarranty:   Number(data.open_warranty_claims || 0),
           pendingReviews: Number(data.pending_reviews || 0),
           newQuotes:      Number(data.new_whatsapp_quotes || 0),
+          newMessages:    Number(newMessages || 0),
           lowStock:       Number(data.low_stock_count || 0),
           notifications,
         });

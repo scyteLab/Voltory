@@ -1,6 +1,5 @@
 -- ============================================================
---  Dashboard views fix  (PROPOSED — review, then run in the
---  Supabase SQL editor; nothing in the app runs this)
+--  Dashboard views fix  (APPLIED in Supabase on 30 Oct 2026 — kept for reference)
 --
 --  Problem: the admin dashboard reads revenue_this_month,
 --  orders_this_month, new_warranty_claims_this_month, total_revenue,
@@ -113,8 +112,8 @@ select
 create or replace view public.sales_by_day as
 with days as (
   select generate_series(
-           (now() at time zone 'Africa/Lagos')::date - 29,
-           (now() at time zone 'Africa/Lagos')::date,
+           ((now() at time zone 'Africa/Lagos')::date - 29)::timestamp,
+           ((now() at time zone 'Africa/Lagos')::date)::timestamp,
            interval '1 day'
          )::date as day
 ),
@@ -122,7 +121,7 @@ counted as (
   select (o.created_at at time zone 'Africa/Lagos')::date as day, o.total
   from public.orders o
   where o.status not in ('cancelled', 'refunded', 'pending_payment')
-    and o.created_at >= ((now() at time zone 'Africa/Lagos')::date - 29) at time zone 'Africa/Lagos'
+    and o.created_at >= (((now() at time zone 'Africa/Lagos')::date - 29)::timestamp) at time zone 'Africa/Lagos'
 )
 select
   d.day,

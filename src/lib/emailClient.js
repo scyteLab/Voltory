@@ -1,6 +1,7 @@
 import {
-  orderConfirmationEmail, adminOrderNotificationEmail,
+  orderConfirmationEmail, adminOrderNotificationEmail, contactMessageNotifyEmail,
 } from "./emailTemplates.js";
+import { SITE } from "../config/site.js";
 
 /**
  * emailClient
@@ -101,6 +102,28 @@ export async function sendAdminOrderNotification(order, adminEmail = null) {
     subject: tmpl.subject,
     html: tmpl.html,
   });
+}
+
+/**
+ * Notify the support inbox of a new Contact-page message.
+ * Reply-to is the sender, so "Reply" in the mail client goes to them.
+ * Never throws; a skipped/failed send only logs a warning.
+ */
+export async function sendContactNotification(msg) {
+  const tmpl = contactMessageNotifyEmail(msg);
+  const res = await postEmail({
+    type: "contact_notify",
+    to: SITE.supportEmail,
+    subject: tmpl.subject,
+    html: tmpl.html,
+    text: tmpl.text,
+    replyTo: msg.email || undefined,
+  });
+  if (!res.ok || res.skipped) {
+    // eslint-disable-next-line no-console
+    console.warn("[email] contact notification not sent — message is saved in admin/messages", res);
+  }
+  return res;
 }
 
 /**

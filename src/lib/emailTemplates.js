@@ -256,6 +256,53 @@ export function adminOrderNotificationEmail(order) {
 }
 
 /* ============================================================
+   Contact form → support inbox
+   ============================================================ */
+
+export function contactMessageNotifyEmail(msg) {
+  const adminUrl = `${(SITE.appUrl || "https://mynaven.com")}/admin/messages`;
+  const subject = msg.subject || "General enquiry";
+  const row = (label, value) => `
+    <tr>
+      <td style="padding:6px 8px;font-size:13px;color:${BRAND_MUT};width:90px;vertical-align:top;">${label}</td>
+      <td style="padding:6px 8px;font-size:13px;">${value ? escapeHtml(value) : "—"}</td>
+    </tr>`;
+
+  const body = `
+    <h1 style="margin:0 0 16px;font-size:20px;">New contact message</h1>
+    <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="border:1px solid ${BRAND_LINE};border-radius:8px;">
+      ${row("Name", msg.name)}
+      ${row("Email", msg.email)}
+      ${row("Phone", msg.phone)}
+      ${row("Subject", subject)}
+    </table>
+    <div style="margin:16px 0;padding:14px;background:${BRAND_BG};border-radius:8px;font-size:14px;line-height:1.5;white-space:pre-wrap;">${escapeHtml(msg.message)}</div>
+    <div style="margin:24px 0 8px;text-align:center;">
+      <a href="${adminUrl}" style="display:inline-block;padding:12px 24px;background:${BRAND_COLOR};color:#ffffff;text-decoration:none;border-radius:8px;font-weight:700;font-size:14px;">Open in admin</a>
+    </div>
+  `;
+
+  const text = [
+    `New contact message`,
+    ``,
+    `Name: ${msg.name}`,
+    `Email: ${msg.email || "-"}`,
+    `Phone: ${msg.phone || "-"}`,
+    `Subject: ${subject}`,
+    ``,
+    msg.message,
+    ``,
+    adminUrl,
+  ].join("\n");
+
+  return {
+    subject: `New contact message: ${subject}`,
+    html: shell({ title: `New contact message: ${subject}`, preheader: `${msg.name} · ${subject}`, body }),
+    text,
+  };
+}
+
+/* ============================================================
    Helpers
    ============================================================ */
 
