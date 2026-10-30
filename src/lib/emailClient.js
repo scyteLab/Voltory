@@ -5,7 +5,8 @@ import {
 /**
  * emailClient
  *
- * Fires order emails via the Netlify Function at /api/send-email.
+ * Fires order emails via the Netlify Function send-email
+ * (/.netlify/functions/send-email; /api/send-email also rewrites there).
  *
  * Every function here is FIRE-AND-FORGET:
  *   · Never blocks the checkout flow
@@ -23,7 +24,8 @@ import {
  * tools).
  */
 
-const EMAIL_ENDPOINT = "/api/send-email";
+// Direct function path: doesn't depend on the /api rewrite.
+const EMAIL_ENDPOINT = "/.netlify/functions/send-email";
 
 async function postEmail(payload) {
   try {

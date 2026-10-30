@@ -1,1 +1,10 @@
+# Netlify processes this file BEFORE the [[redirects]] in netlify.toml,
+# and stops at the first match — so the API rewrites must come before
+# the SPA catch-all, here as well as in netlify.toml.
+/api/send-email          /.netlify/functions/send-email          200
+/api/paystack-verify     /.netlify/functions/paystack-verify     200
+/api/paystack-webhook    /.netlify/functions/paystack-webhook    200
+/api/order-switch-pod    /.netlify/functions/order-switch-pod    200
+
+# SPA fallback — must stay last.
 /*    /index.html   200

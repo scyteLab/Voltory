@@ -170,3 +170,55 @@ export async function reconcilePayment(reference) {
   }
   return { httpStatus: 200, paymentStatus: "paid" };
 }
+
+const ORDER_ID_PATTERN = /^VLT-[A-Za-z0-9]+-[A-Za-z0-9]+$/;
+
+/**
+ * Convert an unpaid online order (status pending_payment) into a
+ * Pay on Delivery order: status confirmed, payment_method pod,
+ * payment_status unpaid. Used when a customer abandons Paystack and
+ * chooses POD at checkout — the browser can't do it because anon
+ * may insert orders but not update them.
+ *
+ * Checks Paystack first: if the last attempt was actually paid, the
+ * order is confirmed as paid instead. Idempotent.
+ *
+ * Resolves with { httpStatus, ok, paymentStatus, reason? }.
+ */
+export async function switchOrderToPod(orderId) {
+  if (typeof orderId !== "string" || !ORDER_ID_PATTERN.test(orderId)) {
+    return { httpStatus: 400, ok: false, reason: "invalid_order_id" };
+  }
+  let order = await loadOrder(orderId);
+  if (!order) return { httpStatus: 404, ok: false, reason: "order_not_found" };
+
+  if (order.payment_status !== "paid" && orderIdFromReference(order.paystack_ref) === orderId) {
+    const res = await reconcilePayment(order.paystack_ref);
+    if (res.paymentStatus === "paid") return { httpStatus: 200, ok: false, paymentStatus: "paid" };
+  }
+  if (order.payment_status === "paid") return { httpStatus: 200, ok: false, paymentStatus: "paid" };
+
+  if (order.status !== "pending_payment") {
+    // Already converted (repeat call) → fine. Anything else (cancelled,
+    // already in fulfilment) isn't ours to change.
+    const done = order.status === "confirmed" && order.payment_method === "pod";
+    return done
+      ? { httpStatus: 200, ok: true, paymentStatus: order.payment_status }
+      : { httpStatus: 409, ok: false, reason: `status_${order.status}` };
+  }
+
+  const rows = await supabaseRequest(
+    `orders?id=eq.${encodeURIComponent(orderId)}&status=eq.pending_payment&payment_status=neq.paid`,
+    {
+      method: "PATCH",
+      headers: { Prefer: "return=representation" },
+      body: JSON.stringify({ status: "confirmed", payment_method: "pod", payment_status: "unpaid" }),
+    }
+  );
+  if (Array.isArray(rows) && rows.length) return { httpStatus: 200, ok: true, paymentStatus: "unpaid" };
+
+  // Lost a race (webhook confirmed it, or staff changed it) — report what's there now.
+  order = await loadOrder(orderId);
+  if (order?.payment_status === "paid") return { httpStatus: 200, ok: false, paymentStatus: "paid" };
+  return { httpStatus: 409, ok: false, reason: `status_${order?.status}` };
+}

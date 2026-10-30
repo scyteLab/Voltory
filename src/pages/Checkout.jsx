@@ -32,7 +32,9 @@ const PAYMENT_METHODS = [
 ];
 
 export default function Checkout() {
-  const { cart, totals, placeOrder, createPendingPaymentOrder, completePaidOrder, requestCall } = useStore();
+  const {
+    cart, totals, placeOrder, createPendingPaymentOrder, completePaidOrder, convertPendingOrderToPod, requestCall,
+  } = useStore();
   const { customer } = useCustomerAuth();
   const { bySku } = useCatalog();
   const { get: getCheckoutSetting } = useCheckoutSettings();
@@ -221,16 +223,32 @@ export default function Checkout() {
       return;
     }
 
-    // Switching to Pay on Delivery after an unfinished online attempt:
-    // check that attempt first (a late transfer may have gone through),
-    // otherwise convert that same order to POD instead of duplicating it.
-    if (pendingOrder) {
-      const { paymentStatus } = await verifyPaystackPayment(pendingOrder.reference);
-      if (paymentStatus === "paid") {
-        completePaidOrder(pendingOrder.id);
-        navigate(`/order/${pendingOrder.id}`);
-        return;
+    // Switching to Pay on Delivery after an unfinished online attempt
+    // for the same amount: the server checks that attempt with Paystack
+    // (a late transfer may have gone through), otherwise converts that
+    // same order to POD instead of duplicating it.
+    if (pendingOrder && pendingOrder.grand === grand) {
+      try {
+        const res = await convertPendingOrderToPod({
+          contact, address, payment, installation, deliveryFee,
+          orderId: pendingOrder.id,
+        });
+        if (res.paid) {
+          completePaidOrder(pendingOrder.id);
+          navigate(`/order/${pendingOrder.id}`);
+          return;
+        }
+        if (!res.ok) {
+          setSubmitting(false);
+          setErrors({ payment: "We couldn't switch this order to Pay on Delivery. Please check your connection and try again." });
+          return;
+        }
+        navigate(`/order/${res.id}`);
+      } catch (err) {
+        setSubmitting(false);
+        setErrors({ payment: err.message || "We couldn't place your order. Please try again." });
       }
+      return;
     }
 
     setTimeout(() => {
@@ -238,7 +256,6 @@ export default function Checkout() {
         const id = placeOrder({
           contact, address, payment, installation,
           deliveryFee,
-          orderId: pendingOrder?.id || null,
         });
         navigate(`/order/${id}`);
       } catch (err) {

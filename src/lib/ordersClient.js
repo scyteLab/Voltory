@@ -63,7 +63,7 @@ function toSupabaseShape(order) {
   // moves an online order from pending_payment to confirmed). Only
   // the paystack-verify / paystack-webhook functions may. Once the
   // server has marked an order paid we stop sending payment fields
-  // and status at all, so a later upsert can't overwrite them.
+  // and status at all, so a later sync can never overwrite them.
   if (order.paymentStatus !== "paid") {
     orderRow.status         = normaliseOutgoingStatus(order.status);
     orderRow.paystack_ref   = order.paystackRef || null;
@@ -106,7 +106,16 @@ function normaliseOutgoingStatus(s) {
  * on success or { ok: false, error } on any failure. Never throws.
  * We swallow because callers are in a background retry loop and
  * we don't want a rejection cascade.
+ *
+ * Plain INSERT, never upsert: the browser's anon role may insert
+ * orders but not update them (RLS), and an upsert that hits an
+ * existing row becomes an UPDATE and is refused with 401. A
+ * duplicate-key error (23505) means an earlier attempt already
+ * landed, so it counts as success — that ends the retry loop.
+ * Changing an existing order is the server's job.
  */
+const isDuplicate = (error) => error?.code === "23505";
+
 export async function insertOrderToSupabase(order) {
   if (!supabaseConfigured) {
     return { ok: false, error: "Supabase not configured" };
@@ -115,17 +124,14 @@ export async function insertOrderToSupabase(order) {
     const { orderRow, itemRows } = toSupabaseShape(order);
 
     // Insert the order first — order_items has an FK to orders.id.
-    // Use upsert on id so retries after a partial success don't blow up.
-    const orderRes = await supabase
-      .from("orders")
-      .upsert(orderRow, { onConflict: "id" });
-    if (orderRes.error) throw orderRes.error;
+    const orderRes = await supabase.from("orders").insert(orderRow);
+    if (orderRes.error && !isDuplicate(orderRes.error)) throw orderRes.error;
 
+    // Items go in one atomic batch, so after a partial success either
+    // all of them exist (duplicate → done) or none do (insert them).
     if (itemRows.length) {
-      const itemsRes = await supabase
-        .from("order_items")
-        .upsert(itemRows, { onConflict: "order_id,sku" });
-      if (itemsRes.error) throw itemsRes.error;
+      const itemsRes = await supabase.from("order_items").insert(itemRows);
+      if (itemsRes.error && !isDuplicate(itemsRes.error)) throw itemsRes.error;
     }
     return { ok: true };
   } catch (err) {

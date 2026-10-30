@@ -7,6 +7,7 @@ import {
   markOrderSynced, getUnsyncedOrders,
 } from "../utils/orders.js";
 import { insertOrderToSupabase } from "../lib/ordersClient.js";
+import { switchOrderToPod } from "../lib/paystackClient.js";
 import { sendOrderEmails } from "../lib/emailClient.js";
 import { upsertFromCheckout } from "../lib/customerAuth.js";
 import { getStoredWishlist, saveWishlist } from "../utils/wishlist.js";
@@ -473,6 +474,26 @@ export function StoreProvider({ children }) {
     return order.id;
   };
 
+  // Customer abandoned an online payment and chose Pay on Delivery for
+  // the same order. The row already exists, and the browser may only
+  // insert orders, so the server converts it. Resolves with
+  // { ok: true, id } | { ok: false, paid: true } (it was paid after all)
+  // | { ok: false, error }. Throws OrderTotalError like placeOrder.
+  const convertPendingOrderToPod = async ({ orderId, paystackRef: _r, paymentStatus: _s, ...args }) => {
+    const order = buildOrder({ ...args, orderId, paystackRef: null, paymentStatus: "unpaid" });
+    const res = await switchOrderToPod(orderId);
+    if (res.paymentStatus === "paid") return { ok: false, paid: true };
+    if (!res.ok) return { ok: false, error: res.error };
+
+    saveOrder({ ...order, syncedAt: new Date().toISOString() });
+    clearCart();
+    sendOrderEmails(order).catch((err) => {
+      // eslint-disable-next-line no-console
+      console.warn("[convertPendingOrderToPod] email dispatch error:", err);
+    });
+    return { ok: true, id: order.id };
+  };
+
   // Card / Transfer / USSD: the order must exist in Supabase (as
   // 'pending') BEFORE the Paystack popup opens, so the server can
   // look it up when verifying. Unlike placeOrder this waits for the
@@ -516,6 +537,7 @@ export function StoreProvider({ children }) {
         toast, dismissToast,
         callConfirm, requestCall, cancelCall, confirmCall,
         account, signIn, signOut, placeOrder, createPendingPaymentOrder, completePaidOrder,
+        convertPendingOrderToPod,
         wishlist, toggleWishlist, isInWishlist, wishlistCount,
         compare, toggleCompare, isInComparison, removeFromComparison, clearComparison, compareCount,
         productOffers,

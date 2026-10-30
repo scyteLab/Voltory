@@ -111,7 +111,8 @@ export async function openPaystack({ amountKobo, email, reference, metadata = {}
  */
 export async function verifyPaystackPayment(reference) {
   try {
-    const res = await fetch("/api/paystack-verify", {
+    // Direct function path: doesn't depend on the /api rewrite.
+    const res = await fetch("/.netlify/functions/paystack-verify", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ reference }),
@@ -121,6 +122,27 @@ export async function verifyPaystackPayment(reference) {
     return { paymentStatus: data.paymentStatus || "unknown" };
   } catch (err) {
     return { paymentStatus: "unknown", error: err?.message || String(err) };
+  }
+}
+
+/**
+ * Ask the server to turn an unpaid online order into a Pay on Delivery
+ * order (the browser can't update orders itself). The server checks
+ * Paystack first, so a late payment is caught.
+ *
+ * Resolves with { ok, paymentStatus?, error? }. Never throws.
+ */
+export async function switchOrderToPod(orderId) {
+  try {
+    const res = await fetch("/.netlify/functions/order-switch-pod", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ orderId }),
+    });
+    const data = await res.json().catch(() => ({}));
+    return { ok: !!data.ok, paymentStatus: data.paymentStatus, error: data.error || (res.ok ? null : `HTTP ${res.status}`) };
+  } catch (err) {
+    return { ok: false, error: err?.message || String(err) };
   }
 }
 
