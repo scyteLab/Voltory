@@ -1,6 +1,4 @@
 import { supabase, supabaseConfigured } from "./supabaseClient.js";
-import { SITE } from "../config/site.js";
-import { naira } from "../utils/format.js";
 
 /**
  * whatsappQuotesClient
@@ -9,8 +7,9 @@ import { naira } from "../utils/format.js";
  *
  *   1. generateQuoteId()      — unique reference: VQ-YYYYMMDDHHmm-XXXX
  *   2. saveQuote()            — writes quote header + items to Supabase
- *   3. buildWhatsappMessage() — formats the pre-filled WA message
- *   4. buildWhatsappUrl()     — assembles the wa.me URL
+ *
+ * The WhatsApp message itself is written by utils/whatsappMessage.js
+ * (cartMessage), using the quoteId returned here as its "Quote ref".
  *
  * We save FIRST, open WhatsApp SECOND. If the save fails, the button
  * shows an error and doesn't open WhatsApp — otherwise the customer
@@ -104,48 +103,4 @@ export async function saveQuote({ cart, bySku, customer, contactName, contactPho
   } catch (err) {
     return { ok: false, error: err?.message || String(err) };
   }
-}
-
-/* ============================================================
-   WhatsApp message formatter
-   ============================================================ */
-
-/**
- * Build the pre-filled WhatsApp message body. Kept short-ish to
- * survive on all phones (some phones truncate WA share URLs at
- * ~2000 chars). At 10 items with average name length, we're well
- * inside that limit.
- *
- * Message shape:
- *   Hi NAVEN! I'd like to enquire about:
- *
- *   • 2× Scanfrost 350L Refrigerator (SF350) – ₦250,000 each
- *   • 1× Midea 1.5HP Inverter AC (MID15I) – ₦180,000 each
- *
- *   Subtotal: ₦680,000
- *
- *   My name is Ilori Emmanuel. Quote ref: VQ-YYYYMMDDHHmm-XXXX
- */
-export function buildWhatsappMessage({ quoteId, subtotal, items, contactName }) {
-  const nameLine = contactName ? `My name is ${contactName}. ` : "";
-  const lines = [
-    "Hi NAVEN! I'd like to enquire about:",
-    "",
-    ...items.map((i) => `• ${i.qty}× ${i.product_name} (${i.sku}) – ${naira(i.unit_price)} each`),
-    "",
-    `Subtotal: ${naira(subtotal)}`,
-    "",
-    `${nameLine}Quote ref: ${quoteId}`,
-  ];
-  return lines.join("\n");
-}
-
-/**
- * Build the tel-style wa.me URL with the message pre-filled.
- * Uses SITE.whatsapp normalized to digits only (wa.me is strict).
- */
-export function buildWhatsappUrl(message) {
-  const phoneDigits = (SITE.whatsapp || "").replace(/\D+/g, "");
-  const encoded = encodeURIComponent(message);
-  return `https://wa.me/${phoneDigits}?text=${encoded}`;
 }

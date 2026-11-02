@@ -112,6 +112,31 @@ function reconcileGifts(cart, offers) {
 }
 
 /* ============================================================
+   BUY NOW
+   ============================================================
+   "Buy Now" on a product page checks out ONE product without
+   touching the cart. The item ({ sku, qty }) lives in state and in
+   sessionStorage (survives a reload or the Paystack popup, not a new
+   tab), and Checkout uses it only at /checkout?mode=buynow.
+*/
+const BUY_NOW_KEY = "naven_buy_now";
+
+function loadBuyNow() {
+  try {
+    const v = JSON.parse(sessionStorage.getItem(BUY_NOW_KEY) || "null");
+    return v && typeof v.sku === "string" && Number(v.qty) > 0 ? { sku: v.sku, qty: Number(v.qty) } : null;
+  } catch {
+    return null;
+  }
+}
+function storeBuyNow(item) {
+  try {
+    if (item) sessionStorage.setItem(BUY_NOW_KEY, JSON.stringify(item));
+    else sessionStorage.removeItem(BUY_NOW_KEY);
+  } catch { /* noop */ }
+}
+
+/* ============================================================
    PROVIDER
    ============================================================ */
 
@@ -119,6 +144,7 @@ export function StoreProvider({ children }) {
   const [theme, setTheme] = useState(DEFAULT_SITE_SETTINGS.theme);
   const [fontPair, setFontPair] = useState(DEFAULT_SITE_SETTINGS.font_pair);
   const [cart, setCart] = useState(() => getStoredCart());
+  const [buyNow, setBuyNow] = useState(() => loadBuyNow());
   // Default to NO coupon. Automatic discount removed 2026-10-19.
   // Phase 3 will add GM-approved coupons via admin backend —
   // only then will discounts apply, and only when GM activates them.
@@ -262,6 +288,17 @@ export function StoreProvider({ children }) {
     clearStoredCart();
   };
 
+  /* ---------- buy now (see BUY NOW above) ---------- */
+  const startBuyNow = (sku, qty = 1) => {
+    const item = { sku, qty: Math.max(1, Number(qty) || 1) };
+    storeBuyNow(item);
+    setBuyNow(item);
+  };
+  const clearBuyNow = () => {
+    storeBuyNow(null);
+    setBuyNow(null);
+  };
+
   /* ---------- wishlist ---------- */
   const toggleWishlist = (sku) => {
     setWishlist((w) => (w.includes(sku) ? w.filter((s) => s !== sku) : [sku, ...w]));
@@ -308,8 +345,8 @@ export function StoreProvider({ children }) {
   const couponDiscount = (subtotal) => (coupon === SITE.welcomeCoupon.code
     ? Math.round((subtotal * SITE.welcomeCoupon.percent) / 100)
     : 0);
-  const totals = useMemo(() => {
-    const paidLines = cart.filter((i) => !i.isGift);
+  const linesTotals = (lines) => {
+    const paidLines = lines.filter((i) => !i.isGift);
     const subtotal = paidLines.reduce(
       (s, i) => s + (snapshotBySku(i.sku)?.price ?? 0) * i.qty,
       0
@@ -321,8 +358,20 @@ export function StoreProvider({ children }) {
     const installationFee = 0;
     const grand = subtotal - discount + deliveryFee + installationFee;
     return { subtotal, discount, deliveryFee, installationFee, grand };
+  };
+  const totals = useMemo(() => linesTotals(cart),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [cart, coupon, catalogVersion]);
+    [cart, coupon, catalogVersion]);
+
+  /* The buy-now product as checkout lines, with its free gifts
+     (same reconcileGifts rules as the cart). */
+  const buyNowLines = useMemo(
+    () => (buyNow ? reconcileGifts([{ sku: buyNow.sku, qty: buyNow.qty }], productOffers) : []),
+    [buyNow, productOffers]
+  );
+  const buyNowTotals = useMemo(() => linesTotals(buyNowLines),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [buyNowLines, coupon, catalogVersion]);
 
   /* Count — EXCLUDES gifts. Shows "2 items" not "2 items + 2 free gifts" */
   const count = cart
@@ -353,9 +402,10 @@ export function StoreProvider({ children }) {
        · Warehouse can see what to physically include with the order
        · Receipt template can render gifts as separate FREE lines
   */
+  // source: "cart" (default) or "buynow" — which lines are being bought.
   const buildOrder = ({
     contact, address, payment, installation, paystackRef = null, paymentStatus = "unpaid",
-    deliveryFee: deliveryFeeOverride = null, orderId = null,
+    deliveryFee: deliveryFeeOverride = null, orderId = null, source = "cart",
   }) => {
     // Retrying payment reuses the same order id (and its original
     // createdAt) so a failed attempt doesn't leave a duplicate order.
@@ -363,7 +413,8 @@ export function StoreProvider({ children }) {
     const id = orderId || generateOrderId();
     // Store the canonical "0803…" form (same as customers.phone).
     contact = { ...contact, phone: normaliseNgPhone(contact.phone) || contact.phone };
-    const items = cart.map((i) => {
+    const lines = source === "buynow" ? buyNowLines : cart;
+    const items = lines.map((i) => {
       if (i.isGift) {
         return {
           sku: i.sku,
@@ -457,6 +508,10 @@ export function StoreProvider({ children }) {
         });
       });
 
+  // After a successful order: a buy-now order clears only the buy-now
+  // item, so the customer's cart stays exactly as it was.
+  const clearCheckedOut = (source) => (source === "buynow" ? clearBuyNow() : clearCart());
+
   // Pay on Delivery (and any flow that doesn't go through Paystack).
   // Throws OrderTotalError (nothing saved) if the order can't be priced.
   // Write-through cache: localStorage now, Supabase in background.
@@ -464,7 +519,7 @@ export function StoreProvider({ children }) {
   const placeOrder = ({ paystackRef: _ignoredRef, paymentStatus: _ignoredStatus, ...args }) => {
     const order = buildOrder({ ...args, paystackRef: null, paymentStatus: "unpaid" });
     saveOrder(order);
-    clearCart();
+    clearCheckedOut(args.source);
 
     // Order emails (customer confirmation + admin notification) go
     // out once the order is in Supabase: the send-email function loads
@@ -492,7 +547,7 @@ export function StoreProvider({ children }) {
     if (!res.ok) return { ok: false, error: res.error };
 
     saveOrder({ ...order, syncedAt: new Date().toISOString() });
-    clearCart();
+    clearCheckedOut(args.source);
     sendOrderEmails(order.id).catch((err) => {
       // eslint-disable-next-line no-console
       console.warn("[convertPendingOrderToPod] email dispatch error:", err);
@@ -519,15 +574,18 @@ export function StoreProvider({ children }) {
 
   // Called only after the SERVER has confirmed payment with Paystack.
   // Mirrors the server's answer (paid + confirmed) into the local cache
-  // for display and fires the order emails. Checkout also clears the
-  // cart; "Pay now" on the order page passes clearCart: false and the
-  // order it loaded (it may not be in this device's localStorage).
-  const completePaidOrder = (orderId, { clearCart: shouldClearCart = true, order: fallback = null } = {}) => {
+  // for display and fires the order emails. Checkout also clears what
+  // was bought (the cart, or the buy-now item when source is "buynow");
+  // "Pay now" on the order page passes clearCart: false and the order
+  // it loaded (it may not be in this device's localStorage).
+  const completePaidOrder = (orderId, {
+    clearCart: shouldClearCart = true, order: fallback = null, source = "cart",
+  } = {}) => {
     const order = getOrder(orderId) || fallback;
     if (!order) return;
     const paid = { ...order, paymentStatus: "paid", status: ORDER_STATUS.CONFIRMED };
     saveOrder(paid);
-    if (shouldClearCart) clearCart();
+    if (shouldClearCart) clearCheckedOut(source);
     sendOrderEmails(orderId).catch((err) => {
       // eslint-disable-next-line no-console
       console.warn("[completePaidOrder] email dispatch error:", err);
@@ -539,6 +597,7 @@ export function StoreProvider({ children }) {
       value={{
         theme, setTheme, fontPair, saveAppearance,
         cart, addToCart, setQty, removeFromCart, clearCart,
+        buyNow, buyNowLines, buyNowTotals, startBuyNow, clearBuyNow,
         coupon, setCoupon, totals, count,
         toast, dismissToast,
         callConfirm, requestCall, cancelCall, confirmCall,

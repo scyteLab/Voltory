@@ -370,6 +370,37 @@
 }
 .pdp__add:hover { filter: brightness(1.08); }
 .pdp__add:disabled { background: #c7d0db; cursor: not-allowed; }
+/* Buy Now: strong secondary next to the navy Add to Cart. */
+.pdp__buynow {
+  flex: 1;
+  background: #fff;
+  color: var(--p);
+  border: 2px solid var(--p);
+  border-radius: 10px;
+  font-weight: 800;
+  font-size: 14.5px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 0 20px;
+  transition: background 0.15s, color 0.15s;
+}
+.pdp__buynow:hover { background: var(--p-soft); }
+.pdp__buynow:disabled { color: #9aa6b5; border-color: #c7d0db; background: #fff; cursor: not-allowed; }
+@media (max-width: 600px) {
+  /* [qty][♡][⇄] on top, Add to Cart + Buy Now side by side below. */
+  .pdp__buyrow { flex-wrap: wrap; row-gap: 0; }
+  .pdp__buyrow::after { content: ""; order: 1; flex-basis: 100%; height: 0; } /* line break */
+  .pdp__qty { margin-right: auto; }
+  .pdp__add, .pdp__buynow {
+    order: 2;
+    flex: 1 1 calc(50% - 5px);
+    min-height: 48px;
+    margin-top: 10px;
+    padding: 0 12px;
+  }
+}
 .pdp__wish {
   width: 46px;
   border: 1.5px solid var(--line);

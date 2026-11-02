@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import {
   BadgeCheck, ChevronRight, FileBadge, Heart, Home as HomeIcon,
-  MessageCircle, Minus, Plus, Repeat, ShieldCheck, ShoppingCart, Truck, Wrench,
+  MessageCircle, Minus, Plus, Repeat, ShieldCheck, ShoppingCart, Truck, Wrench, Zap,
 } from "lucide-react";
 import { RECOMMENDED_ADDON } from "../data/products.js";
 import { useCatalog } from "../context/CatalogContext.jsx";
@@ -10,7 +10,7 @@ import { snapshotCategoryById } from "../lib/catalogSnapshot.js";
 import { naira, discountPct, stockState } from "../utils/format.js";
 import { addRecentlyViewed } from "../utils/recentlyViewed.js";
 import { useStore } from "../context/StoreContext.jsx";
-import { SITE } from "../config/site.js";
+import { productHelpMessage, whatsappUrl } from "../utils/whatsappMessage.js";
 import { MAX_COMPARE } from "../utils/comparison.js";
 import RatingStars from "../components/product/RatingStars.jsx";
 import Gallery from "../components/product/Gallery.jsx";
@@ -86,7 +86,7 @@ export default function Product() {
   const navigate = useNavigate();
   const product = bySlug(slug);
   const {
-    addToCart, toggleWishlist, isInWishlist,
+    addToCart, startBuyNow, toggleWishlist, isInWishlist,
     toggleCompare, isInComparison,
   } = useStore();
   const [qty, setQty] = useState(1);
@@ -116,6 +116,11 @@ export default function Product() {
   const offer = getOfferBySku ? getOfferBySku(product.sku) : null;
 
   const handleAdd = () => addToCart(product.sku, qty);
+  // Checks out just this product at this quantity; the cart is untouched.
+  const handleBuyNow = () => {
+    startBuyNow(product.sku, qty);
+    navigate("/checkout?mode=buynow");
+  };
   const handleAddBundle = () => {
     addToCart(product.sku, qty);
     if (addon) addToCart(addon.sku, 1);
@@ -216,7 +221,10 @@ export default function Product() {
               </button>
             </div>
             <button className="pdp__add" onClick={handleAdd} disabled={st === "out"}>
-              <ShoppingCart size={16} /> Add to Cart
+              <ShoppingCart size={16} /> {st === "out" ? "Out of stock" : "Add to Cart"}
+            </button>
+            <button className="pdp__buynow" onClick={handleBuyNow} disabled={st === "out"}>
+              <Zap size={16} /> {st === "out" ? "Out of stock" : "Buy Now"}
             </button>
             <button
               className={"pdp__wish" + (wished ? " pdp__wish--on" : "")}
@@ -238,7 +246,7 @@ export default function Product() {
             </button>
           </div>
 
-          <a className="pdp__wa" href={SITE.whatsappLink} target="_blank" rel="noreferrer">
+          <a className="pdp__wa" href={whatsappUrl(productHelpMessage(product))} target="_blank" rel="noreferrer">
             <span className="pdp__wa-icon"><MessageCircle size={18} /></span>
             <span>
               <b>Need help choosing?</b>

@@ -5,9 +5,11 @@ import { useCatalog } from "../../context/CatalogContext.jsx";
 import { useCustomerAuth } from "../../context/AuthContext.jsx";
 import { naira } from "../../utils/format.js";
 import {
-  saveQuote, buildWhatsappMessage, buildWhatsappUrl,
+  saveQuote,
 } from "../../lib/whatsappQuotesClient.js";
 import { checkPhoneField, formatNgPhone, phoneBlur } from "../../utils/phone.js";
+import { cartMessage, whatsappUrl } from "../../utils/whatsappMessage.js";
+import { useCustomerAddresses } from "../../hooks/useCustomerAddresses.js";
 
 /**
  * SendToWhatsappModal
@@ -31,6 +33,11 @@ export default function SendToWhatsappModal({ onClose }) {
 
   // Pre-fill from signed-in customer if any, shown as "0805 085 4444"
   const displayPhone = customer?.phone ? formatNgPhone(customer.phone) : "";
+
+  // Delivery area for the message: the signed-in customer's default address.
+  const { addresses } = useCustomerAddresses();
+  const defaultAddress = addresses.find((a) => a.is_default) || addresses[0] || null;
+  const area = defaultAddress ? [defaultAddress.lga, defaultAddress.state].filter(Boolean).join(", ") : "";
 
   const [name, setName]   = useState(customer?.name || "");
   const [phone, setPhone] = useState(displayPhone);
@@ -67,13 +74,20 @@ export default function SendToWhatsappModal({ onClose }) {
       return;
     }
 
-    const message = buildWhatsappMessage({
-      quoteId: res.quoteId,
+    // Same lines and quote id as the saved whatsapp_quotes record.
+    const message = cartMessage({
+      items: res.items.map((i) => ({
+        name: i.product_name, sku: i.sku, qty: i.qty, unitPrice: i.unit_price,
+      })),
+      gifts: cart
+        .filter((l) => l.isGift)
+        .map((l) => ({ name: l.giftDescription || l.offerTitle || "Promotional gift", giftFor: l.giftFor })),
       subtotal: res.subtotal,
-      items: res.items,
-      contactName: name,
+      quoteRef: res.quoteId,
+      customerName: name.trim(),
+      area,
     });
-    const url = buildWhatsappUrl(message);
+    const url = whatsappUrl(message);
 
     // Open in new tab / handoff to WhatsApp app
     window.open(url, "_blank", "noopener,noreferrer");

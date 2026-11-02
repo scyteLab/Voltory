@@ -17,6 +17,9 @@ export const SITE = {
   // Set to -1 to show the bolt before the name instead (works for any rename).
   logoBoltIndex: -1,
 
+  // Public site address, used in shared links (e.g. WhatsApp messages).
+  siteUrl: "https://mynaven.com",
+
   // ---- Contact ----
   phone: "+234 906 4998 654",
   supportEmail: "support@mynaven.com",

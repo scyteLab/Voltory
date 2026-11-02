@@ -476,6 +476,22 @@
   color: var(--mut);
 }
 
+/* "Buy Now" checkout banner */
+.ck-buynow {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin: -6px 0 16px;
+  padding: 11px 14px;
+  border: 1px solid var(--p-line);
+  background: var(--p-soft);
+  border-radius: 10px;
+  font-size: 13.5px;
+  color: var(--ink);
+}
+.ck-buynow svg { flex-shrink: 0; margin-top: 2px; color: var(--p); }
+.ck-buynow a { color: var(--p); font-weight: 700; text-decoration: underline; white-space: nowrap; }
+
 /* payment options */
 .ck-pay {
   display: flex;

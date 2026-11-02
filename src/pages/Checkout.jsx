@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react";
-import { Link, Navigate, useNavigate } from "react-router-dom";
+import { Link, Navigate, useNavigate, useSearchParams } from "react-router-dom";
 import {
   BadgeCheck, Banknote, ChevronRight, CreditCard, Gift, Home as HomeIcon,
-  Info, Lock, MapPin, Phone, Smartphone as PhoneIcon, User, Wrench,
+  Info, Lock, MapPin, Phone, Smartphone as PhoneIcon, User, Wrench, Zap,
 } from "lucide-react";
 import { useStore } from "../context/StoreContext.jsx";
 import { useCatalog } from "../context/CatalogContext.jsx";
@@ -41,8 +41,17 @@ const POD_LIMIT_MESSAGE =
 
 export default function Checkout() {
   const {
-    cart, totals, placeOrder, createPendingPaymentOrder, completePaidOrder, convertPendingOrderToPod, requestCall,
+    cart: storeCart, totals: cartTotals, buyNow, buyNowLines, buyNowTotals,
+    placeOrder, createPendingPaymentOrder, completePaidOrder, convertPendingOrderToPod, requestCall,
   } = useStore();
+  // /checkout?mode=buynow checks out only the "Buy Now" product; the
+  // cart is left untouched. Plain /checkout (or no buy-now item) is
+  // the regular cart.
+  const [searchParams] = useSearchParams();
+  const buyNowMode = searchParams.get("mode") === "buynow" && Boolean(buyNow) && buyNowLines.length > 0;
+  const source = buyNowMode ? "buynow" : "cart";
+  const cart = buyNowMode ? buyNowLines : storeCart;
+  const totals = buyNowMode ? buyNowTotals : cartTotals;
   const { customer } = useCustomerAuth();
   const { bySku } = useCatalog();
   const { get: getCheckoutSetting } = useCheckoutSettings();
@@ -212,7 +221,7 @@ export default function Checkout() {
 
       // 1. Create (or refresh) the order in Supabase as 'pending' FIRST.
       const created = await createPendingPaymentOrder({
-        contact, address, payment, installation, deliveryFee,
+        contact, address, payment, installation, deliveryFee, source,
         orderId, paystackRef: reference,
       });
       if (!created.ok) {
@@ -251,7 +260,7 @@ export default function Checkout() {
         //    which asks Paystack and is the only thing that marks paid.
         const { paymentStatus } = await verifyPaystackPayment(result.ref);
         if (paymentStatus === "paid") {
-          completePaidOrder(orderId);
+          completePaidOrder(orderId, { source });
           navigate(`/order/${orderId}`);
           return;
         }
@@ -275,11 +284,11 @@ export default function Checkout() {
     if (pendingOrder && pendingOrder.grand === grand) {
       try {
         const res = await convertPendingOrderToPod({
-          contact, address, payment, installation, deliveryFee,
+          contact, address, payment, installation, deliveryFee, source,
           orderId: pendingOrder.id,
         });
         if (res.paid) {
-          completePaidOrder(pendingOrder.id);
+          completePaidOrder(pendingOrder.id, { source });
           navigate(`/order/${pendingOrder.id}`);
           return;
         }
@@ -299,7 +308,7 @@ export default function Checkout() {
     setTimeout(() => {
       try {
         const id = placeOrder({
-          contact, address, payment, installation,
+          contact, address, payment, installation, source,
           deliveryFee,
         });
         navigate(`/order/${id}`);
@@ -324,6 +333,16 @@ export default function Checkout() {
       </nav>
 
       <h1 className="checkout__title">Checkout</h1>
+
+      {buyNowMode && (
+        <p className="ck-buynow" role="status">
+          <Zap size={15} />
+          <span>
+            Buying now: <b>{bySku(buyNow.sku)?.name || buyNow.sku}</b>. Your cart items are saved for later.{" "}
+            <Link to="/cart">Go to cart</Link>
+          </span>
+        </p>
+      )}
 
       <form className="checkout" onSubmit={onSubmit} noValidate>
         <div className="checkout__main">

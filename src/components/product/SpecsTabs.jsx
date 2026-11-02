@@ -7,6 +7,7 @@ import { naira } from "../../utils/format.js";
 import { SITE } from "../../config/site.js";
 import RatingStars from "./RatingStars.jsx";
 import { fetchProductAttributes, attributesToSpecRows } from "../../lib/productAttributesClient.js";
+import { productHelpMessage, productReviewMessage, whatsappUrl } from "../../utils/whatsappMessage.js";
 
 /**
  * SpecsTabs — tab strip + panels below the buy box.
@@ -229,24 +230,10 @@ function WarrantyPanel({ product }) {
 }
 
 /* ============================================================
-   WhatsApp CTA helpers
+   WhatsApp CTA helpers (messages: utils/whatsappMessage.js)
    ============================================================ */
-function whatsappUrl(topic, product) {
-  const base = SITE.whatsappLink || "";
-  const message = topic === "question"
-    ? `Hi NAVEN, I have a question about "${product.name}" (SKU: ${product.sku}). Could you help?`
-    : `Hi NAVEN, I recently bought "${product.name}" (SKU: ${product.sku}) and I'd like to share a review.`;
-
-  const encoded = encodeURIComponent(message);
-
-  if (base.includes("?")) {
-    return `${base}&text=${encoded}`;
-  }
-  if (base.startsWith("https://wa.me/") || base.startsWith("http://wa.me/")) {
-    return `${base}?text=${encoded}`;
-  }
-  const phone = String(base).replace(/[^0-9]/g, "");
-  return phone ? `https://wa.me/${phone}?text=${encoded}` : base;
+function productWhatsappUrl(topic, product) {
+  return whatsappUrl(topic === "question" ? productHelpMessage(product) : productReviewMessage(product));
 }
 
 /* ---------- deterministic mock review generator ---------- */
@@ -378,7 +365,7 @@ function ReviewsPanel({ product }) {
 
   const breakdown = generateRatingBreakdown(rating, total);
   const mockReviews = generateMockReviews(product.sku, rating, total);
-  const reviewLink = whatsappUrl("review", product);
+  const reviewLink = productWhatsappUrl("review", product);
 
   return (
     <div className="reviews">
@@ -464,7 +451,7 @@ function ReviewsPanel({ product }) {
 }
 
 function QAPanel({ product }) {
-  const questionLink = whatsappUrl("question", product);
+  const questionLink = productWhatsappUrl("question", product);
   const count = product.questions ?? 0;
 
   return (
