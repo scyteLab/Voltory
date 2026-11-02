@@ -4,6 +4,7 @@ import {
   ChevronDown, Heart, LogOut, MapPin, Package, User,
 } from "lucide-react";
 import { useCustomerAuth } from "../../context/AuthContext.jsx";
+import { formatNgPhone } from "../../utils/phone.js";
 
 /**
  * Account dropdown in the main nav. Shown only when the user is
@@ -31,9 +32,7 @@ export default function AccountMenu() {
 
   const firstName = (customer.name || "").split(/\s+/)[0] || "there";
   // Phone in DB is +2348012345678; show as 08012345678 for familiarity
-  const displayPhone = (customer.phone || "").startsWith("+234")
-    ? "0" + customer.phone.slice(4)
-    : customer.phone;
+  const displayPhone = formatNgPhone(customer.phone || "");
 
   async function handleSignOut() {
     await signOut();

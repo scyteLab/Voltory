@@ -10,6 +10,7 @@ import { SITE } from "../config/site.js";
 import ReceiptTemplate from "../components/receipt/ReceiptTemplate.jsx";
 import { downloadReceiptAsPdf } from "../lib/receiptPdf.js";
 import SEOHead from "../components/seo/SEOHead.jsx";
+import { checkPhoneField, phoneBlur } from "../utils/phone.js";
 
 /**
  * Receipt \u2014 /receipt/:id
@@ -67,7 +68,12 @@ export default function Receipt() {
       setError("Please enter the phone number used at checkout.");
       return;
     }
-    doLookup(phoneInput.trim());
+    const phoneRes = checkPhoneField(phoneInput);
+    if (!phoneRes.ok) {
+      setError(phoneRes.error);
+      return;
+    }
+    doLookup(phoneRes.phone);
   }
 
   function handlePrint() {
@@ -112,9 +118,11 @@ export default function Receipt() {
               <span className="auth-input">
                 <input
                   type="tel"
-                  inputMode="numeric"
+                  inputMode="tel"
                   value={phoneInput}
                   onChange={(e) => setPhoneInput(e.target.value)}
+                  onBlur={() => phoneBlur(phoneInput, setPhoneInput, setError)}
+                  maxLength={20}
                   placeholder="0803 123 4567"
                   autoComplete="tel"
                   disabled={loading}

@@ -17,6 +17,7 @@ import {
 import { generateOrderId } from "../utils/orders.js";
 import { naira } from "../utils/format.js";
 import { SITE } from "../config/site.js";
+import { checkPhoneField, formatNgPhone } from "../utils/phone.js";
 
 const NIGERIAN_STATES = [
   "Lagos", "Abuja FCT", "Rivers", "Oyo", "Kano", "Kaduna", "Ogun",
@@ -24,12 +25,19 @@ const NIGERIAN_STATES = [
   "Plateau", "Bayelsa", "Imo", "Ondo", "Osun", "Other",
 ];
 
+// Display order. Bank Transfer is the default for every new checkout;
+// the choice is never remembered between visits.
 const PAYMENT_METHODS = [
-  { id: "card", icon: CreditCard, label: "Pay with Card", note: "Visa, Mastercard, Verve — secured by Paystack" },
   { id: "transfer", icon: Banknote, label: "Bank Transfer", note: "Transfer to a one-time account number" },
-  { id: "pod", icon: HomeIcon, label: "Pay on Delivery", note: "OTP-verified · Lagos zones only" },
+  { id: "card", icon: CreditCard, label: "Pay with Card", note: "Visa, Mastercard, Verve — secured by Paystack" },
   { id: "ussd", icon: PhoneIcon, label: "USSD", note: "Dial a code from your bank app" },
+  { id: "pod", icon: HomeIcon, label: "Pay on Delivery", note: "OTP-verified · Lagos zones only" },
 ];
+
+const POD_LIMIT = SITE.podMaxOrderTotal;
+const POD_LIMIT_MESSAGE =
+  `Pay on Delivery is available for orders up to ${naira(POD_LIMIT)}. ` +
+  "For this order, please pay by Bank Transfer, Card or USSD. Payment is processed securely by Paystack.";
 
 export default function Checkout() {
   const {
@@ -40,9 +48,7 @@ export default function Checkout() {
   const { get: getCheckoutSetting } = useCheckoutSettings();
   const navigate = useNavigate();
 
-  const prefillPhone = (customer?.phone || "").startsWith("+234")
-    ? "0" + customer.phone.slice(4)
-    : (customer?.phone || "");
+  const prefillPhone = customer?.phone ? formatNgPhone(customer.phone) : "";
 
   const [contact, setContact] = useState({
     name:  customer?.name  || "",
@@ -63,7 +69,10 @@ export default function Checkout() {
   });
   // When Paystack is not configured, only POD is available — default to it.
   const paystackReady = isPaystackConfigured();
-  const [payment, setPayment] = useState(paystackReady ? "card" : "pod");
+  const [payment, setPayment] = useState(paystackReady ? "transfer" : "pod");
+  // Inline Pay-on-Delivery limit message; bumping `pulse` replays its
+  // highlight when the disabled option is clicked again.
+  const [podNotice, setPodNotice] = useState({ show: false, pulse: 0 });
   const [installation, setInstallation] = useState(false);
   const [errors, setErrors] = useState({});
   const [submitting, setSubmitting] = useState(false);
@@ -79,6 +88,37 @@ export default function Checkout() {
   const freeDeliveryThreshold = getCheckoutSetting("free_delivery_threshold_ngn");
   const deliveryFee = 0;
   const grand = totals.subtotal - totals.discount + deliveryFee + installFee;
+  const podOverLimit = grand > POD_LIMIT;
+
+  function showPodNotice() {
+    setPodNotice((n) => ({ show: true, pulse: n.pulse + 1 }));
+  }
+
+  // Total rose above the limit (cart change, installation added) while
+  // Pay on Delivery was selected: move to Bank Transfer and explain why.
+  useEffect(() => {
+    if (!podOverLimit) {
+      setPodNotice((n) => (n.show ? { ...n, show: false } : n));
+      return;
+    }
+    if (payment === "pod") {
+      if (paystackReady) setPayment("transfer");
+      showPodNotice();
+    }
+  }, [podOverLimit, payment, paystackReady]);
+
+  // Phone is checked when the field loses focus (and on submit), then
+  // tidied to "0805 085 4444".
+  function onPhoneBlur() {
+    if (!contact.phone.trim()) return;
+    const res = checkPhoneField(contact.phone);
+    if (res.ok) {
+      setContact((c) => ({ ...c, phone: res.display }));
+      setErrors((e) => ({ ...e, phone: undefined }));
+    } else {
+      setErrors((e) => ({ ...e, phone: res.error }));
+    }
+  }
 
   useEffect(() => {
     if (pickerInitialised) return;
@@ -102,7 +142,7 @@ export default function Checkout() {
       setContact((c) => ({
         ...c,
         name:  picked.name  || c.name,
-        phone: picked.phone || c.phone,
+        phone: picked.phone ? formatNgPhone(picked.phone) : c.phone,
       }));
     }
   }, [pickedAddressId, savedAddresses]);
@@ -112,7 +152,8 @@ export default function Checkout() {
   function validate() {
     const e = {};
     if (!contact.name.trim()) e.name = "Full name required";
-    if (!/^0[789][01]\d{8}$/.test(contact.phone.replace(/\s/g, ""))) e.phone = "Enter a valid Nigerian phone number";
+    const phoneRes = checkPhoneField(contact.phone);
+    if (!phoneRes.ok) e.phone = phoneRes.error;
     if (contact.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(contact.email)) e.email = "Invalid email format";
     if (!pickedAddressId) {
       if (!address.lga.trim()) e.lga = "LGA / City required";
@@ -133,6 +174,10 @@ export default function Checkout() {
     }
     // Never create an order we can't charge for. buildOrder repeats
     // this check against the saved lines; this one fails fast.
+    if (payment === "pod" && podOverLimit) {
+      showPodNotice();
+      return;
+    }
     if (!(grand > 0)) {
       setPaymentNotice("");
       setErrors({ payment: "Your order total is ₦0, so we can't place it. Please refresh the page and try again, or contact support." });
@@ -144,7 +189,7 @@ export default function Checkout() {
       createSavedAddress({
         label: "",
         name:  contact.name,
-        phone: contact.phone,
+        phone: checkPhoneField(contact.phone).phone || contact.phone,
         state: address.state,
         lga:   address.lga,
         street: address.street,
@@ -305,7 +350,9 @@ export default function Checkout() {
                   type="tel"
                   value={contact.phone}
                   onChange={(e) => setContact({ ...contact, phone: e.target.value })}
+                  onBlur={onPhoneBlur}
                   placeholder="0803 123 4567"
+                  maxLength={20}
                   inputMode="tel"
                   autoComplete="tel"
                 />
@@ -410,32 +457,61 @@ export default function Checkout() {
             <div className="ck-pay">
               {PAYMENT_METHODS
                 .filter((m) => paystackReady || m.id === "pod")
-                .map((m) => (
-                <label key={m.id} className={"ck-pay__opt" + (payment === m.id ? " ck-pay__opt--on" : "")}>
-                  <input
-                    type="radio"
-                    name="payment"
-                    value={m.id}
-                    checked={payment === m.id}
-                    onChange={() => setPayment(m.id)}
-                  />
-                  <span className="ck-pay__icon"><m.icon size={20} /></span>
-                  <span>
-                    <b>{m.label}</b>
-                    <small>{m.note}</small>
-                  </span>
-                </label>
-              ))}
+                .map((m) => {
+                  const disabled = m.id === "pod" && podOverLimit;
+                  return (
+                    <div key={m.id}>
+                      <label
+                        className={
+                          "ck-pay__opt"
+                          + (payment === m.id ? " ck-pay__opt--on" : "")
+                          + (disabled ? " ck-pay__opt--disabled" : "")
+                        }
+                        aria-disabled={disabled || undefined}
+                        onClick={disabled ? (e) => { e.preventDefault(); showPodNotice(); } : undefined}
+                      >
+                        <input
+                          type="radio"
+                          name="payment"
+                          value={m.id}
+                          checked={payment === m.id}
+                          disabled={disabled}
+                          onChange={() => setPayment(m.id)}
+                        />
+                        <span className="ck-pay__icon"><m.icon size={20} /></span>
+                        <span>
+                          <b>{m.label}</b>
+                          <small>{m.note}</small>
+                          {disabled && (
+                            <small className="ck-pay__limit">Not available for orders above {naira(POD_LIMIT)}</small>
+                          )}
+                        </span>
+                      </label>
+                      {disabled && podNotice.show && (
+                        <p
+                          key={podNotice.pulse}
+                          className={"ck-pay__notice" + (podNotice.pulse > 1 ? " ck-pay__notice--pulse" : "")}
+                          role="status"
+                        >
+                          <Info size={14} /> {POD_LIMIT_MESSAGE}
+                        </p>
+                      )}
+                    </div>
+                  );
+                })}
             </div>
 
             {!paystackReady && (
               <p className="ck-card__hint" style={{ marginTop: 12 }}>
-                <Info size={13} /> Online payment (Card, Bank Transfer, USSD) is coming soon. For now, please pay on delivery.
+                <Info size={13} />{" "}
+                {podOverLimit
+                  ? `Online payment isn't available yet, and Pay on Delivery is limited to orders up to ${naira(POD_LIMIT)}. Please contact us on WhatsApp to complete this order.`
+                  : "Online payment (Card, Bank Transfer, USSD) is coming soon. For now, please pay on delivery."}
               </p>
             )}
 
             <p className="ck-card__hint" style={{ marginTop: 16 }}>
-              <Lock size={13} /> All transactions are encrypted. We never store your card details.
+              <Lock size={13} /> You'll complete payment on Paystack's secure page. NAVEN never sees or stores your card details.
             </p>
           </section>
         </div>

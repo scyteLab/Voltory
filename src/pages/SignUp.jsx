@@ -4,6 +4,7 @@ import { Eye, EyeOff, KeyRound, Mail, Phone, User } from "lucide-react";
 import { useCustomerAuth } from "../context/AuthContext.jsx";
 import AuthShell from "../components/auth/AuthShell.jsx";
 import SEOHead from "../components/seo/SEOHead.jsx";
+import { checkPhoneField, phoneBlur } from "../utils/phone.js";
 
 /**
  * SignUp  \u2014  /signup
@@ -19,6 +20,7 @@ export default function SignUp() {
 
   const [name, setName]             = useState("");
   const [phone, setPhone]           = useState("");
+  const [phoneError, setPhoneError] = useState(null);
   const [email, setEmail]           = useState("");
   const [password, setPassword]     = useState("");
   const [confirm, setConfirm]       = useState("");
@@ -31,13 +33,19 @@ export default function SignUp() {
     e.preventDefault();
     setError(null);
 
+    const phoneRes = checkPhoneField(phone);
+    if (!phoneRes.ok) {
+      setPhoneError(phoneRes.error);
+      return;
+    }
+
     if (password !== confirm) {
       setError("Passwords don't match.");
       return;
     }
 
     setSubmitting(true);
-    const res = await signUp({ phone, password, name, email: email || null });
+    const res = await signUp({ phone: phoneRes.phone, password, name, email: email || null });
     setSubmitting(false);
 
     if (!res.ok) {
@@ -98,13 +106,16 @@ export default function SignUp() {
             <div className="ashell-field__input">
               <Phone size={16} />
               <input
-                id="phone" type="tel" inputMode="numeric" autoComplete="tel"
+                id="phone" type="tel" inputMode="tel" autoComplete="tel"
                 placeholder="0803 123 4567"
                 value={phone}
-                onChange={(e) => setPhone(e.target.value)}
+                onChange={(e) => { setPhone(e.target.value); setPhoneError(null); }}
+                onBlur={() => phoneBlur(phone, setPhone, setPhoneError)}
+                maxLength={20}
                 disabled={submitting}
               />
             </div>
+            {phoneError && <small className="ashell-field__error" role="alert">{phoneError}</small>}
           </div>
 
           <div className="ashell-field">

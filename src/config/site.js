@@ -28,6 +28,10 @@ export const SITE = {
   currencySymbol: "₦",
   freeDeliveryOver: 150000,
   installationFee: 25000,
+  // Pay on Delivery is offered only up to this grand total (₦).
+  // Also enforced server-side: order-switch-pod (env POD_MAX_ORDER_TOTAL)
+  // and supabase/pod_limit_guard.sql — keep all three in step.
+  podMaxOrderTotal: 450000,
   welcomeCoupon: { code: "WELCOME10", percent: 10 },
 
   // ---- Top utility bar (right side links) ----

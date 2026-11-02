@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { MapPin, X } from "lucide-react";
+import { checkPhoneField, formatNgPhone, phoneBlur } from "../../utils/phone.js";
 
 const NIGERIAN_STATES = [
   "Lagos", "Abuja FCT", "Rivers", "Oyo", "Kano", "Kaduna", "Ogun",
@@ -25,7 +26,8 @@ export default function AddressFormModal({ address, defaultName, defaultPhone, o
   const [form, setForm] = useState({
     label:      address?.label      || "",
     name:       address?.name       || defaultName  || "",
-    phone:      address?.phone      || defaultPhone || "",
+    // Shown tidied ("0805 085 4444"); saved in canonical form.
+    phone:      formatNgPhone(address?.phone || defaultPhone || ""),
     state:      address?.state      || "Lagos",
     lga:        address?.lga        || "",
     street:     address?.street     || "",
@@ -46,6 +48,8 @@ export default function AddressFormModal({ address, defaultName, defaultPhone, o
     if (!form.lga.trim()) e.lga = "LGA / City is required";
     if (!form.street.trim()) e.street = "Street address is required";
     else if (form.street.trim().length < 5) e.street = "Include a house number and street name";
+    const phoneRes = checkPhoneField(form.phone, { required: false });
+    if (!phoneRes.ok) e.phone = phoneRes.error;
     return e;
   }
 
@@ -57,7 +61,7 @@ export default function AddressFormModal({ address, defaultName, defaultPhone, o
 
     setSubmitting(true);
     setFormErr(null);
-    const res = await onSubmit(form);
+    const res = await onSubmit({ ...form, phone: checkPhoneField(form.phone, { required: false }).phone || "" });
     setSubmitting(false);
 
     if (!res?.ok) {
@@ -110,14 +114,24 @@ export default function AddressFormModal({ address, defaultName, defaultPhone, o
               />
             </label>
 
-            <label className="field field--full">
+            <label className={"field field--full" + (errors.phone ? " has-error" : "")}>
               <span className="field__label">Phone Number</span>
               <input
                 type="tel"
+                inputMode="tel"
+                autoComplete="tel"
+                maxLength={20}
                 value={form.phone}
-                onChange={(e) => set("phone", e.target.value)}
-                placeholder="080..."
+                onChange={(e) => { set("phone", e.target.value); setErrors((er) => ({ ...er, phone: undefined })); }}
+                onBlur={() => phoneBlur(
+                  form.phone,
+                  (v) => set("phone", v),
+                  (msg) => setErrors((er) => ({ ...er, phone: msg || undefined })),
+                  { required: false },
+                )}
+                placeholder="0803 123 4567"
               />
+              {errors.phone && <span className="field__error">{errors.phone}</span>}
             </label>
 
             <label className={"field" + (errors.state ? " has-error" : "")}>

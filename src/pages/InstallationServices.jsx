@@ -16,6 +16,7 @@ import { clip, makeReference, submitFormSubmission } from "../lib/publicFormsCli
 import { usePublicFormGuard } from "../hooks/usePublicFormGuard.js";
 import HoneypotField from "../components/ui/HoneypotField.jsx";
 import FormSendError from "../components/ui/FormSendError.jsx";
+import { checkPhoneField, phoneBlur } from "../utils/phone.js";
 import { naira } from "../utils/format.js";
 import Icon from "../components/ui/Icon.jsx";
 import Tagline from "../components/brand/Tagline.jsx";
@@ -68,8 +69,9 @@ export default function InstallationServices() {
     if (sending || guard.cooldownLeft > 0) return;
     const errs = {};
     if (!form.name.trim()) errs.name = "Your name is required";
-    const cleanedPhone = form.phone.replace(/\s/g, "");
-    if (!/^0[789][01]\d{8}$/.test(cleanedPhone)) errs.phone = "Enter a valid Nigerian phone number";
+    const phoneRes = checkPhoneField(form.phone);
+    const cleanedPhone = phoneRes.phone;
+    if (!phoneRes.ok) errs.phone = phoneRes.error;
     if (form.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) errs.email = "Invalid email format";
     if (!form.state) errs.state = "Select your state";
     if (!form.street.trim()) errs.street = "Street address is required";
@@ -312,6 +314,11 @@ export default function InstallationServices() {
                       inputMode="tel"
                       value={form.phone}
                       onChange={(e) => field("phone", e.target.value)}
+                      onBlur={() => phoneBlur(
+                        form.phone,
+                        (v) => setForm((f) => ({ ...f, phone: v })),
+                        (msg) => setErrors((er) => ({ ...er, phone: msg || undefined })),
+                      )}
                       placeholder="0803 123 4567"
                       maxLength={40}
                     />

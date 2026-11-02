@@ -7,6 +7,7 @@ import { naira } from "../../utils/format.js";
 import {
   saveQuote, buildWhatsappMessage, buildWhatsappUrl,
 } from "../../lib/whatsappQuotesClient.js";
+import { checkPhoneField, formatNgPhone, phoneBlur } from "../../utils/phone.js";
 
 /**
  * SendToWhatsappModal
@@ -28,10 +29,8 @@ export default function SendToWhatsappModal({ onClose }) {
   const { cart, totals } = useStore();
   const { bySku } = useCatalog();
 
-  // Pre-fill from signed-in customer if any; strip +234 for display
-  const displayPhone = (customer?.phone || "").startsWith("+234")
-    ? "0" + customer.phone.slice(4)
-    : (customer?.phone || "");
+  // Pre-fill from signed-in customer if any, shown as "0805 085 4444"
+  const displayPhone = customer?.phone ? formatNgPhone(customer.phone) : "";
 
   const [name, setName]   = useState(customer?.name || "");
   const [phone, setPhone] = useState(displayPhone);
@@ -50,15 +49,16 @@ export default function SendToWhatsappModal({ onClose }) {
     setError(null);
 
     if (!name.trim()) { setError("Please enter your name"); return; }
-    if (!/^0[789][01]\d{8}$/.test(phone.replace(/\s/g, ""))) {
-      setError("Enter a valid Nigerian phone number");
+    const phoneRes = checkPhoneField(phone);
+    if (!phoneRes.ok) {
+      setError(phoneRes.error);
       return;
     }
 
     setSubmitting(true);
     const res = await saveQuote({
       cart, bySku, customer,
-      contactName: name, contactPhone: phone, contactEmail: email,
+      contactName: name, contactPhone: phoneRes.phone, contactEmail: email,
     });
     setSubmitting(false);
 
@@ -119,8 +119,12 @@ export default function SendToWhatsappModal({ onClose }) {
                 id="swa-phone"
                 type="tel"
                 className="hb-input"
+                inputMode="tel"
+                autoComplete="tel"
+                maxLength={20}
                 value={phone}
                 onChange={(e) => setPhone(e.target.value)}
+                onBlur={() => phoneBlur(phone, setPhone, setError)}
                 placeholder="0803 123 4567"
                 required
               />

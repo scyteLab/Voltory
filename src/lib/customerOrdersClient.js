@@ -1,4 +1,5 @@
 import { supabase, supabaseConfigured } from "./supabaseClient.js";
+import { normaliseNgPhone } from "../utils/phone.js";
 import { listOrders as listLocalOrders, getOrder as getLocalOrder } from "../utils/orders.js";
 
 /**
@@ -90,10 +91,11 @@ function mergeOrders(remoteList, localList) {
    Existing: fetchCustomerOrders (UNCHANGED)
    ============================================================ */
 
-export async function fetchCustomerOrders({ customerId, phone }) {
-  const localPhone = phone || "";
+export async function fetchCustomerOrders({ customerId, phone: rawPhone }) {
+  // Orders store the canonical "0803…" form; a legacy account may hold "+234…".
+  const phone = rawPhone ? normalizePhone(rawPhone) : "";
   const local = listLocalOrders().filter(
-    (o) => !localPhone || (o.contact?.phone || "").replace(/\s/g, "") === localPhone.replace(/\s/g, "")
+    (o) => !phone || normalizePhone(o.contact?.phone) === phone
         || (o.customer_id && o.customer_id === customerId)
   );
 
@@ -182,10 +184,9 @@ const MAX_ATTEMPTS_PER_HOUR = 10;
 function normalizePhone(phone) {
   if (!phone) return "";
   const digits = String(phone).replace(/[^\d]/g, "");
-  if (digits.startsWith("234") && digits.length === 13) return "0" + digits.slice(3);
-  if (digits.startsWith("0")   && digits.length === 11) return digits;
-  if (digits.length === 10 && /^[7-9]/.test(digits))    return "0" + digits;
-  return digits;
+  // Canonical "08012345678" via utils/phone.js; stored values that
+  // aren't valid Nigerian mobiles fall back to bare digits.
+  return normaliseNgPhone(phone) || digits;
 }
 
 function normalizeOrderId(id) {

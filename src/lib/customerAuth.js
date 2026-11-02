@@ -1,5 +1,6 @@
 import bcrypt from "bcryptjs";
 import { supabase } from "./supabaseClient.js";
+import { normaliseNgPhone, validateNgPhone } from "../utils/phone.js";
 
 /**
  * customerAuth.js  \u2014  storefront customer auth (password-based)
@@ -58,13 +59,24 @@ async function comparePassword(plaintext, hash) {
   }
 }
 
+// Canonical "08012345678" (see utils/phone.js); "" when invalid.
 function normalizePhone(phone) {
-  if (!phone) return "";
-  const digits = String(phone).replace(/[^\d]/g, "");
-  // Convert +234... or 234... to 0-prefixed local form
-  if (digits.startsWith("234") && digits.length === 13) return "0" + digits.slice(3);
-  if (digits.startsWith("0")   && digits.length === 11) return digits;
-  return digits;
+  return normaliseNgPhone(phone) || "";
+}
+
+/**
+ * Look a customer up by canonical phone. A few older rows store
+ * "+234…", so both spellings are matched; a row with a password wins.
+ */
+async function findCustomerByPhone(phone, columns) {
+  const { data, error } = await supabase
+    .from("customers")
+    .select(columns)
+    .in("phone", [phone, "+234" + phone.slice(1)])
+    .limit(2);
+  if (error) return { data: null, error };
+  const rows = data || [];
+  return { data: rows.find((r) => r.password_hash) || rows[0] || null, error: null };
 }
 
 function validatePassword(pw) {
@@ -74,10 +86,8 @@ function validatePassword(pw) {
 }
 
 function validatePhone(phone) {
-  const normalized = normalizePhone(phone);
-  if (!normalized) return "Phone number is required.";
-  if (!/^0[7-9][01]\d{8}$/.test(normalized)) return "Please enter a valid Nigerian phone number.";
-  return null;
+  const res = validateNgPhone(phone);
+  return res.ok ? null : res.error;
 }
 
 /* ============================================================
@@ -98,11 +108,7 @@ export async function signUp({ phone, password, name, email }) {
 
   try {
     /* Check if phone already registered with a password */
-    const { data: existing, error: findErr } = await supabase
-      .from("customers")
-      .select("id, password_hash")
-      .eq("phone", normalizedPhone)
-      .maybeSingle();
+    const { data: existing, error: findErr } = await findCustomerByPhone(normalizedPhone, "id, password_hash");
 
     if (findErr) return { ok: false, error: findErr.message };
 
@@ -185,11 +191,7 @@ export async function signIn({ phone, password }) {
     }
 
     /* Fetch customer */
-    const { data: customer, error: findErr } = await supabase
-      .from("customers")
-      .select("*")
-      .eq("phone", normalizedPhone)
-      .maybeSingle();
+    const { data: customer, error: findErr } = await findCustomerByPhone(normalizedPhone, "*");
 
     if (findErr) return { ok: false, error: findErr.message };
 
@@ -274,11 +276,7 @@ export async function upsertFromCheckout({ phone, name, email }) {
   const cleanEmail = email?.trim() ? email.trim().toLowerCase() : null;
 
   try {
-    const { data: existing, error: findErr } = await supabase
-      .from("customers")
-      .select("id, name, email")
-      .eq("phone", normalizedPhone)
-      .maybeSingle();
+    const { data: existing, error: findErr } = await findCustomerByPhone(normalizedPhone, "id, name, email");
     if (findErr) return { ok: false, error: findErr.message, id: null };
 
     if (existing) {

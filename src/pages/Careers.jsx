@@ -16,6 +16,7 @@ import { clip, makeReference, submitFormSubmission } from "../lib/publicFormsCli
 import { usePublicFormGuard } from "../hooks/usePublicFormGuard.js";
 import HoneypotField from "../components/ui/HoneypotField.jsx";
 import FormSendError from "../components/ui/FormSendError.jsx";
+import { checkPhoneField, phoneBlur } from "../utils/phone.js";
 import Icon from "../components/ui/Icon.jsx";
 import SEOHead from "../components/seo/SEOHead.jsx";
 
@@ -71,10 +72,8 @@ export default function Careers() {
     if (!form.name.trim()) errs.name = "Your name is required";
     if (!form.email.trim()) errs.email = "Email is required so we can reply";
     else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) errs.email = "Invalid email format";
-    if (form.phone) {
-      const cleaned = form.phone.replace(/\s/g, "");
-      if (!/^0[789][01]\d{8}$/.test(cleaned)) errs.phone = "Phone format: 0803 123 4567";
-    }
+    const phoneRes = checkPhoneField(form.phone, { required: false });
+    if (!phoneRes.ok) errs.phone = phoneRes.error;
     if (!form.coverNote.trim()) errs.coverNote = "Tell us a bit about yourself — even one paragraph";
     else if (form.coverNote.trim().length < 30) errs.coverNote = "Please add a bit more (at least 30 characters)";
 
@@ -100,7 +99,7 @@ export default function Careers() {
       formType: "careers",
       name: form.name,
       email: form.email,
-      phone: form.phone.replace(/\s/g, ""),
+      phone: phoneRes.phone,
       data: {
         reference,
         role: roleTitle,
@@ -329,6 +328,12 @@ export default function Careers() {
                     inputMode="tel"
                     value={form.phone}
                     onChange={(e) => field("phone", e.target.value)}
+                    onBlur={() => phoneBlur(
+                      form.phone,
+                      (v) => setForm((f) => ({ ...f, phone: v })),
+                      (msg) => setErrors((er) => ({ ...er, phone: msg || undefined })),
+                      { required: false },
+                    )}
                     placeholder="0803 123 4567"
                     maxLength={40}
                   />

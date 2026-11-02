@@ -12,6 +12,7 @@ import { usePublicFormGuard } from "../hooks/usePublicFormGuard.js";
 import HoneypotField from "../components/ui/HoneypotField.jsx";
 import FormSendError from "../components/ui/FormSendError.jsx";
 import SEOHead from "../components/seo/SEOHead.jsx";
+import { checkPhoneField, phoneBlur } from "../utils/phone.js";
 
 const SUBJECTS = [
   "General enquiry",
@@ -49,13 +50,14 @@ export default function Contact() {
 
     const name = form.name.trim();
     const email = form.email.trim();
-    const phone = form.phone.trim();
+    const phoneRes = checkPhoneField(form.phone, { required: false });
+    const phone = phoneRes.ok ? phoneRes.phone || "" : form.phone.trim();
     const message = form.message.trim();
 
     const errs = {};
     if (!name) errs.name = "Your name is required";
     if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) errs.email = "Invalid email format";
-    if (phone && phone.replace(/\D/g, "").length < 7) errs.phone = "Enter a valid phone number";
+    if (!phoneRes.ok) errs.phone = phoneRes.error;
     if (!email && !phone) {
       errs.email = "Add an email or phone number so we can reply";
       errs.phone = "Add an email or phone number so we can reply";
@@ -261,6 +263,11 @@ export default function Contact() {
                     type="tel"
                     value={form.phone}
                     onChange={(e) => field("phone", e.target.value)}
+                    onBlur={() => phoneBlur(
+                      form.phone,
+                      (v) => setForm((f) => ({ ...f, phone: v })),
+                      (msg) => setErrors((er) => ({ ...er, phone: msg || undefined })),
+                    )}
                     placeholder="0803 000 0000"
                     autoComplete="tel"
                     maxLength={40}

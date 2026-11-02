@@ -12,6 +12,7 @@ import { clip, isValidEmail, submitFormSubmission } from "../lib/publicFormsClie
 import { usePublicFormGuard } from "../hooks/usePublicFormGuard.js";
 import HoneypotField from "../components/ui/HoneypotField.jsx";
 import FormSendError from "../components/ui/FormSendError.jsx";
+import { checkPhoneField, phoneBlur } from "../utils/phone.js";
 
 export default function Affiliate() {
 
@@ -252,6 +253,7 @@ function ApplySection({ formRef }) {
   const [submitted, setSubmitted] = useState(false);
   const [sending, setSending] = useState(false);
   const [sendError, setSendError] = useState(null); // null | "error" | "rate_limited" | "invalid"
+  const [phoneError, setPhoneError] = useState(null);
   const guard = usePublicFormGuard("affiliate");
   const set = (k) => (e) => { setForm({ ...form, [k]: e.target.value }); setSendError(null); };
 
@@ -260,6 +262,11 @@ function ApplySection({ formRef }) {
     if (sending || guard.cooldownLeft > 0) return;
     if (!form.name.trim() || !isValidEmail(form.email)) {
       setSendError("invalid");
+      return;
+    }
+    const phoneRes = checkPhoneField(form.phone, { required: false });
+    if (!phoneRes.ok) {
+      setPhoneError(phoneRes.error);
       return;
     }
 
@@ -276,7 +283,7 @@ function ApplySection({ formRef }) {
       formType: "affiliate",
       name: form.name,
       email: form.email,
-      phone: form.phone,
+      phone: phoneRes.phone,
       data: {
         affiliate_type: form.type,
         channel: clip(form.channel, 200),
@@ -338,7 +345,14 @@ function ApplySection({ formRef }) {
                 <div className="aff2-field"><label>Email address</label><input type="email" required maxLength={254} placeholder="you@email.com" value={form.email} onChange={set("email")} /></div>
               </div>
               <div className="aff2-form__row">
-                <div className="aff2-field"><label>Phone / WhatsApp</label><input type="tel" maxLength={40} placeholder="080..." value={form.phone} onChange={set("phone")} /></div>
+                <div className="aff2-field"><label>Phone / WhatsApp</label><input
+                    type="tel" inputMode="tel" autoComplete="tel" maxLength={20} placeholder="0803 123 4567"
+                    value={form.phone}
+                    onChange={(e) => { set("phone")(e); setPhoneError(null); }}
+                    onBlur={() => phoneBlur(form.phone, (v) => setForm((f) => ({ ...f, phone: v })), setPhoneError, { required: false })}
+                  />
+                  {phoneError && <small className="field__error">{phoneError}</small>}
+                </div>
                 <div className="aff2-field">
                   <label>Affiliate type</label>
                   <select value={form.type} onChange={set("type")}>

@@ -4,6 +4,7 @@ import {
   MessageSquare, Package, User,
 } from "lucide-react";
 import { useCustomerAuth } from "../../context/AuthContext.jsx";
+import { formatNgPhone } from "../../utils/phone.js";
 
 /**
  * Shell for every /account/* route. If the user isn't signed in,
@@ -39,9 +40,7 @@ export default function AccountLayout() {
   const displayName = customer.name || "NAVEN customer";
   // customer.phone is stored as +2348012345678; strip the +234 for
   // display so it reads as a familiar 08... number.
-  const displayPhone = (customer.phone || "").startsWith("+234")
-    ? "0" + customer.phone.slice(4)
-    : customer.phone;
+  const displayPhone = formatNgPhone(customer.phone || "");
 
   return (
     <main className="wrap">

@@ -6,6 +6,7 @@ import AuthShell from "../components/auth/AuthShell.jsx";
 import { SITE } from "../config/site.js";
 import Tagline from "../components/brand/Tagline.jsx";
 import SEOHead from "../components/seo/SEOHead.jsx";
+import { checkPhoneField, phoneBlur } from "../utils/phone.js";
 
 /**
  * Login  \u2014  /login
@@ -21,6 +22,7 @@ export default function Login() {
   const { signIn } = useCustomerAuth();
 
   const [phone, setPhone]           = useState("");
+  const [phoneError, setPhoneError] = useState(null);
   const [password, setPassword]     = useState("");
   const [showPw, setShowPw]         = useState(false);
   const [error, setError]           = useState(null);
@@ -32,9 +34,14 @@ export default function Login() {
     e.preventDefault();
     setError(null);
     setNeedsSignup(false);
+    const phoneRes = checkPhoneField(phone);
+    if (!phoneRes.ok) {
+      setPhoneError(phoneRes.error);
+      return;
+    }
     setSubmitting(true);
 
-    const res = await signIn({ phone, password });
+    const res = await signIn({ phone: phoneRes.phone, password });
     setSubmitting(false);
 
     if (!res.ok) {
@@ -85,14 +92,17 @@ export default function Login() {
               <input
                 id="phone"
                 type="tel"
-                inputMode="numeric"
+                inputMode="tel"
                 autoComplete="tel"
                 placeholder="0803 123 4567"
                 value={phone}
-                onChange={(e) => setPhone(e.target.value)}
+                onChange={(e) => { setPhone(e.target.value); setPhoneError(null); }}
+                onBlur={() => phoneBlur(phone, setPhone, setPhoneError)}
+                maxLength={20}
                 disabled={submitting}
               />
             </div>
+            {phoneError && <small className="ashell-field__error" role="alert">{phoneError}</small>}
           </div>
 
           <div className="ashell-field">

@@ -16,6 +16,7 @@ import {
 } from "../utils/comparison.js";
 import { DEFAULT_SITE_SETTINGS, fetchSiteSettings, updateSiteSettings } from "../lib/siteSettings.js";
 import { fetchAllOffers } from "../lib/adminOffersClient.js";
+import { normaliseNgPhone, samePhone } from "../utils/phone.js";
 
 /**
  * StoreContext
@@ -57,9 +58,6 @@ function persistAccount(acc) {
   }
 }
 
-export function normalisePhone(p) {
-  return (p || "").replace(/\D/g, "");
-}
 
 /* ============================================================
    GIFT RECONCILIATION
@@ -334,7 +332,7 @@ export function StoreProvider({ children }) {
   /* ---------- auth ---------- */
   const signIn = (incoming) => {
     const existing = loadAccount();
-    const sameUser = existing && normalisePhone(existing.phone) === normalisePhone(incoming.phone);
+    const sameUser = existing && samePhone(existing.phone, incoming.phone);
     const next = sameUser
       ? { ...existing, ...incoming, updatedAt: new Date().toISOString() }
       : { ...incoming, createdAt: new Date().toISOString() };
@@ -363,6 +361,8 @@ export function StoreProvider({ children }) {
     // createdAt) so a failed attempt doesn't leave a duplicate order.
     const previous = orderId ? getOrder(orderId) : null;
     const id = orderId || generateOrderId();
+    // Store the canonical "0803…" form (same as customers.phone).
+    contact = { ...contact, phone: normaliseNgPhone(contact.phone) || contact.phone };
     const items = cart.map((i) => {
       if (i.isGift) {
         return {
@@ -410,7 +410,7 @@ export function StoreProvider({ children }) {
     }
 
     const existing = loadAccount();
-    const sameUser = existing && normalisePhone(existing.phone) === normalisePhone(contact.phone);
+    const sameUser = existing && samePhone(existing.phone, contact.phone);
     const accountCreated = !sameUser;
     const next = sameUser
       ? { ...existing, ...contact, updatedAt: new Date().toISOString() }

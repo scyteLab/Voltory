@@ -1,4 +1,5 @@
 import { supabase } from "./supabaseClient.js";
+import { normaliseNgPhone } from "../utils/phone.js";
 
 /**
  * orderTrackingClient  \u2014  guest order lookup
@@ -32,10 +33,9 @@ const MAX_ATTEMPTS_PER_HOUR = 10;
 function normalizePhone(phone) {
   if (!phone) return "";
   const digits = String(phone).replace(/[^\d]/g, "");
-  if (digits.startsWith("234") && digits.length === 13) return "0" + digits.slice(3);
-  if (digits.startsWith("0")   && digits.length === 11) return digits;
-  if (digits.length === 10 && /^[7-9]/.test(digits))    return "0" + digits;
-  return digits;
+  // Canonical "08012345678" via utils/phone.js; stored values that
+  // aren't valid Nigerian mobiles fall back to bare digits.
+  return normaliseNgPhone(phone) || digits;
 }
 
 function normalizeOrderId(id) {

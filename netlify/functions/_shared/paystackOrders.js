@@ -183,9 +183,12 @@ const ORDER_ID_PATTERN = /^VLT-[A-Za-z0-9]+-[A-Za-z0-9]+$/;
  * Checks Paystack first: if the last attempt was actually paid, the
  * order is confirmed as paid instead. Idempotent.
  *
+ * maxTotal: Pay on Delivery is refused (422 pod_limit_exceeded) for
+ * orders whose total is above it.
+ *
  * Resolves with { httpStatus, ok, paymentStatus, reason? }.
  */
-export async function switchOrderToPod(orderId) {
+export async function switchOrderToPod(orderId, { maxTotal = Infinity } = {}) {
   if (typeof orderId !== "string" || !ORDER_ID_PATTERN.test(orderId)) {
     return { httpStatus: 400, ok: false, reason: "invalid_order_id" };
   }
@@ -197,6 +200,11 @@ export async function switchOrderToPod(orderId) {
     if (res.paymentStatus === "paid") return { httpStatus: 200, ok: false, paymentStatus: "paid" };
   }
   if (order.payment_status === "paid") return { httpStatus: 200, ok: false, paymentStatus: "paid" };
+
+  if (Number(order.total) > maxTotal) {
+    console.warn("[order-switch-pod] refused: total above POD limit", { orderId, total: order.total, maxTotal });
+    return { httpStatus: 422, ok: false, paymentStatus: order.payment_status, reason: "pod_limit_exceeded" };
+  }
 
   if (order.status !== "pending_payment") {
     // Already converted (repeat call) → fine. Anything else (cancelled,

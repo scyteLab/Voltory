@@ -332,6 +332,12 @@
 }
 .ashell-field__input input::placeholder { color: #94a3b8; }
 
+.ashell-field__error {
+  display: block;
+  margin-top: 6px;
+  font-size: 12.5px;
+  color: var(--err, #b91c1c);
+}
 .ashell-error {
   padding: 10px 14px;
   border-radius: 8px;

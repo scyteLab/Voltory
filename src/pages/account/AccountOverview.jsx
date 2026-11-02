@@ -7,15 +7,14 @@ import { useCustomerAuth } from "../../context/AuthContext.jsx";
 import { useCustomerOrders } from "../../hooks/useCustomerOrders.js";
 import { ORDER_STATUS, STATUS_LABEL } from "../../utils/orders.js";
 import { naira } from "../../utils/format.js";
+import { formatNgPhone } from "../../utils/phone.js";
 
 export default function AccountOverview() {
   const { customer } = useCustomerAuth();
   const { wishlistCount } = useStore();
   const { orders: myOrders } = useCustomerOrders();
   if (!customer) return null; // AccountLayout redirects; this is belt+braces
-  const displayPhone = (customer.phone || "").startsWith("+234")
-    ? "0" + customer.phone.slice(4)
-    : (customer.phone || "");
+  const displayPhone = formatNgPhone(customer.phone || "");
   const account = { name: customer.name || "", phone: displayPhone };
 
   const recent = myOrders.slice(0, 3);

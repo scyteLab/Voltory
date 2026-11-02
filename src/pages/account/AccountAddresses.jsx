@@ -5,6 +5,7 @@ import { useCustomerAuth } from "../../context/AuthContext.jsx";
 import { useCustomerOrders } from "../../hooks/useCustomerOrders.js";
 import { useCustomerAddresses } from "../../hooks/useCustomerAddresses.js";
 import AddressFormModal from "../../components/account/AddressFormModal.jsx";
+import { formatNgPhone } from "../../utils/phone.js";
 
 /**
  * Saved Addresses — the customer's address book.
@@ -32,9 +33,7 @@ export default function AccountAddresses() {
 
   if (!customer) return null;
 
-  const displayPhone = (customer.phone || "").startsWith("+234")
-    ? "0" + customer.phone.slice(4)
-    : (customer.phone || "");
+  const displayPhone = formatNgPhone(customer.phone || "");
 
   // Recently-used addresses from orders that AREN'T already in the saved set.
   const savedKey = (a) => `${a.street}|${a.lga}|${a.state}`.toLowerCase();

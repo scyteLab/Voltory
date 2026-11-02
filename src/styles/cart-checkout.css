@@ -526,6 +526,39 @@
   font-size: 11.5px;
   color: var(--mut);
 }
+/* Pay on Delivery above the order limit: visible, not selectable. */
+.ck-pay__opt--disabled {
+  cursor: not-allowed;
+  background: #f6f7f9;
+  border-style: dashed;
+}
+.ck-pay__opt--disabled:hover { border-color: var(--line); }
+.ck-pay__opt--disabled .ck-pay__icon,
+.ck-pay__opt--disabled b { color: var(--mut); }
+.ck-pay__opt--disabled input[type="radio"] { cursor: not-allowed; }
+.ck-pay__limit { display: block; color: var(--err); font-weight: 600; }
+.ck-pay__notice {
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+  margin: 8px 0 2px;
+  padding: 10px 12px;
+  border: 1px solid #fcd34d;
+  background: #fffbeb;
+  border-radius: 10px;
+  color: #92400e;
+  font-size: 12.5px;
+  line-height: 1.45;
+}
+.ck-pay__notice svg { flex-shrink: 0; margin-top: 2px; }
+.ck-pay__notice--pulse { animation: ck-pay-pulse 0.6s ease-out; }
+@keyframes ck-pay-pulse {
+  0%   { box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.55); background: #fef3c7; }
+  100% { box-shadow: 0 0 0 8px rgba(245, 158, 11, 0); background: #fffbeb; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .ck-pay__notice--pulse { animation: none; }
+}
 
 /* checkout summary */
 .checkout__summary {

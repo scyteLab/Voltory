@@ -9,6 +9,7 @@ import { fetchOrderByIdAndPhone } from "../lib/customerOrdersClient.js";
 import { naira } from "../utils/format.js";
 import { SITE } from "../config/site.js";
 import SEOHead from "../components/seo/SEOHead.jsx";
+import { checkPhoneField, phoneBlur } from "../utils/phone.js";
 
 /**
  * TrackOrder — public /track-order page
@@ -77,8 +78,13 @@ export default function TrackOrder() {
       setError("Enter the phone number you used when placing the order.");
       return;
     }
+    const phoneRes = checkPhoneField(phoneInput);
+    if (!phoneRes.ok) {
+      setError(phoneRes.error);
+      return;
+    }
 
-    doLookup(cleanedId, phoneInput);
+    doLookup(cleanedId, phoneRes.phone);
   }
 
   return (
@@ -129,9 +135,11 @@ export default function TrackOrder() {
               <Phone size={16} />
               <input
                 type="tel"
-                inputMode="numeric"
+                inputMode="tel"
                 value={phoneInput}
                 onChange={(e) => { setPhoneInput(e.target.value); setError(null); }}
+                onBlur={() => phoneBlur(phoneInput, setPhoneInput, setError)}
+                maxLength={20}
                 placeholder="0803 123 4567"
                 autoComplete="tel"
                 disabled={looking}
