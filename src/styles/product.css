@@ -399,28 +399,39 @@
   padding: 0 16px;
 }
 
+/* Every control in the buy row is exactly 48px tall. */
+.pdp__buyrow > * { height: 48px; }
+.pdp__qty button,
+.pdp__qty input { height: 45px; }
+.pdp__buyrow .pdp__wish,
+.pdp__buyrow .pdp__compare { width: 48px; flex-shrink: 0; }
+
 /* Layout follows the BUY BOX width, not the screen, so it holds on any
    desktop/tablet/phone split:
      wide   → [qty] [Add to Cart] [Buy Now] [♡] [⇄]
-     narrow → [qty]            [♡] [⇄]
-              [ Add to Cart ] [ Buy Now ]   (full width, side by side) */
+     narrow → [qty] [   Add to Cart   ] [♡] [⇄]
+              [          Buy Now           ]      (no gaps, two rows) */
 .pdp__buy { container: pdp-buy / inline-size; }
 @container pdp-buy (max-width: 680px) {
-  .pdp__buyrow { flex-wrap: wrap; row-gap: 0; }
-  .pdp__buyrow::after { content: ""; order: 1; flex-basis: 100%; height: 0; } /* line break */
-  .pdp__qty { margin-right: auto; }
-  .pdp__add,
-  .pdp__buynow {
-    order: 2;
-    flex: 1 1 calc(50% - 5px);
-    min-height: 50px;
-    margin-top: 10px;
-  }
+  .pdp__buyrow { flex-wrap: wrap; row-gap: 10px; }
+  .pdp__buynow { order: 1; flex: 1 1 100%; }
 }
-/* Very small phones: shorter padding so both labels still fit. */
-@container pdp-buy (max-width: 340px) {
+/* Phones: two balanced, fully used rows
+     [qty] [     Add to Cart     ]
+     [    Buy Now    ] [♡] [⇄]          */
+@container pdp-buy (max-width: 440px) {
+  .pdp__buyrow { gap: 8px; row-gap: 0; }
+  .pdp__buyrow::after { content: ""; order: 1; flex-basis: 100%; height: 0; } /* line break */
+  .pdp__buynow { order: 2; flex: 1 1 0; }
+  .pdp__buyrow .pdp__wish,
+  .pdp__buyrow .pdp__compare { order: 3; width: 44px; }
+  .pdp__buynow,
+  .pdp__buyrow .pdp__wish,
+  .pdp__buyrow .pdp__compare { margin-top: 10px; }
+  .pdp__qty button { width: 34px; }
+  .pdp__qty input { width: 36px; }
   .pdp__add,
-  .pdp__buynow { padding: 0 10px; font-size: 13.5px; gap: 6px; }
+  .pdp__buynow { padding: 0 12px; gap: 6px; }
 }
 .pdp__wish {
   width: 46px;
