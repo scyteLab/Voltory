@@ -42,7 +42,7 @@ import AdminHomepage from "./pages/admin/AdminHomepage.jsx";
 import AdminReviews from "./pages/admin/AdminReviews.jsx";
 import AdminWhatsappQuotes from "./pages/admin/AdminWhatsappQuotes.jsx";
 import AdminWhatsappQuoteDetail from "./pages/admin/AdminWhatsappQuoteDetail.jsx";
-import AdminMessages from "./pages/admin/AdminMessages.jsx";
+import AdminInbox from "./pages/admin/AdminInbox.jsx";
 import TopBar from "./components/layout/TopBar.jsx";
 import Header from "./components/layout/Header.jsx";
 import Tagline from "./components/brand/Tagline.jsx";
@@ -251,7 +251,8 @@ export default function App() {
                 <Route path="/admin/reviews" element={<AdminReviews />} />
                 <Route path="/admin/whatsapp-quotes" element={<AdminWhatsappQuotes />} />
                 <Route path="/admin/whatsapp-quotes/:id" element={<AdminWhatsappQuoteDetail />} />
-                <Route path="/admin/messages" element={<AdminMessages />} />
+                <Route path="/admin/inbox" element={<AdminInbox />} />
+                <Route path="/admin/messages" element={<Navigate to="/admin/inbox" replace />} />
                 <Route path="/admin/settings" element={<AdminSettings />} />
               </Route>
             </Routes>

@@ -5,13 +5,16 @@ import {
   Home as HomeIcon, Lightbulb, Sparkles, Tag, Wrench, Zap,
 } from "lucide-react";
 import { SITE } from "../config/site.js";
-import { addSubscriber } from "../utils/newsletterSubscribers.js";
+import { subscribeNewsletter } from "../lib/publicFormsClient.js";
+import { usePublicFormGuard } from "../hooks/usePublicFormGuard.js";
+import HoneypotField from "../components/ui/HoneypotField.jsx";
+import FormSendError from "../components/ui/FormSendError.jsx";
 import SEOHead from "../components/seo/SEOHead.jsx";
 
 /**
  * Blog — Coming Soon page with newsletter capture and topic
- * preferences. Subscribers are saved to localStorage; the admin
- * will surface them later. When real blog posts ship, this page
+ * preferences. Subscribers are saved to newsletter_subscribers and
+ * listed in Admin → Inbox → Newsletter. When real blog posts ship, this page
  * becomes the blog landing.
  */
 const TOPICS = [
@@ -28,6 +31,10 @@ export default function Blog() {
   const [selected, setSelected] = useState(new Set(["ac-guides", "deals"]));
   const [submitted, setSubmitted] = useState(false);
   const [error, setError] = useState(null);
+  const [alreadySubscribed, setAlreadySubscribed] = useState(false);
+  const [sending, setSending] = useState(false);
+  const [sendFailed, setSendFailed] = useState(false);
+  const guard = usePublicFormGuard("newsletter");
 
 
   function toggleTopic(id) {
@@ -38,22 +45,33 @@ export default function Blog() {
     });
   }
 
-  function onSubmit(e) {
+  async function onSubmit(e) {
     e.preventDefault();
+    if (sending || guard.cooldownLeft > 0) return;
     setError(null);
-    const result = addSubscriber({
+    setSendFailed(false);
+
+    // Honeypot filled: almost certainly a bot. Pretend it worked.
+    if (guard.isBot()) {
+      guard.markSent();
+      setSubmitted(true);
+      return;
+    }
+
+    setSending(true);
+    const result = await subscribeNewsletter({
       email,
       topics: Array.from(selected),
       source: "blog",
     });
-    if (!result.added) {
-      if (result.reason === "duplicate") {
-        setError("You’re already on the list — we’ll be in touch.");
-      } else {
-        setError("Please enter a valid email address.");
-      }
+    setSending(false);
+    if (!result.ok) {
+      if (result.reason === "invalid") setError("Please enter a valid email address.");
+      else setSendFailed(true);
       return;
     }
+    guard.markSent();
+    setAlreadySubscribed(Boolean(result.duplicate));
     setSubmitted(true);
   }
 
@@ -91,9 +109,10 @@ export default function Blog() {
       {submitted ? (
         <section className="blog-success">
           <span className="blog-success__icon"><CheckCircle2 size={56} /></span>
-          <h2>You’re on the list</h2>
+          <h2>{alreadySubscribed ? "You’re already subscribed" : "You’re on the list"}</h2>
           <p>
-            Thanks — we’ll send your first email to <b className="mono">{email}</b>{" "}
+            {alreadySubscribed ? "No need to sign up again — " : "Thanks — "}
+            we’ll send your first email to <b className="mono">{email}</b>{" "}
             as soon as the blog launches.
           </p>
           {selected.size > 0 && (
@@ -136,6 +155,7 @@ export default function Blog() {
           </ul>
 
           <form className={"blog-form" + (error ? " has-error" : "")} onSubmit={onSubmit} noValidate>
+            <HoneypotField value={guard.honeypot} onChange={guard.setHoneypot} />
             <label>
               <input
                 type="email"
@@ -144,10 +164,14 @@ export default function Blog() {
                 placeholder="Enter your email address"
                 aria-label="Email address"
                 autoComplete="email"
+                maxLength={254}
               />
-              <button type="submit">Notify Me <ChevronRight size={14} /></button>
+              <button type="submit" disabled={sending || guard.cooldownLeft > 0}>
+                {sending ? "Sending…" : <>Notify Me <ChevronRight size={14} /></>}
+              </button>
             </label>
             {error && <small className="blog-form__error">{error}</small>}
+            {sendFailed && <FormSendError what="signup" />}
             <small className="blog-form__terms">
               By subscribing you agree to our Privacy Policy. Unsubscribe anytime.
             </small>

@@ -1,6 +1,104 @@
 /* ============================================================
-   Admin — Contact messages inbox (/admin/messages)
+   Admin — Inbox (/admin/inbox): Messages, Newsletter and the
+   form_submissions tabs. The msg-* list/detail layout is shared
+   by MessagesTab and SubmissionsTab.
    ============================================================ */
+
+.inbox-tabs {
+  display: flex;
+  gap: 2px;
+  border-bottom: 1px solid var(--adm-border);
+  margin-bottom: 16px;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.inbox-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 14px;
+  background: none;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--adm-ink-3);
+  cursor: pointer;
+  white-space: nowrap;
+}
+.inbox-tab:hover { color: var(--adm-ink); }
+.inbox-tab--on { color: var(--adm-brand); border-bottom-color: var(--adm-brand); }
+.inbox-tab__count {
+  min-width: 20px;
+  height: 18px;
+  padding: 0 6px;
+  border-radius: 99px;
+  background: var(--adm-err);
+  color: #fff;
+  font-size: 10.5px;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.inbox-fields {
+  margin: 16px 0;
+  border: 1px solid var(--adm-border);
+  border-radius: var(--adm-r-md);
+  overflow: hidden;
+}
+.inbox-fields > div {
+  display: grid;
+  grid-template-columns: minmax(110px, 160px) 1fr;
+  gap: 12px;
+  padding: 9px 12px;
+  border-top: 1px solid var(--adm-border);
+  font-size: 13.5px;
+}
+.inbox-fields > div:first-child { border-top: 0; }
+.inbox-fields dt { color: var(--adm-ink-3); text-transform: capitalize; }
+.inbox-fields dd { margin: 0; white-space: pre-wrap; overflow-wrap: anywhere; }
+.inbox-fields a { color: var(--adm-info); }
+
+.inbox-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+.inbox-toolbar__right { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.inbox-search { width: 240px; max-width: 100%; }
+
+.inbox-table-wrap {
+  overflow-x: auto;
+  background: var(--adm-surface);
+  border: 1px solid var(--adm-border);
+  border-radius: var(--adm-r-lg);
+}
+.inbox-table { width: 100%; border-collapse: collapse; font-size: 13px; color: var(--adm-ink); }
+.inbox-table th {
+  text-align: left;
+  font-size: 11.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--adm-ink-3);
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--adm-border);
+  white-space: nowrap;
+}
+.inbox-table td { padding: 10px 12px; border-top: 1px solid var(--adm-border); vertical-align: middle; }
+.inbox-table tr:first-child td { border-top: 0; }
+.inbox-table td a { color: var(--adm-info); overflow-wrap: anywhere; }
+.inbox-table__topics { color: var(--adm-ink-2); max-width: 260px; }
+
+@media (max-width: 600px) {
+  .inbox-fields > div { grid-template-columns: 1fr; gap: 2px; }
+  .inbox-search { width: 100%; }
+}
 
 .msg-layout {
   display: grid;
@@ -68,6 +166,8 @@
 }
 .msg-chip--new     { background: var(--adm-info-bg); color: var(--adm-info); }
 .msg-chip--replied { background: var(--adm-ok-bg);   color: var(--adm-ok); }
+.msg-chip--in_progress { background: var(--adm-warn-bg); color: var(--adm-warn); }
+.msg-chip--done    { background: var(--adm-ok-bg);   color: var(--adm-ok); }
 .msg-chip--closed  { background: var(--adm-surface-2); color: var(--adm-ink-3); border: 1px solid var(--adm-border); }
 
 .msg-detail {

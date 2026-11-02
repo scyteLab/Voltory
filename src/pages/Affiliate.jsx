@@ -8,6 +8,10 @@ import {
 } from "lucide-react";
 import { SITE } from "../config/site.js";
 import SEOHead from "../components/seo/SEOHead.jsx";
+import { clip, isValidEmail, submitFormSubmission } from "../lib/publicFormsClient.js";
+import { usePublicFormGuard } from "../hooks/usePublicFormGuard.js";
+import HoneypotField from "../components/ui/HoneypotField.jsx";
+import FormSendError from "../components/ui/FormSendError.jsx";
 
 export default function Affiliate() {
 
@@ -246,7 +250,50 @@ function ApplySection({ formRef }) {
     channel: "", audience: "Under 5,000", category: "TVs & Entertainment", message: "",
   });
   const [submitted, setSubmitted] = useState(false);
-  const set = (k) => (e) => setForm({ ...form, [k]: e.target.value });
+  const [sending, setSending] = useState(false);
+  const [sendError, setSendError] = useState(null); // null | "error" | "rate_limited" | "invalid"
+  const guard = usePublicFormGuard("affiliate");
+  const set = (k) => (e) => { setForm({ ...form, [k]: e.target.value }); setSendError(null); };
+
+  async function onSubmit(e) {
+    e.preventDefault();
+    if (sending || guard.cooldownLeft > 0) return;
+    if (!form.name.trim() || !isValidEmail(form.email)) {
+      setSendError("invalid");
+      return;
+    }
+
+    // Honeypot filled: almost certainly a bot. Pretend it worked.
+    if (guard.isBot()) {
+      guard.markSent();
+      setSubmitted(true);
+      return;
+    }
+
+    setSending(true);
+    setSendError(null);
+    const res = await submitFormSubmission({
+      formType: "affiliate",
+      name: form.name,
+      email: form.email,
+      phone: form.phone,
+      data: {
+        affiliate_type: form.type,
+        channel: clip(form.channel, 200),
+        audience: form.audience,
+        category: form.category,
+        message: clip(form.message, 3000),
+      },
+    });
+    setSending(false);
+
+    if (!res.ok) {
+      setSendError(res.reason);
+      return;
+    }
+    guard.markSent();
+    setSubmitted(true);
+  }
 
   return (
     <section id="apply" className="aff2-section aff2-apply" ref={formRef}>
@@ -284,13 +331,14 @@ function ApplySection({ formRef }) {
               </Link>
             </div>
           ) : (
-            <form className="aff2-form" onSubmit={(e) => { e.preventDefault(); setSubmitted(true); }}>
+            <form className="aff2-form" onSubmit={onSubmit}>
+              <HoneypotField value={guard.honeypot} onChange={guard.setHoneypot} />
               <div className="aff2-form__row">
-                <div className="aff2-field"><label>Full name</label><input required placeholder="Enter your name" value={form.name} onChange={set("name")} /></div>
-                <div className="aff2-field"><label>Email address</label><input type="email" required placeholder="you@email.com" value={form.email} onChange={set("email")} /></div>
+                <div className="aff2-field"><label>Full name</label><input required maxLength={120} placeholder="Enter your name" value={form.name} onChange={set("name")} /></div>
+                <div className="aff2-field"><label>Email address</label><input type="email" required maxLength={254} placeholder="you@email.com" value={form.email} onChange={set("email")} /></div>
               </div>
               <div className="aff2-form__row">
-                <div className="aff2-field"><label>Phone / WhatsApp</label><input placeholder="080..." value={form.phone} onChange={set("phone")} /></div>
+                <div className="aff2-field"><label>Phone / WhatsApp</label><input type="tel" maxLength={40} placeholder="080..." value={form.phone} onChange={set("phone")} /></div>
                 <div className="aff2-field">
                   <label>Affiliate type</label>
                   <select value={form.type} onChange={set("type")}>
@@ -299,7 +347,7 @@ function ApplySection({ formRef }) {
                   </select>
                 </div>
               </div>
-              <div className="aff2-field"><label>Primary channel</label><input placeholder="Instagram, TikTok, YouTube, website, WhatsApp community..." value={form.channel} onChange={set("channel")} /></div>
+              <div className="aff2-field"><label>Primary channel</label><input maxLength={200} placeholder="Instagram, TikTok, YouTube, website, WhatsApp community..." value={form.channel} onChange={set("channel")} /></div>
               <div className="aff2-form__row">
                 <div className="aff2-field">
                   <label>Estimated audience size</label>
@@ -315,8 +363,16 @@ function ApplySection({ formRef }) {
                   </select>
                 </div>
               </div>
-              <div className="aff2-field"><label>Why do you want to partner with {SITE.name}?</label><textarea rows={4} placeholder="Tell us about your audience and how you plan to promote the products." value={form.message} onChange={set("message")} /></div>
-              <button type="submit" className="aff2-btn aff2-btn--full">Submit application</button>
+              <div className="aff2-field"><label>Why do you want to partner with {SITE.name}?</label><textarea rows={4} maxLength={3000} placeholder="Tell us about your audience and how you plan to promote the products." value={form.message} onChange={set("message")} /></div>
+              {sendError === "invalid" && (
+                <small className="field__error">Please add your name and a valid email address.</small>
+              )}
+              {(sendError === "error" || sendError === "rate_limited") && (
+                <FormSendError what="application" rateLimited={sendError === "rate_limited"} />
+              )}
+              <button type="submit" className="aff2-btn aff2-btn--full" disabled={sending || guard.cooldownLeft > 0}>
+                {sending ? "Sending…" : guard.cooldownLeft > 0 ? `Please wait ${guard.cooldownLeft}s` : "Submit application"}
+              </button>
             </form>
           )}
         </div>

@@ -181,7 +181,12 @@ export function StoreProvider({ children }) {
       for (const order of pending) {
         if (cancelled) break;
         const res = await insertOrderToSupabase(order);
-        if (res.ok) markOrderSynced(order.id);
+        if (res.ok) {
+          markOrderSynced(order.id);
+          // Its emails were held back until it reached Supabase (see
+          // placeOrder). The server skips orders still awaiting payment.
+          sendOrderEmails(order.id).catch(() => {});
+        }
       }
     })();
     return () => { cancelled = true; };
@@ -461,16 +466,17 @@ export function StoreProvider({ children }) {
     saveOrder(order);
     clearCart();
 
-    // Fire order emails (customer confirmation + admin notification)
-    // in the background. Non-blocking, silent failure. If Resend
-    // isn't configured on the server, the function returns
-    // { skipped: true } and we log-info once.
-    sendOrderEmails(order).catch((err) => {
-      // eslint-disable-next-line no-console
-      console.warn("[placeOrder] email dispatch error:", err);
+    // Order emails (customer confirmation + admin notification) go
+    // out once the order is in Supabase: the send-email function loads
+    // it by id. Non-blocking, silent failure. If this sync fails, the
+    // retry on next app load saves the order and sends them then.
+    syncOrder(order).then((r) => {
+      if (!r.ok) return;
+      sendOrderEmails(order.id).catch((err) => {
+        // eslint-disable-next-line no-console
+        console.warn("[placeOrder] email dispatch error:", err);
+      });
     });
-
-    syncOrder(order);
     return order.id;
   };
 
@@ -487,7 +493,7 @@ export function StoreProvider({ children }) {
 
     saveOrder({ ...order, syncedAt: new Date().toISOString() });
     clearCart();
-    sendOrderEmails(order).catch((err) => {
+    sendOrderEmails(order.id).catch((err) => {
       // eslint-disable-next-line no-console
       console.warn("[convertPendingOrderToPod] email dispatch error:", err);
     });
@@ -522,7 +528,7 @@ export function StoreProvider({ children }) {
     const paid = { ...order, paymentStatus: "paid", status: ORDER_STATUS.CONFIRMED };
     saveOrder(paid);
     if (shouldClearCart) clearCart();
-    sendOrderEmails(paid).catch((err) => {
+    sendOrderEmails(orderId).catch((err) => {
       // eslint-disable-next-line no-console
       console.warn("[completePaidOrder] email dispatch error:", err);
     });

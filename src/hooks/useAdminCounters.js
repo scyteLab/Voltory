@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { supabase } from "../lib/supabaseClient.js";
+import { countNewSubscribers } from "../lib/inboxAdmin.js";
 
 /**
  * Lightweight polling hook for sidebar / topbar badges.
@@ -8,7 +9,10 @@ import { supabase } from "../lib/supabaseClient.js";
  *
  * Returns:
  *   { pendingOrders, openWarranty, pendingReviews, newQuotes,
- *     newMessages, lowStock, notifications }
+ *     newInbox, lowStock, notifications }
+ *
+ * newInbox = new contact messages + new form submissions + newsletter
+ * signups since this admin last opened Inbox → Newsletter.
  */
 export function useAdminCounters() {
   const [counts, setCounts] = useState({
@@ -16,7 +20,7 @@ export function useAdminCounters() {
     openWarranty:   null,
     pendingReviews: null,
     newQuotes:      null,
-    newMessages:    null,
+    newInbox:       null,
     lowStock:       null,
     notifications:  null,
   });
@@ -27,7 +31,7 @@ export function useAdminCounters() {
 
     async function pull() {
       try {
-        const [{ data }, { count: newMessages }] = await Promise.all([
+        const [{ data }, { count: newMessages }, { count: newSubmissions }, newSubscribers] = await Promise.all([
           supabase
             .from("dashboard_kpis")
             .select("pending_orders, open_warranty_claims, low_stock_count, pending_reviews, new_whatsapp_quotes")
@@ -37,7 +41,14 @@ export function useAdminCounters() {
             .from("contact_messages")
             .select("id", { count: "exact", head: true })
             .eq("status", "new"),
+          supabase
+            .from("form_submissions")
+            .select("id", { count: "exact", head: true })
+            .eq("status", "new"),
+          countNewSubscribers(),
         ]);
+        const newInbox =
+          Number(newMessages || 0) + Number(newSubmissions || 0) + Number(newSubscribers || 0);
         if (stopped || !data) return;
         // Notifications badge = every actionable item the admin
         // needs to look at, summed.
@@ -47,13 +58,13 @@ export function useAdminCounters() {
           Number(data.low_stock_count || 0) +
           Number(data.pending_reviews || 0) +
           Number(data.new_whatsapp_quotes || 0) +
-          Number(newMessages || 0);
+          newInbox;
         setCounts({
           pendingOrders:  Number(data.pending_orders || 0),
           openWarranty:   Number(data.open_warranty_claims || 0),
           pendingReviews: Number(data.pending_reviews || 0),
           newQuotes:      Number(data.new_whatsapp_quotes || 0),
-          newMessages:    Number(newMessages || 0),
+          newInbox,
           lowStock:       Number(data.low_stock_count || 0),
           notifications,
         });

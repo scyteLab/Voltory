@@ -4,43 +4,40 @@ import {
 } from "lucide-react";
 import {
   fetchMessagesForAdmin, fetchMessageStatusCounts, updateMessage,
-} from "../../lib/contactMessagesAdmin.js";
-import { adminToast } from "../../lib/adminToast.js";
+} from "../../../lib/contactMessagesAdmin.js";
+import { adminToast } from "../../../lib/adminToast.js";
+import { formatDate, mailtoReply, whatsappUrl } from "./inboxUtils.js";
 
 /**
- * AdminMessages — /admin/messages
+ * MessagesTab — Admin → Inbox → Messages
  *
- * Inbox for the public Contact form (table contact_messages).
+ * Contact-page messages (table contact_messages).
  * List on the left, detail on the right (stacked on mobile).
  * From the detail the admin can change status, keep a private
  * note, and reply by email or WhatsApp.
  */
 const STATUS_LABEL = { new: "New", replied: "Replied", closed: "Closed" };
 
-function formatDate(iso) {
-  return new Date(iso).toLocaleString("en-NG", { dateStyle: "medium", timeStyle: "short" });
-}
-
-function whatsappUrl(phone) {
-  const digits = (phone || "").replace(/\D+/g, "");
-  if (!digits) return null;
-  return `https://wa.me/${digits.startsWith("234") ? digits : "234" + digits.replace(/^0/, "")}`;
-}
-
 function mailtoUrl(msg) {
-  const subject = `Re: ${msg.subject || "Your message to NAVEN"}`;
-  const quoted = msg.message.split("\n").map((l) => `> ${l}`).join("\n");
-  const body = `Hi ${msg.name},\n\n\n\n---\nYou wrote on ${formatDate(msg.created_at)}:\n${quoted}`;
-  return `mailto:${msg.email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+  return mailtoReply({
+    to: msg.email,
+    subject: `Re: ${msg.subject || "Your message to NAVEN"}`,
+    name: msg.name,
+    quoted: msg.message,
+    createdAt: msg.created_at,
+  });
 }
 
-export default function AdminMessages() {
-  const [status, setStatus]     = useState("new");
+/** initialId: open this message (from an email's "Open in admin" link).
+ *  onChanged: called after a status change so the Inbox badges refresh. */
+export default function MessagesTab({ initialId = null, onChanged }) {
+  // A deep link may point at a message that's no longer 'new'.
+  const [status, setStatus]     = useState(initialId ? "all" : "new");
   const [messages, setMessages] = useState([]);
   const [counts, setCounts]     = useState({ new: 0, replied: 0, closed: 0 });
   const [loading, setLoading]   = useState(true);
   const [error, setError]       = useState(null);
-  const [selectedId, setSelectedId] = useState(null);
+  const [selectedId, setSelectedId] = useState(initialId);
 
   const refreshCounts = useCallback(() => {
     fetchMessageStatusCounts().then((c) => c.ok && setCounts(c.counts));
@@ -68,6 +65,7 @@ export default function AdminMessages() {
   function applyUpdate(updated) {
     setMessages((prev) => prev.map((m) => (m.id === updated.id ? updated : m)));
     refreshCounts();
+    onChanged?.();
   }
 
   const TABS = [
@@ -78,14 +76,7 @@ export default function AdminMessages() {
   ];
 
   return (
-    <div className="adm-page">
-      <header className="adm-page__head">
-        <div>
-          <h1>Messages</h1>
-          <p>Messages sent from the Contact page. Newest first.</p>
-        </div>
-      </header>
-
+    <div>
       <div className="revq-tabs" role="tablist">
         {TABS.map((t) => (
           <button

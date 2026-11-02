@@ -30,7 +30,7 @@ const TOP_LINKS = [
   { label: "Orders",     icon: ShoppingCart, live: true,  to: "/admin/orders",    badgeKey: "pendingOrders" },
   { label: "Receipts",   icon: Receipt,      live: true,  to: "/admin/receipts" },
   { label: "WA Quotes",  icon: MessageCircle,live: true,  to: "/admin/whatsapp-quotes", badgeKey: "newQuotes" },
-  { label: "Messages",   icon: Inbox,        live: true,  to: "/admin/messages",  badgeKey: "newMessages" },
+  { label: "Inbox",      icon: Inbox,        live: true,  to: "/admin/inbox",     badgeKey: "newInbox" },
   { label: "Homepage",   icon: LayoutGrid,   live: true,  to: "/admin/homepage" },
   { label: "Customers",  icon: Users,        live: true,  to: "/admin/customers" },
   { label: "Team",       icon: UserCog,      live: true,  to: "/admin/team" },

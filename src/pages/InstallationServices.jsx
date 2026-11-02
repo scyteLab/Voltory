@@ -12,9 +12,10 @@ import {
   INSTALL_APPLIANCES, INSTALL_STEPS, INSTALL_COVERAGE,
   INSTALL_TRUST, INSTALL_FAQ,
 } from "../config/installationServices.js";
-import {
-  generateInstallId, saveInstallRequest, INSTALL_STATUS,
-} from "../utils/installationRequests.js";
+import { clip, makeReference, submitFormSubmission } from "../lib/publicFormsClient.js";
+import { usePublicFormGuard } from "../hooks/usePublicFormGuard.js";
+import HoneypotField from "../components/ui/HoneypotField.jsx";
+import FormSendError from "../components/ui/FormSendError.jsx";
 import { naira } from "../utils/format.js";
 import Icon from "../components/ui/Icon.jsx";
 import Tagline from "../components/brand/Tagline.jsx";
@@ -48,6 +49,9 @@ export default function InstallationServices() {
   });
   const [errors, setErrors] = useState({});
   const [submitted, setSubmitted] = useState(null);
+  const [sending, setSending] = useState(false);
+  const [sendError, setSendError] = useState(null); // null | "error" | "rate_limited"
+  const guard = usePublicFormGuard("installation");
 
 
   function scrollToForm() {
@@ -59,8 +63,9 @@ export default function InstallationServices() {
     setErrors((er) => ({ ...er, [name]: undefined }));
   }
 
-  function onSubmit(e) {
+  async function onSubmit(e) {
     e.preventDefault();
+    if (sending || guard.cooldownLeft > 0) return;
     const errs = {};
     if (!form.name.trim()) errs.name = "Your name is required";
     const cleanedPhone = form.phone.replace(/\s/g, "");
@@ -76,29 +81,44 @@ export default function InstallationServices() {
     }
 
     const appliance = INSTALL_APPLIANCES.find((a) => a.id === form.applianceId);
-    const id = generateInstallId();
-    const req = {
-      id,
-      createdAt: new Date().toISOString(),
-      status: INSTALL_STATUS.REQUESTED,
-      name: form.name.trim(),
+    const reference = makeReference("VLT-I");
+    const success = { id: reference, applianceName: appliance.name, fee: appliance.fee };
+
+    // Honeypot filled: almost certainly a bot. Pretend it worked.
+    if (guard.isBot()) {
+      guard.markSent();
+      setSubmitted(success);
+      return;
+    }
+
+    setSending(true);
+    setSendError(null);
+    const res = await submitFormSubmission({
+      formType: "installation",
+      name: form.name,
+      email: form.email,
       phone: cleanedPhone,
-      email: form.email.trim(),
-      address: {
+      data: {
+        reference,
+        appliance: appliance.name,
+        fee: appliance.fee,
+        brand: clip(form.brand, 80),
+        model: clip(form.model, 80),
         state: form.state,
-        lga: form.lga.trim(),
-        street: form.street.trim(),
+        lga: clip(form.lga, 80),
+        street: clip(form.street, 300),
+        preferred_date: form.preferredDate || null,
+        notes: clip(form.notes, 2000),
       },
-      applianceId: form.applianceId,
-      applianceName: appliance.name,
-      brand: form.brand.trim(),
-      model: form.model.trim(),
-      preferredDate: form.preferredDate || null,
-      notes: form.notes.trim(),
-      fee: appliance.fee,
-    };
-    saveInstallRequest(req);
-    setSubmitted({ id, applianceName: appliance.name, fee: appliance.fee });
+    });
+    setSending(false);
+
+    if (!res.ok) {
+      setSendError(res.reason);
+      return;
+    }
+    guard.markSent();
+    setSubmitted(success);
     formRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
   }
 
@@ -264,6 +284,7 @@ export default function InstallationServices() {
       ) : (
         <section className="ins-form-wrap">
           <form className="ins-form" onSubmit={onSubmit} noValidate>
+            <HoneypotField value={guard.honeypot} onChange={guard.setHoneypot} />
             <fieldset>
               <legend>Your details</legend>
               <div className="ck-grid">
@@ -276,6 +297,7 @@ export default function InstallationServices() {
                       value={form.name}
                       onChange={(e) => field("name", e.target.value)}
                       placeholder="Your name"
+                      maxLength={120}
                     />
                   </span>
                   {errors.name && <span className="field__error">{errors.name}</span>}
@@ -291,6 +313,7 @@ export default function InstallationServices() {
                       value={form.phone}
                       onChange={(e) => field("phone", e.target.value)}
                       placeholder="0803 123 4567"
+                      maxLength={40}
                     />
                   </span>
                   {errors.phone && <span className="field__error">{errors.phone}</span>}
@@ -307,6 +330,7 @@ export default function InstallationServices() {
                       value={form.email}
                       onChange={(e) => field("email", e.target.value)}
                       placeholder="you@example.com"
+                      maxLength={254}
                     />
                   </span>
                   {errors.email && <span className="field__error">{errors.email}</span>}
@@ -339,6 +363,7 @@ export default function InstallationServices() {
                       value={form.lga}
                       onChange={(e) => field("lga", e.target.value)}
                       placeholder="e.g. Ikeja, Lekki, Wuse"
+                      maxLength={80}
                     />
                   </span>
                 </label>
@@ -352,6 +377,7 @@ export default function InstallationServices() {
                       value={form.street}
                       onChange={(e) => field("street", e.target.value)}
                       placeholder="House number, street name, landmark"
+                      maxLength={300}
                     />
                   </span>
                   {errors.street && <span className="field__error">{errors.street}</span>}
@@ -385,6 +411,7 @@ export default function InstallationServices() {
                       value={form.brand}
                       onChange={(e) => field("brand", e.target.value)}
                       placeholder="e.g. Scanfrost, Samsung, LG"
+                      maxLength={80}
                     />
                   </span>
                   {errors.brand && <span className="field__error">{errors.brand}</span>}
@@ -398,6 +425,7 @@ export default function InstallationServices() {
                       value={form.model}
                       onChange={(e) => field("model", e.target.value)}
                       placeholder="e.g. SF-AC15GENINV"
+                      maxLength={80}
                     />
                   </span>
                 </label>
@@ -423,18 +451,26 @@ export default function InstallationServices() {
                     value={form.notes}
                     onChange={(e) => field("notes", e.target.value)}
                     placeholder="e.g. 3rd floor, no lift; remove old AC; need disposal of packaging"
+                      maxLength={2000}
                   />
                 </label>
               </div>
             </fieldset>
+
+            {sendError && <FormSendError what="booking request" rateLimited={sendError === "rate_limited"} />}
 
             <div className="ins-form__foot">
               <small>
                 <ShieldCheck size={13} style={{ verticalAlign: "middle", marginRight: 4, color: "var(--ok)" }} />
                 No payment now. Pay the technician after install is complete and you’re happy.
               </small>
-              <button type="submit" className="auth-submit ins-form__submit">
-                <Send size={15} /> Send Booking Request
+              <button
+                type="submit"
+                className="auth-submit ins-form__submit"
+                disabled={sending || guard.cooldownLeft > 0}
+              >
+                <Send size={15} />{" "}
+                {sending ? "Sending…" : guard.cooldownLeft > 0 ? `Please wait ${guard.cooldownLeft}s` : "Send Booking Request"}
               </button>
             </div>
           </form>

@@ -7,7 +7,9 @@ import {
 } from "lucide-react";
 import { SITE } from "../../config/site.js";
 import { useStore } from "../../context/StoreContext.jsx";
-import { addSubscriber } from "../../utils/newsletterSubscribers.js";
+import { subscribeNewsletter } from "../../lib/publicFormsClient.js";
+import { usePublicFormGuard } from "../../hooks/usePublicFormGuard.js";
+import HoneypotField from "../ui/HoneypotField.jsx";
 import Logo from "./Logo.jsx";
 
 const BADGE_ICONS = { "Secure Payments": Lock, "Pay on Delivery": Banknote, "Nationwide Delivery": Truck };
@@ -46,21 +48,29 @@ function resolveLink(label) {
 export default function Footer() {
   const { requestCall } = useStore();
   const [email, setEmail] = useState("");
-  const [state, setState] = useState("idle"); // idle | ok | dup | err
+  const [state, setState] = useState("idle"); // idle | sending | ok | dup | invalid | err
+  const guard = usePublicFormGuard("newsletter");
 
-  function onSubmit(e) {
+  async function onSubmit(e) {
     e.preventDefault();
-    const result = addSubscriber({ email, source: "footer" });
-    if (result.added) {
+    if (state === "sending" || guard.cooldownLeft > 0) return;
+
+    // Honeypot filled: almost certainly a bot. Pretend it worked.
+    if (guard.isBot()) {
+      guard.markSent();
       setState("ok");
+      return;
+    }
+
+    setState("sending");
+    const result = await subscribeNewsletter({ email, source: "footer" });
+    if (result.ok) {
+      guard.markSent();
+      setState(result.duplicate ? "dup" : "ok");
       setEmail("");
       setTimeout(() => setState("idle"), 3500);
-    } else if (result.reason === "duplicate") {
-      setState("dup");
-      setTimeout(() => setState("idle"), 3500);
     } else {
-      setState("err");
-      setTimeout(() => setState("idle"), 3500);
+      setState(result.reason === "invalid" ? "invalid" : "err");
     }
   }
 
@@ -110,20 +120,29 @@ export default function Footer() {
             onSubmit={onSubmit}
             noValidate
           >
+            <HoneypotField value={guard.honeypot} onChange={guard.setHoneypot} />
             <input
               type="email"
               placeholder={state === "ok" ? "You're on the list!" : "Enter your email"}
               aria-label="Email address"
               value={email}
               onChange={(e) => { setEmail(e.target.value); setState("idle"); }}
-              disabled={state === "ok"}
+              disabled={state === "ok" || state === "sending"}
+              maxLength={254}
+              autoComplete="email"
             />
-            <button type="submit" aria-label="Subscribe">
+            <button type="submit" aria-label="Subscribe" disabled={state === "sending" || guard.cooldownLeft > 0}>
               {state === "ok" ? <Check size={16} /> : <ArrowRight size={16} />}
             </button>
           </form>
-          {state === "dup" && <small className="ftr__news-msg">Already subscribed!</small>}
-          {state === "err" && <small className="ftr__news-msg ftr__news-msg--err">Please enter a valid email.</small>}
+          {state === "dup" && <small className="ftr__news-msg">You're already subscribed.</small>}
+          {state === "invalid" && <small className="ftr__news-msg ftr__news-msg--err">Please enter a valid email.</small>}
+          {state === "err" && (
+            <small className="ftr__news-msg ftr__news-msg--err">
+              Couldn't subscribe right now. Try again, or{" "}
+              <a href={SITE.whatsappLink} target="_blank" rel="noreferrer">message us on WhatsApp</a>.
+            </small>
+          )}
 
           <h5 className="ftr__pay-head">We Accept</h5>
           <div className="ftr__pay">

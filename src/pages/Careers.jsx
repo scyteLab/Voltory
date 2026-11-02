@@ -12,9 +12,10 @@ import {
   CAREERS_BENEFITS, CAREERS_FAQ, CAREERS_HERO,
   CAREERS_ROLES, CAREERS_VALUES,
 } from "../config/careersContent.js";
-import {
-  generateApplicationId, saveApplication, APPLICATION_STATUS,
-} from "../utils/careerApplications.js";
+import { clip, makeReference, submitFormSubmission } from "../lib/publicFormsClient.js";
+import { usePublicFormGuard } from "../hooks/usePublicFormGuard.js";
+import HoneypotField from "../components/ui/HoneypotField.jsx";
+import FormSendError from "../components/ui/FormSendError.jsx";
 import Icon from "../components/ui/Icon.jsx";
 import SEOHead from "../components/seo/SEOHead.jsx";
 
@@ -37,6 +38,9 @@ export default function Careers() {
   });
   const [errors, setErrors] = useState({});
   const [submitted, setSubmitted] = useState(null);
+  const [sending, setSending] = useState(false);
+  const [sendError, setSendError] = useState(null); // null | "error" | "rate_limited"
+  const guard = usePublicFormGuard("careers");
 
 
   function scrollToForm() {
@@ -60,8 +64,9 @@ export default function Careers() {
     setTimeout(scrollToForm, 50);
   }
 
-  function onSubmit(e) {
+  async function onSubmit(e) {
     e.preventDefault();
+    if (sending || guard.cooldownLeft > 0) return;
     const errs = {};
     if (!form.name.trim()) errs.name = "Your name is required";
     if (!form.email.trim()) errs.email = "Email is required so we can reply";
@@ -79,23 +84,40 @@ export default function Careers() {
     }
 
     const role = [OPEN_APPLICATION, ...CAREERS_ROLES].find((r) => r.id === form.roleId);
-    const id = generateApplicationId();
-    const application = {
-      id,
-      createdAt: new Date().toISOString(),
-      status: APPLICATION_STATUS.RECEIVED,
-      name: form.name.trim(),
-      email: form.email.trim(),
+    const reference = makeReference("VLT-A");
+    const roleTitle = role?.title || form.roleId;
+
+    // Honeypot filled: almost certainly a bot. Pretend it worked.
+    if (guard.isBot()) {
+      guard.markSent();
+      setSubmitted({ id: reference, roleTitle });
+      return;
+    }
+
+    setSending(true);
+    setSendError(null);
+    const res = await submitFormSubmission({
+      formType: "careers",
+      name: form.name,
+      email: form.email,
       phone: form.phone.replace(/\s/g, ""),
-      roleId: form.roleId,
-      roleTitle: role?.title || form.roleId,
-      linkedin: form.linkedin.trim(),
-      portfolio: form.portfolio.trim(),
-      coverNote: form.coverNote.trim(),
-      source: "careers",
-    };
-    saveApplication(application);
-    setSubmitted({ id, roleTitle: application.roleTitle });
+      data: {
+        reference,
+        role: roleTitle,
+        role_id: form.roleId,
+        linkedin: clip(form.linkedin, 300),
+        portfolio: clip(form.portfolio, 300),
+        cover_note: clip(form.coverNote, 4000),
+      },
+    });
+    setSending(false);
+
+    if (!res.ok) {
+      setSendError(res.reason);
+      return;
+    }
+    guard.markSent();
+    setSubmitted({ id: reference, roleTitle });
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
@@ -262,6 +284,7 @@ export default function Careers() {
         </section>
       ) : (
         <form className="cr-form" onSubmit={onSubmit} noValidate>
+          <HoneypotField value={guard.honeypot} onChange={guard.setHoneypot} />
           <fieldset>
             <legend>Your details</legend>
             <div className="ck-grid">
@@ -274,6 +297,7 @@ export default function Careers() {
                     value={form.name}
                     onChange={(e) => field("name", e.target.value)}
                     placeholder="Your name"
+                    maxLength={120}
                   />
                 </span>
                 {errors.name && <span className="field__error">{errors.name}</span>}
@@ -288,6 +312,7 @@ export default function Careers() {
                     value={form.email}
                     onChange={(e) => field("email", e.target.value)}
                     placeholder="you@example.com"
+                    maxLength={254}
                   />
                 </span>
                 {errors.email && <span className="field__error">{errors.email}</span>}
@@ -305,6 +330,7 @@ export default function Careers() {
                     value={form.phone}
                     onChange={(e) => field("phone", e.target.value)}
                     placeholder="0803 123 4567"
+                    maxLength={40}
                   />
                 </span>
                 {errors.phone && <span className="field__error">{errors.phone}</span>}
@@ -342,6 +368,7 @@ export default function Careers() {
                     value={form.linkedin}
                     onChange={(e) => field("linkedin", e.target.value)}
                     placeholder="https://linkedin.com/in/your-handle"
+                    maxLength={300}
                   />
                 </span>
               </label>
@@ -357,6 +384,7 @@ export default function Careers() {
                     value={form.portfolio}
                     onChange={(e) => field("portfolio", e.target.value)}
                     placeholder="Drive link, personal site, or portfolio URL"
+                    maxLength={300}
                   />
                 </span>
               </label>
@@ -368,6 +396,7 @@ export default function Careers() {
                   rows="5"
                   value={form.coverNote}
                   onChange={(e) => field("coverNote", e.target.value)}
+                  maxLength={4000}
                   placeholder="Tell us briefly: what you do well, what you’d want to own at NAVEN, and anything relevant about your background. One paragraph is fine."
                 />
                 {errors.coverNote && <span className="field__error">{errors.coverNote}</span>}
@@ -375,14 +404,21 @@ export default function Careers() {
             </div>
           </fieldset>
 
+          {sendError && <FormSendError what="application" rateLimited={sendError === "rate_limited"} />}
+
           <div className="cr-form__foot">
             <small>
               By submitting, you consent to NAVEN storing your application details
               for review and future role-matching. We never share applicant information
               with third parties.
             </small>
-            <button type="submit" className="auth-submit cr-form__submit">
-              <Send size={15} /> Submit Application
+            <button
+              type="submit"
+              className="auth-submit cr-form__submit"
+              disabled={sending || guard.cooldownLeft > 0}
+            >
+              <Send size={15} />{" "}
+              {sending ? "Sending…" : guard.cooldownLeft > 0 ? `Please wait ${guard.cooldownLeft}s` : "Submit Application"}
             </button>
           </div>
         </form>

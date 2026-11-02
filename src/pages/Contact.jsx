@@ -1,14 +1,16 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Link } from "react-router-dom";
 import {
-  AlertTriangle, AtSign, CheckCircle2, ChevronRight, Clock, Home as HomeIcon, Mail,
+  AtSign, CheckCircle2, ChevronRight, Clock, Home as HomeIcon, Mail,
   MapPin, MessageCircle, MessageSquare, Phone, Send, User,
 } from "lucide-react";
 import { SITE } from "../config/site.js";
 import { useStore } from "../context/StoreContext.jsx";
 import { useCustomerAuth } from "../context/AuthContext.jsx";
 import { submitContactMessage } from "../lib/contactMessagesClient.js";
-import { sendContactNotification } from "../lib/emailClient.js";
+import { usePublicFormGuard } from "../hooks/usePublicFormGuard.js";
+import HoneypotField from "../components/ui/HoneypotField.jsx";
+import FormSendError from "../components/ui/FormSendError.jsx";
 import SEOHead from "../components/seo/SEOHead.jsx";
 
 const SUBJECTS = [
@@ -22,16 +24,6 @@ const SUBJECTS = [
   "Other",
 ];
 
-const RESUBMIT_COOLDOWN_MS = 30_000;
-const LAST_SENT_KEY = "naven_contact_last_sent";
-
-function readLastSent() {
-  try { return Number(localStorage.getItem(LAST_SENT_KEY)) || 0; } catch { return 0; }
-}
-function writeLastSent(ts) {
-  try { localStorage.setItem(LAST_SENT_KEY, String(ts)); } catch { /* noop */ }
-}
-
 export default function Contact() {
   const { requestCall } = useStore();
   const { customer } = useCustomerAuth();
@@ -42,31 +34,14 @@ export default function Contact() {
     phone: account?.phone || "",
     subject: SUBJECTS[0],
     message: "",
-    website: "", // honeypot: real visitors never see or fill this
   });
   const [form, setForm] = useState(emptyForm);
   const [errors, setErrors] = useState({});
   const [submitted, setSubmitted] = useState(false);
   const [sending, setSending] = useState(false);
   const [sendError, setSendError] = useState(false);
-  const [lastSent, setLastSent] = useState(readLastSent);
-  const [now, setNow] = useState(() => Date.now());
-
-  const cooldownLeft = Math.max(0, Math.ceil((lastSent + RESUBMIT_COOLDOWN_MS - now) / 1000));
-
-  // Tick once a second, only while a cooldown is running.
-  useEffect(() => {
-    if (cooldownLeft <= 0) return undefined;
-    const t = setInterval(() => setNow(Date.now()), 1000);
-    return () => clearInterval(t);
-  }, [cooldownLeft]);
-
-  function markSent() {
-    const ts = Date.now();
-    writeLastSent(ts);
-    setLastSent(ts);
-    setNow(ts);
-  }
+  const guard = usePublicFormGuard("contact");
+  const { cooldownLeft, markSent } = guard;
 
   async function onSubmit(e) {
     e.preventDefault();
@@ -94,7 +69,7 @@ export default function Contact() {
     }
 
     // Honeypot filled: almost certainly a bot. Pretend it worked.
-    if (form.website) {
+    if (guard.isBot()) {
       markSent();
       setSubmitted(true);
       return;
@@ -118,10 +93,8 @@ export default function Contact() {
       return;
     }
 
-    // Fire-and-forget: the message is already saved, so email
-    // problems are logged and never shown to the customer.
-    sendContactNotification(payload);
-
+    // The notification email is sent by a Supabase Database Webhook
+    // on INSERT (netlify/functions/notify-new-submission.js).
     markSent();
     setSubmitted(true);
     window.scrollTo({ top: 220, behavior: "smooth" });
@@ -245,20 +218,7 @@ export default function Contact() {
             <h3>Send us a message</h3>
             <p className="contact-form__hint">Give us an email or a phone number (or both) so we can reply.</p>
 
-            {/* Honeypot: hidden from people and screen readers; bots fill it. */}
-            <div aria-hidden="true" className="contact-hp">
-              <label>
-                Website
-                <input
-                  type="text"
-                  name="website"
-                  tabIndex={-1}
-                  autoComplete="off"
-                  value={form.website}
-                  onChange={(e) => field("website", e.target.value)}
-                />
-              </label>
-            </div>
+            <HoneypotField value={guard.honeypot} onChange={guard.setHoneypot} />
 
             <div className="ck-grid">
               <label className={"field field--full" + (errors.name ? " has-error" : "")}>
@@ -334,20 +294,7 @@ export default function Contact() {
               </label>
             </div>
 
-            {sendError && (
-              <div className="contact-error" role="alert">
-                <AlertTriangle size={18} />
-                <div>
-                  <b>Sorry, your message couldn't be sent.</b>
-                  <p>
-                    Please try again, or message us directly on{" "}
-                    <a href={SITE.whatsappLink} target="_blank" rel="noreferrer">
-                      WhatsApp ({SITE.whatsapp})
-                    </a>.
-                  </p>
-                </div>
-              </div>
-            )}
+            {sendError && <FormSendError />}
 
             <button
               type="submit"
