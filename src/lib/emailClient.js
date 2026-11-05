@@ -1,8 +1,9 @@
 /**
  * emailClient
  *
- * Asks the Netlify Function send-email to send an order's emails
- * (/.netlify/functions/send-email; /api/send-email also rewrites there).
+ * Asks the Netlify Function send-email to send an order's customer
+ * confirmation (/.netlify/functions/send-email; /api/send-email also
+ * rewrites there).
  *
  * The browser sends ONLY { type, orderId }. The function loads the
  * order from Supabase with the service key and decides the recipient
@@ -14,9 +15,9 @@
  *   · Failures are logged, never surfaced to the customer
  *   · The order is the source of truth; email is a nice-to-have
  *
- * Form notifications (contact, newsletter, installation, …) are NOT
- * sent from the browser: a Supabase Database Webhook calls
- * netlify/functions/notify-new-submission.js on INSERT.
+ * Team notifications (orders, WhatsApp quotes, contact, warranty,
+ * forms) are NOT sent from the browser: Supabase Database Webhooks
+ * call netlify/functions/notify-event.js.
  */
 
 // Direct function path: doesn't depend on the /api rewrite.
@@ -48,17 +49,10 @@ async function postEmail(type, orderId) {
 }
 
 /**
- * Customer confirmation + team notification for a saved order.
- * Runs both in parallel; failures on either side don't affect the
- * other. Never throws.
+ * Customer confirmation for a saved order. The server sends it at most
+ * once per order, so calling this again is harmless. Never throws.
+ * (The team is notified by the orders Database Webhook, not from here.)
  */
-export async function sendOrderEmails(orderId) {
-  const results = await Promise.allSettled([
-    postEmail("order_confirmation", orderId),
-    postEmail("order_admin_notify", orderId),
-  ]);
-  return {
-    confirmation: results[0].status === "fulfilled" ? results[0].value : { ok: false },
-    adminNotify:  results[1].status === "fulfilled" ? results[1].value : { ok: false },
-  };
+export function sendOrderConfirmation(orderId) {
+  return postEmail("order_confirmation", orderId);
 }

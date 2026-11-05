@@ -1,13 +1,12 @@
 /**
- * Shared Resend + Supabase helpers for send-email and
- * notify-new-submission. Lives in _shared so Netlify bundles it into
- * those functions instead of deploying it as a function of its own.
+ * Shared Resend + Supabase helpers for send-email and notify-event.
+ * Lives in _shared so Netlify bundles it into those functions instead
+ * of deploying it as a function of its own.
  *
  * Env vars (Netlify dashboard → Site settings → Environment variables):
  *   RESEND_API_KEY             — from https://resend.com/api-keys
- *   RESEND_FROM_EMAIL          — verified sender, e.g. "NAVEN <noreply@mynaven.com>"
- *   NOTIFY_EMAILS              — team recipients, comma-separated
- *   RESEND_ADMIN_EMAIL         — legacy single recipient, used if NOTIFY_EMAILS is unset
+ *   RESEND_FROM_EMAIL          — verified sender, e.g. "NAVEN Notifications <notifications@mynaven.com>"
+ *   NOTIFY_ORDERS_TO / NOTIFY_SUPPORT_TO — team recipients (see notify-event.js)
  *   SUPABASE_URL               — falls back to VITE_SUPABASE_URL
  *   SUPABASE_SERVICE_ROLE_KEY  — bypasses RLS; server-side only
  */
@@ -18,9 +17,9 @@ export function isValidEmail(value) {
   return typeof value === "string" && value.length <= 254 && EMAIL_RE.test(value.trim());
 }
 
-/** Team recipients from NOTIFY_EMAILS (comma-separated), else RESEND_ADMIN_EMAIL. */
-export function teamRecipients() {
-  const raw = process.env.NOTIFY_EMAILS || process.env.RESEND_ADMIN_EMAIL || "";
+/** Valid addresses from a comma-separated env var, else from `fallback`. */
+export function recipientsFromEnv(name, fallback) {
+  const raw = process.env[name] || fallback || "";
   return raw.split(",").map((s) => s.trim()).filter(isValidEmail);
 }
 
@@ -67,19 +66,34 @@ export function supabaseConfigured() {
   return Boolean((process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL) && process.env.SUPABASE_SERVICE_ROLE_KEY);
 }
 
-/** GET from PostgREST with the service key. Throws on HTTP errors. */
-export async function supabaseGet(path) {
+async function supabaseRequest(method, path, body) {
   const base = (process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL).replace(/\/$/, "");
   const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
   const res = await fetch(`${base}/rest/v1/${path}`, {
-    headers: { apikey: key, Authorization: `Bearer ${key}` },
+    method,
+    headers: {
+      apikey: key,
+      Authorization: `Bearer ${key}`,
+      ...(body ? { "Content-Type": "application/json", Prefer: "return=representation" } : {}),
+    },
+    body: body ? JSON.stringify(body) : undefined,
   });
   const json = await res.json().catch(() => null);
   if (!res.ok) {
-    throw new Error(`Supabase GET ${path.split("?")[0]} failed: HTTP ${res.status} ${json?.message || ""}`.trim());
+    throw new Error(`Supabase ${method} ${path.split("?")[0]} failed: HTTP ${res.status} ${json?.message || ""}`.trim());
   }
   return json;
 }
+
+/** GET from PostgREST with the service key. Throws on HTTP errors. */
+export const supabaseGet = (path) => supabaseRequest("GET", path);
+
+/**
+ * PATCH with the service key; resolves with the updated rows, so a
+ * filter like `admin_notified_at=is.null` doubles as a claim: an empty
+ * array means another call got there first.
+ */
+export const supabasePatch = (path, body) => supabaseRequest("PATCH", path, body);
 
 /** Public site origin for links in emails: SITE_URL, else Netlify's URL. */
 export function siteOrigin() {

@@ -1,42 +1,36 @@
 /**
- * send-email  —  Netlify serverless function (order emails only)
+ * send-email  —  Netlify serverless function (customer order confirmation ONLY)
  *
- * The browser asks for an order's emails by id; it never chooses the
- * recipient, subject or content. This function loads the order from
- * Supabase with the service key and builds both emails server-side:
+ * The browser asks for an order's confirmation by id; it never chooses
+ * the recipient, subject or content. This function loads the order
+ * from Supabase with the service key and sends the confirmation to
+ * the customer_email stored on that order — at most once per order:
+ * orders.customer_email_sent_at is claimed (only if still null) before
+ * sending, and released again if Resend refuses.
  *
- *   order_confirmation  → the order's own customer_email
- *   order_admin_notify  → NOTIFY_EMAILS (or legacy RESEND_ADMIN_EMAIL)
+ * Team notifications are NOT sent from here: a Supabase Database
+ * Webhook calls notify-event.js when an order is confirmed.
  *
  * Orders still awaiting online payment (pending_payment) and
  * cancelled orders get no email.
  *
- * Remaining exposure: someone who knows a real order id can make the
- * same two emails go out again, to that order's customer and the team.
- * Order ids carry a random suffix and can't be listed by visitors.
- * The planned orders Database Webhook (see notify-new-submission.js)
- * would let this endpoint be removed entirely.
+ * Env vars: RESEND_API_KEY, RESEND_FROM_EMAIL, SUPABASE_URL,
+ * SUPABASE_SERVICE_ROLE_KEY. Missing settings → 200 { ok: true,
+ * skipped: true }, so checkout never breaks.
  *
- * Env vars: see _shared/email.js (RESEND_*, NOTIFY_EMAILS, SUPABASE_*).
- * Missing Resend or Supabase settings → 200 { ok: true, skipped: true },
- * so checkout never breaks.
- *
- * Request body:  { type: "order_confirmation" | "order_admin_notify", orderId: "VLT-…" }
+ * Request body:  { type: "order_confirmation", orderId: "VLT-…" }
  *
  * Response:
  *   200 { ok: true, id }                 — sent
  *   200 { ok: true, skipped: true, reason }
  *   400 / 404 { ok: false, error }
- *   502 { ok: false, error }             — Resend refused
+ *   502 { ok: false, error }             — lookup failed / Resend refused
  */
+import { orderConfirmationEmail } from "../../src/lib/emailTemplates.js";
 import {
-  orderConfirmationEmail, adminOrderNotificationEmail,
-} from "../../src/lib/emailTemplates.js";
-import {
-  isValidEmail, missingResendConfig, sendViaResend, supabaseConfigured, supabaseGet, teamRecipients,
+  isValidEmail, missingResendConfig, sendViaResend, supabaseConfigured, supabaseGet, supabasePatch,
 } from "./_shared/email.js";
 
-const TYPES = new Set(["order_confirmation", "order_admin_notify"]);
 const ORDER_ID_RE = /^VLT-[A-Za-z0-9]+-[A-Za-z0-9]+$/;
 const NO_EMAIL_STATUSES = new Set(["pending_payment", "cancelled"]);
 
@@ -75,6 +69,7 @@ function toTemplateOrder(row) {
 
 export const handler = async (event) => {
   if (event.httpMethod !== "POST") return reply(405, { ok: false, error: "Method not allowed" });
+  if ((event.body || "").length > 2048) return reply(400, { ok: false, error: "Body too large" });
 
   let payload;
   try {
@@ -83,21 +78,22 @@ export const handler = async (event) => {
     return reply(400, { ok: false, error: "Invalid JSON body" });
   }
 
-  const { type, orderId } = payload;
-  if (!TYPES.has(type) || typeof orderId !== "string" || !ORDER_ID_RE.test(orderId)) {
-    return reply(400, { ok: false, error: "Expected { type: order_confirmation | order_admin_notify, orderId }" });
+  const { type, orderId } = payload || {};
+  if (type !== "order_confirmation" || typeof orderId !== "string" || !ORDER_ID_RE.test(orderId)) {
+    return reply(400, { ok: false, error: "Expected { type: \"order_confirmation\", orderId }" });
   }
 
   const missing = missingResendConfig();
-  if (missing.length || !supabaseConfigured()) {
-    if (!supabaseConfigured()) missing.push("SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY");
-    console.warn(`[send-email] not configured (${missing.join(", ")}); skipping ${type} for ${orderId}`);
+  if (!supabaseConfigured()) missing.push("SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY");
+  if (missing.length) {
+    console.warn(`[send-email] not configured (${missing.join(", ")}); skipping confirmation for ${orderId}`);
     return reply(200, { ok: true, skipped: true, reason: "not_configured" });
   }
 
+  const id = encodeURIComponent(orderId);
   let row;
   try {
-    const rows = await supabaseGet(`orders?id=eq.${encodeURIComponent(orderId)}&select=*,order_items(*)`);
+    const rows = await supabaseGet(`orders?id=eq.${id}&select=*,order_items(*)`);
     row = Array.isArray(rows) ? rows[0] : null;
   } catch (err) {
     console.error("[send-email] order lookup failed:", err.message);
@@ -107,36 +103,42 @@ export const handler = async (event) => {
   if (NO_EMAIL_STATUSES.has(row.status)) {
     return reply(200, { ok: true, skipped: true, reason: `status_${row.status}` });
   }
-
-  const order = toTemplateOrder(row);
-  let to;
-  let tmpl;
-  if (type === "order_confirmation") {
-    if (!isValidEmail(order.contact.email)) {
-      return reply(200, { ok: true, skipped: true, reason: "no_customer_email" });
-    }
-    to = [order.contact.email.trim()];
-    tmpl = orderConfirmationEmail(order);
-  } else {
-    to = teamRecipients();
-    if (!to.length) {
-      console.warn("[send-email] NOTIFY_EMAILS / RESEND_ADMIN_EMAIL not set; skipping admin notify");
-      return reply(200, { ok: true, skipped: true, reason: "no_team_recipients" });
-    }
-    tmpl = adminOrderNotificationEmail(order);
+  if (row.customer_email_sent_at) return reply(200, { ok: true, skipped: true, reason: "already_sent" });
+  if (!isValidEmail(row.customer_email)) {
+    return reply(200, { ok: true, skipped: true, reason: "no_customer_email" });
   }
 
+  // Claim the send; an empty result means another call already did.
+  const claimedAt = new Date().toISOString();
+  try {
+    const claimed = await supabasePatch(
+      `orders?id=eq.${id}&customer_email_sent_at=is.null&select=id`,
+      { customer_email_sent_at: claimedAt },
+    );
+    if (!Array.isArray(claimed) || !claimed.length) {
+      return reply(200, { ok: true, skipped: true, reason: "already_sent" });
+    }
+  } catch (err) {
+    console.error("[send-email] claim failed:", err.message);
+    return reply(502, { ok: false, error: "Order update failed" });
+  }
+
+  const order = toTemplateOrder(row);
+  const tmpl = orderConfirmationEmail(order);
   const sent = await sendViaResend({
-    to,
+    to: [row.customer_email.trim()],
     subject: tmpl.subject,
     html: tmpl.html,
     text: tmpl.text,
-    replyTo: type === "order_admin_notify" ? order.contact.email : undefined,
   });
   if (!sent.ok) {
-    console.error(`[send-email] Resend error for ${type} ${orderId}:`, sent.status, sent.error);
+    console.error(`[send-email] Resend error for ${orderId}:`, sent.status, sent.error);
+    await supabasePatch(
+      `orders?id=eq.${id}&customer_email_sent_at=eq.${encodeURIComponent(claimedAt)}`,
+      { customer_email_sent_at: null },
+    ).catch((err) => console.error("[send-email] release failed:", err.message));
     return reply(502, { ok: false, error: "Email provider error" });
   }
-  console.log("[send-email] sent", { type, orderId, id: sent.id });
+  console.log("[send-email] sent", { orderId, id: sent.id });
   return reply(200, { ok: true, id: sent.id });
 };

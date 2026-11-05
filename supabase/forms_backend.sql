@@ -26,7 +26,7 @@
 --
 --  Email notifications are NOT created here. They come from
 --  Supabase Database Webhooks (Dashboard → Database → Webhooks)
---  calling netlify/functions/notify-new-submission.js — see the
+--  calling netlify/functions/notify-event.js — see the
 --  checklist in the commit / handover notes.
 --
 --  Safe to re-run.

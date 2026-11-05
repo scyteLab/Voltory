@@ -96,7 +96,7 @@ export default function Contact() {
     }
 
     // The notification email is sent by a Supabase Database Webhook
-    // on INSERT (netlify/functions/notify-new-submission.js).
+    // on INSERT (netlify/functions/notify-event.js).
     markSent();
     setSubmitted(true);
     window.scrollTo({ top: 220, behavior: "smooth" });

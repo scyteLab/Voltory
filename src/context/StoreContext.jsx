@@ -8,7 +8,7 @@ import {
 } from "../utils/orders.js";
 import { insertOrderToSupabase } from "../lib/ordersClient.js";
 import { switchOrderToPod } from "../lib/paystackClient.js";
-import { sendOrderEmails } from "../lib/emailClient.js";
+import { sendOrderConfirmation } from "../lib/emailClient.js";
 import { upsertFromCheckout } from "../lib/customerAuth.js";
 import { getStoredWishlist, saveWishlist } from "../utils/wishlist.js";
 import {
@@ -207,9 +207,9 @@ export function StoreProvider({ children }) {
         const res = await insertOrderToSupabase(order);
         if (res.ok) {
           markOrderSynced(order.id);
-          // Its emails were held back until it reached Supabase (see
+          // Its confirmation was held back until it reached Supabase (see
           // placeOrder). The server skips orders still awaiting payment.
-          sendOrderEmails(order.id).catch(() => {});
+          sendOrderConfirmation(order.id).catch(() => {});
         }
       }
     })();
@@ -521,13 +521,14 @@ export function StoreProvider({ children }) {
     saveOrder(order);
     clearCheckedOut(args.source);
 
-    // Order emails (customer confirmation + admin notification) go
-    // out once the order is in Supabase: the send-email function loads
-    // it by id. Non-blocking, silent failure. If this sync fails, the
-    // retry on next app load saves the order and sends them then.
+    // The customer confirmation goes out once the order is in Supabase:
+    // the send-email function loads it by id. Non-blocking, silent
+    // failure. If this sync fails, the retry on next app load saves the
+    // order and sends it then. The team email comes from the orders
+    // Database Webhook (notify-event), not from the browser.
     syncOrder(order).then((r) => {
       if (!r.ok) return;
-      sendOrderEmails(order.id).catch((err) => {
+      sendOrderConfirmation(order.id).catch((err) => {
         // eslint-disable-next-line no-console
         console.warn("[placeOrder] email dispatch error:", err);
       });
@@ -548,7 +549,7 @@ export function StoreProvider({ children }) {
 
     saveOrder({ ...order, syncedAt: new Date().toISOString() });
     clearCheckedOut(args.source);
-    sendOrderEmails(order.id).catch((err) => {
+    sendOrderConfirmation(order.id).catch((err) => {
       // eslint-disable-next-line no-console
       console.warn("[convertPendingOrderToPod] email dispatch error:", err);
     });
@@ -574,8 +575,9 @@ export function StoreProvider({ children }) {
 
   // Called only after the SERVER has confirmed payment with Paystack.
   // Mirrors the server's answer (paid + confirmed) into the local cache
-  // for display and fires the order emails. Checkout also clears what
-  // was bought (the cart, or the buy-now item when source is "buynow");
+  // for display and asks for the customer confirmation email. Checkout
+  // also clears what was bought (the cart, or the buy-now item when
+  // source is "buynow");
   // "Pay now" on the order page passes clearCart: false and the order
   // it loaded (it may not be in this device's localStorage).
   const completePaidOrder = (orderId, {
@@ -586,7 +588,7 @@ export function StoreProvider({ children }) {
     const paid = { ...order, paymentStatus: "paid", status: ORDER_STATUS.CONFIRMED };
     saveOrder(paid);
     if (shouldClearCart) clearCheckedOut(source);
-    sendOrderEmails(orderId).catch((err) => {
+    sendOrderConfirmation(orderId).catch((err) => {
       // eslint-disable-next-line no-console
       console.warn("[completePaidOrder] email dispatch error:", err);
     });

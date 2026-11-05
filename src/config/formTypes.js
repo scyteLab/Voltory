@@ -5,7 +5,7 @@
  * these, so adding a field to a form never hides it.
  *
  * Plain data (no browser APIs): also imported by
- * netlify/functions/notify-new-submission.js.
+ * netlify/functions/notify-event.js.
  *
  * Adding a form: add it here, to the form_type check in
  * supabase/forms_backend.sql, and it gets an Inbox tab automatically.

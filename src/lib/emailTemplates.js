@@ -2,7 +2,8 @@ import { SITE } from "../config/site.js";
 import { naira } from "../utils/format.js";
 
 /**
- * Email HTML templates.
+ * Customer email HTML templates (sent by netlify/functions/send-email.js).
+ * Team notifications live in netlify/functions/_shared/notifyTemplates.js.
  *
  * Emails must use INLINE styles — many email clients (Gmail, Outlook,
  * Apple Mail) strip <style> blocks or handle them inconsistently.
@@ -61,7 +62,7 @@ function shell({ title, body, preheader = "" }) {
 }
 
 /* ============================================================
-   Items table — shared between customer + admin emails
+   Items table
    ============================================================ */
 
 function itemsTable(items) {
@@ -141,7 +142,7 @@ export function orderConfirmationEmail(order) {
     transfer: "Bank transfer",
     ussd: "USSD",
     pod: "Pay on Delivery",
-  })[order.payment] || "Payment received";
+  })[order.payment?.method || order.payment] || "Payment received";
 
   const paidStatus = order.paymentStatus === "paid"
     ? `<span style="color:#047857;font-weight:700;">Paid</span>`
@@ -188,115 +189,6 @@ export function orderConfirmationEmail(order) {
       body,
     }),
   };
-}
-
-/* ============================================================
-   TEMPLATE 2 — admin notification (new order)
-   ============================================================ */
-
-export function adminOrderNotificationEmail(order) {
-  const orderId = order.id;
-  const orderAdminUrl = `${(SITE.appUrl || "https://mynaven.com")}/admin/orders/${orderId}`;
-  const address = order.address || {};
-  const addressLine = [address.street, address.lga, address.state].filter(Boolean).join(", ") || "—";
-
-  const paidLabel = order.paymentStatus === "paid"
-    ? `<span style="color:#047857;font-weight:700;">✅ PAID</span>`
-    : `<span style="color:#b45309;font-weight:700;">⏳ Awaiting payment</span>`;
-
-  const body = `
-    <h1 style="margin:0 0 8px;font-size:22px;color:${BRAND_INK};">New order — ${escapeHtml(naira(order.totals?.grand || 0))}</h1>
-    <p style="margin:0 0 16px;font-size:14px;color:${BRAND_MUT};">
-      ${paidLabel} · ${escapeHtml(order.items?.length || 0)} item${(order.items?.length || 0) === 1 ? "" : "s"}
-    </p>
-
-    <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="margin:16px 0;">
-      <tr>
-        <td style="padding:6px 0;font-size:13px;color:${BRAND_MUT};width:120px;">Order ID</td>
-        <td style="padding:6px 0;font-size:13px;font-family:ui-monospace,monospace;">${escapeHtml(orderId)}</td>
-      </tr>
-      <tr>
-        <td style="padding:6px 0;font-size:13px;color:${BRAND_MUT};">Customer</td>
-        <td style="padding:6px 0;font-size:13px;"><b>${escapeHtml(order.contact?.name || "")}</b></td>
-      </tr>
-      <tr>
-        <td style="padding:6px 0;font-size:13px;color:${BRAND_MUT};">Phone</td>
-        <td style="padding:6px 0;font-size:13px;font-family:ui-monospace,monospace;">${escapeHtml(order.contact?.phone || "")}</td>
-      </tr>
-      <tr>
-        <td style="padding:6px 0;font-size:13px;color:${BRAND_MUT};">Email</td>
-        <td style="padding:6px 0;font-size:13px;">${escapeHtml(order.contact?.email || "—")}</td>
-      </tr>
-      <tr>
-        <td style="padding:6px 0;font-size:13px;color:${BRAND_MUT};vertical-align:top;">Address</td>
-        <td style="padding:6px 0;font-size:13px;">${escapeHtml(addressLine)}${address.landmark ? `<br><span style="color:${BRAND_MUT};font-size:12px;">Landmark: ${escapeHtml(address.landmark)}</span>` : ""}</td>
-      </tr>
-      <tr>
-        <td style="padding:6px 0;font-size:13px;color:${BRAND_MUT};">Payment</td>
-        <td style="padding:6px 0;font-size:13px;">${escapeHtml(order.payment || "—")}${order.paystackRef ? `<br><span style="color:${BRAND_MUT};font-size:11px;font-family:ui-monospace,monospace;">Ref: ${escapeHtml(order.paystackRef)}</span>` : ""}</td>
-      </tr>
-    </table>
-
-    ${itemsTable(order.items)}
-    ${totalsBlock(order.totals)}
-
-    <div style="margin:24px 0 8px;text-align:center;">
-      <a href="${orderAdminUrl}" style="display:inline-block;padding:12px 24px;background:${BRAND_COLOR};color:#ffffff;text-decoration:none;border-radius:8px;font-weight:700;font-size:14px;">Open in admin</a>
-    </div>
-  `;
-
-  return {
-    subject: `[NAVEN] New order ${orderId} — ${naira(order.totals?.grand || 0)}`,
-    html: shell({
-      title: `New order ${orderId}`,
-      preheader: `${order.contact?.name} · ${naira(order.totals?.grand || 0)}`,
-      body,
-    }),
-  };
-}
-
-/* ============================================================
-   New form submission → team inbox
-   Built server-side by netlify/functions/notify-new-submission.js
-   from the inserted row. Every value is escaped here.
-   ============================================================ */
-
-/**
- * heading:   "New installation request"
- * rows:      [[label, value], ...]  (short fields, shown as a table)
- * longText:  optional [label, value] shown as a block (message, cover note)
- * adminUrl:  "Open in admin" target
- */
-export function submissionNotifyEmail({ heading, preheader = "", rows, longText = null, adminUrl }) {
-  const row = (label, value) => `
-    <tr>
-      <td style="padding:6px 8px;font-size:13px;color:${BRAND_MUT};width:130px;vertical-align:top;">${escapeHtml(label)}</td>
-      <td style="padding:6px 8px;font-size:13px;white-space:pre-wrap;word-break:break-word;">${value ? escapeHtml(value) : "—"}</td>
-    </tr>`;
-
-  const body = `
-    <h1 style="margin:0 0 16px;font-size:20px;">${escapeHtml(heading)}</h1>
-    <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="border:1px solid ${BRAND_LINE};border-radius:8px;">
-      ${rows.map(([label, value]) => row(label, value)).join("")}
-    </table>
-    ${longText ? `
-    <p style="margin:16px 0 6px;font-size:12px;color:${BRAND_MUT};text-transform:uppercase;letter-spacing:0.04em;">${escapeHtml(longText[0])}</p>
-    <div style="margin:0 0 16px;padding:14px;background:${BRAND_BG};border-radius:8px;font-size:14px;line-height:1.5;white-space:pre-wrap;word-break:break-word;">${escapeHtml(longText[1])}</div>` : ""}
-    <div style="margin:24px 0 8px;text-align:center;">
-      <a href="${escapeHtml(adminUrl)}" style="display:inline-block;padding:12px 24px;background:${BRAND_COLOR};color:#ffffff;text-decoration:none;border-radius:8px;font-weight:700;font-size:14px;">Open in admin</a>
-    </div>
-  `;
-
-  const text = [
-    heading,
-    "",
-    ...rows.map(([label, value]) => `${label}: ${value || "-"}`),
-    ...(longText ? ["", `${longText[0]}:`, longText[1]] : []),
-    "",
-    `Open in admin: ${adminUrl}`,
-  ].join("\n");
-
-  return { html: shell({ title: heading, preheader, body }), text };
 }
 
 /* ============================================================
