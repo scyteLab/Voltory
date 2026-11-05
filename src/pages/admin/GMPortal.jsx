@@ -6,7 +6,7 @@ import {
 import { useAdmin } from "../../context/AdminContext.jsx";
 import { useGMPortal } from "../../hooks/useGMPortal.js";
 import { listApprovals, decideApproval } from "../../lib/gmPortalClient.js";
-import { executeRoleChange } from "../../lib/adminTeamClient.js";
+import { executeApprovedAction } from "../../lib/approvalActions.js";
 import ApprovalCard from "../../components/admin/ApprovalCard.jsx";
 
 /**
@@ -20,7 +20,8 @@ import ApprovalCard from "../../components/admin/ApprovalCard.jsx";
  *   1. Record the decision via decideApproval (also enforces
  *      two-person integrity: creator \u2260 decider)
  *   2. Execute the downstream action based on action_type
- *      (sub-session 2: only admin_role_change)
+ *      (lib/approvalActions.js: prices, offers, order
+ *      cancellations, legacy role changes)
  *   3. Refresh the queue
  *
  * On reject, we only record the decision.
@@ -209,7 +210,7 @@ export default function GMPortal() {
           </p>
           <div className="adm-gm-empty__note">
             <Clock size={13} />
-            <span>Currently wired: admin role changes. More action types coming.</span>
+            <span>Store staff send price changes, offer changes and order cancellations here.</span>
           </div>
         </div>
       ) : (
@@ -226,24 +227,4 @@ export default function GMPortal() {
       )}
     </div>
   );
-}
-
-/* ============================================================
-   Downstream action executor
-   ============================================================
-   Dispatches on approval.action_type to run the actual DB
-   change AFTER the GM has approved. Future sessions extend
-   this switch with more action types.
-*/
-async function executeApprovedAction(approval) {
-  switch (approval.action_type) {
-    case "admin_role_change":
-      return executeRoleChange(approval.payload);
-
-    default:
-      return {
-        ok: false,
-        error: `Unknown action type '${approval.action_type}'. Manual intervention required.`,
-      };
-  }
 }

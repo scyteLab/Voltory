@@ -8,6 +8,7 @@ import {
 import Logo from "../layout/Logo.jsx";
 import { useAdminCounters } from "../../hooks/useAdminCounters.js";
 import { useAdmin } from "../../context/AdminContext.jsx";
+import { can, canOpenPage } from "../../config/permissions.js";
 
 /**
  * The deep-navy sidebar. Split out of the old AdminLayout so the
@@ -15,7 +16,8 @@ import { useAdmin } from "../../context/AdminContext.jsx";
  * grow independently.
  *
  * Nav is data-driven — add a new section by editing CATALOG_ITEMS
- * or TOP_LINKS. "Soon" tags render as disabled hints.
+ * or TOP_LINKS. "Soon" tags render as disabled hints. Links the
+ * signed-in role can't open (config/permissions.js) are not shown.
  */
 const CATALOG_ITEMS = [
   { label: "Products", to: "/admin/products", live: true },
@@ -49,7 +51,10 @@ const CHANNELS = ["Website", "Mobile App", "POS"];
 export default function AdminSidebar({ open, onNavigate }) {
   const [catalogOpen, setCatalogOpen] = useState(true);
   const counters = useAdminCounters();
-  const { isGM } = useAdmin();
+  const { role } = useAdmin();
+  const allowed = (to) => canOpenPage(role, to);
+  const catalogItems = CATALOG_ITEMS.filter((item) => !item.live || allowed(item.to));
+  const topLinks = TOP_LINKS.filter((item) => !item.to || allowed(item.to));
 
   return (
     <aside className={"adm-sidebar" + (open ? " adm-sidebar--open" : "")}>
@@ -61,26 +66,28 @@ export default function AdminSidebar({ open, onNavigate }) {
       </div>
 
       <nav className="adm-nav">
-        <NavLink
-          to="/admin"
-          end
-          className={({ isActive }) => "adm-nav__link" + (isActive ? " adm-nav__link--on" : "")}
-          onClick={onNavigate}
-        >
-          <span><LayoutDashboard size={17} /> Dashboard</span>
-        </NavLink>
+        {allowed("/admin") && (
+          <NavLink
+            to="/admin"
+            end
+            className={({ isActive }) => "adm-nav__link" + (isActive ? " adm-nav__link--on" : "")}
+            onClick={onNavigate}
+          >
+            <span><LayoutDashboard size={17} /> Dashboard</span>
+          </NavLink>
+        )}
 
-        <button
+        {catalogItems.length > 0 && <button
           className={"adm-nav__group-head" + (catalogOpen ? " adm-nav__link--on" : "")}
           onClick={() => setCatalogOpen((v) => !v)}
           aria-expanded={catalogOpen}
         >
           <span><Package size={17} /> Catalog</span>
           <ChevronDown size={14} className={catalogOpen ? "adm-chev adm-chev--open" : "adm-chev"} />
-        </button>
-        {catalogOpen && (
+        </button>}
+        {catalogOpen && catalogItems.length > 0 && (
           <div className="adm-nav__group">
-            {CATALOG_ITEMS.map((item) =>
+            {catalogItems.map((item) =>
               item.live ? (
                 <NavLink
                   key={item.label}
@@ -99,7 +106,7 @@ export default function AdminSidebar({ open, onNavigate }) {
           </div>
         )}
 
-        {TOP_LINKS.map(({ label, icon: Icon, badgeKey, live, to }) => {
+        {topLinks.map(({ label, icon: Icon, badgeKey, live, to }) => {
           const badge = badgeKey ? counters[badgeKey] : null;
           if (live && to) {
             return (
@@ -124,13 +131,15 @@ export default function AdminSidebar({ open, onNavigate }) {
           );
         })}
 
-        <NavLink
-          to="/admin/settings"
-          className={({ isActive }) => "adm-nav__link" + (isActive ? " adm-nav__link--on" : "")}
-          onClick={onNavigate}
-        >
-          <span><SettingsIcon size={17} /> Settings</span>
-        </NavLink>
+        {allowed("/admin/settings") && (
+          <NavLink
+            to="/admin/settings"
+            className={({ isActive }) => "adm-nav__link" + (isActive ? " adm-nav__link--on" : "")}
+            onClick={onNavigate}
+          >
+            <span><SettingsIcon size={17} /> Settings</span>
+          </NavLink>
+        )}
       </nav>
 
       <div className="adm-sidebar__channels">
@@ -142,7 +151,7 @@ export default function AdminSidebar({ open, onNavigate }) {
         ))}
       </div>
 
-      {isGM && (
+      {can(role, "approvals.decide") && (
         <div className="adm-sidebar__channels">
           <p className="adm-nav__section-label">Governance</p>
           <Link to="/admin/gm-portal" className="adm-nav__link" onClick={onNavigate}>

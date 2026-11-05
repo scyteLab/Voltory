@@ -9,6 +9,7 @@ import {
   setQuoteStatus, convertQuoteToOrder,
 } from "../../lib/whatsappQuotesAdmin.js";
 import { naira } from "../../utils/format.js";
+import { NO_ACCESS_TIP, usePermission } from "../../lib/permissions.js";
 
 /**
  * AdminWhatsappQuoteDetail — /admin/whatsapp-quotes/:id
@@ -26,6 +27,10 @@ import { naira } from "../../utils/format.js";
  * the order page after conversion. Keeps the surface focused.
  */
 export default function AdminWhatsappQuoteDetail() {
+  // Support: status + notes only. Store / GM: items and convert too.
+  const canUpdate  = usePermission("quotes.update");
+  const canItems   = usePermission("quotes.editItems");
+  const canConvert = usePermission("quotes.convert");
   const { id } = useParams();
   const navigate = useNavigate();
 
@@ -204,7 +209,7 @@ export default function AdminWhatsappQuoteDetail() {
                   <button
                     type="button"
                     onClick={() => handleQtyChange(it.id, -1, it.qty)}
-                    disabled={busy || alreadyConverted || it.qty <= 1}
+                    disabled={busy || alreadyConverted || it.qty <= 1 || !canItems}
                     className="waq-qty-btn"
                     aria-label="Decrease quantity"
                   >
@@ -214,7 +219,7 @@ export default function AdminWhatsappQuoteDetail() {
                   <button
                     type="button"
                     onClick={() => handleQtyChange(it.id, +1, it.qty)}
-                    disabled={busy || alreadyConverted}
+                    disabled={busy || alreadyConverted || !canItems}
                     className="waq-qty-btn"
                     aria-label="Increase quantity"
                   >
@@ -233,7 +238,8 @@ export default function AdminWhatsappQuoteDetail() {
                       const v = Number(e.target.value);
                       if (v !== it.unitPrice) handlePriceChange(it.id, v);
                     }}
-                    disabled={busy || alreadyConverted}
+                    disabled={busy || alreadyConverted || !canItems}
+                    title={canItems ? undefined : NO_ACCESS_TIP}
                     className="hb-input waq-item__priceinput"
                   />
                 </div>
@@ -243,7 +249,7 @@ export default function AdminWhatsappQuoteDetail() {
                   <b>{naira(it.lineTotal)}</b>
                 </div>
 
-                {!alreadyConverted && (
+                {!alreadyConverted && canItems && (
                   <button
                     type="button"
                     className="waq-btn waq-btn--danger"
@@ -273,7 +279,7 @@ export default function AdminWhatsappQuoteDetail() {
           rows={4}
           value={notes}
           onChange={(e) => { setNotes(e.target.value); setNotesDirty(true); }}
-          disabled={busy}
+          disabled={busy || !canUpdate}
           placeholder="Anything worth remembering — discount offered, delivery preference, timing, etc."
         />
         {notesDirty && (
@@ -305,7 +311,7 @@ export default function AdminWhatsappQuoteDetail() {
               type="button"
               className={"adm-btn adm-btn--secondary" + (quote.status === s ? " adm-btn--on" : "")}
               onClick={() => handleStatus(s)}
-              disabled={busy || quote.status === s || alreadyConverted}
+              disabled={busy || quote.status === s || alreadyConverted || !canUpdate}
             >
               {quote.status === s && <Check size={14} />} {label}
             </button>
@@ -324,7 +330,8 @@ export default function AdminWhatsappQuoteDetail() {
                 type="button"
                 className="adm-btn adm-btn--primary waq-convert__btn"
                 onClick={handleConvert}
-                disabled={busy || quote.items.length === 0}
+                disabled={busy || quote.items.length === 0 || !canConvert}
+                title={canConvert ? undefined : "Converting a quote to an order is for Store staff or the GM."}
               >
                 {busy ? <Loader2 size={14} className="waq-spin" /> : <ChevronRight size={14} />}
                 Convert to Order

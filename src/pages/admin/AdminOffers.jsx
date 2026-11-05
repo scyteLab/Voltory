@@ -7,6 +7,7 @@ import {
 import { useCatalog } from "../../context/CatalogContext.jsx";
 import { useAdmin } from "../../context/AdminContext.jsx";
 import { usePermission } from "../../lib/permissions.js";
+import { proposeOfferChange } from "../../lib/approvalActions.js";
 import { adminToast } from "../../lib/adminToast.js";
 
 /**
@@ -31,7 +32,10 @@ import { adminToast } from "../../lib/adminToast.js";
 export default function AdminOffers() {
   const { productOffers, removeOffer, setOfferActive, loading } = useCatalog();
   const { session } = useAdmin();
-  const canManage = usePermission("catalog.offers.manage");
+  // GM (offers.manage) changes offers directly; Store (offers.propose)
+  // sends each change to the GM as an approval.
+  const canManage = usePermission(["offers.manage", "offers.propose"]);
+  const canDirect = usePermission("offers.manage");
 
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all"); // all | active | paused | expired
@@ -72,6 +76,15 @@ export default function AdminOffers() {
     }
     setBusy(true);
     try {
+      if (!canDirect) {
+        const res = await proposeOfferChange({
+          createdBy: session?.user?.id, op: "toggle", offerId: offer.id,
+          label: offer.title, isActive: !offer.is_active,
+        });
+        if (!res.ok) throw new Error(res.error);
+        adminToast.success("Sent to the GM for approval.");
+        return;
+      }
       await setOfferActive(offer.id, !offer.is_active);
       adminToast.success(offer.is_active ? "Offer paused" : "Offer resumed");
     } catch (err) {
@@ -89,6 +102,15 @@ export default function AdminOffers() {
     }
     setBusy(true);
     try {
+      if (!canDirect) {
+        const res = await proposeOfferChange({
+          createdBy: session?.user?.id, op: "delete", offerId: deleteConfirm.id, label: deleteConfirm.title,
+        });
+        if (!res.ok) throw new Error(res.error);
+        adminToast.success("Deletion sent to the GM for approval.");
+        setDeleteConfirm(null);
+        return;
+      }
       await removeOffer(deleteConfirm.id);
       adminToast.success("Offer deleted.");
       setDeleteConfirm(null);

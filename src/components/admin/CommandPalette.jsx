@@ -5,6 +5,8 @@ import {
   Settings as SettingsIcon, ShoppingCart, Users, X,
 } from "lucide-react";
 import { supabase } from "../../lib/supabaseClient.js";
+import { useAdmin } from "../../context/AdminContext.jsx";
+import { canOpenPage } from "../../config/permissions.js";
 
 /**
  * The ⌘K command palette. Opens as a centered modal. Types-to-
@@ -35,6 +37,9 @@ export default function CommandPalette({ open, onClose }) {
   const [loading, setLoading] = useState(false);
   const inputRef = useRef(null);
   const navigate = useNavigate();
+  const { role } = useAdmin();
+  // Only offer what this role can open (config/permissions.js).
+  const allowed = (to) => canOpenPage(role, to);
 
   // Reset when opening / closing
   useEffect(() => {
@@ -87,21 +92,29 @@ export default function CommandPalette({ open, onClose }) {
   const flat = useMemo(() => {
     const items = [];
     const term = q.trim().toLowerCase();
+    const nav = NAV_ITEMS.filter((i) => allowed(i.to));
     const filteredNav = term
-      ? NAV_ITEMS.filter((i) => i.label.toLowerCase().includes(term))
-      : NAV_ITEMS;
+      ? nav.filter((i) => i.label.toLowerCase().includes(term))
+      : nav;
     filteredNav.forEach((n) => items.push({ kind: "nav", ...n }));
-    (results.products || []).forEach((p) =>
-      items.push({ kind: "product", id: p.sku, ...p })
-    );
-    (results.orders || []).forEach((o) =>
-      items.push({ kind: "order", ...o })
-    );
-    (results.customers || []).forEach((c) =>
-      items.push({ kind: "customer", id: c.phone, ...c })
-    );
+    if (allowed("/admin/products")) {
+      (results.products || []).forEach((p) =>
+        items.push({ kind: "product", id: p.sku, ...p })
+      );
+    }
+    if (allowed("/admin/orders")) {
+      (results.orders || []).forEach((o) =>
+        items.push({ kind: "order", ...o })
+      );
+    }
+    if (allowed("/admin/customers")) {
+      (results.customers || []).forEach((c) =>
+        items.push({ kind: "customer", id: c.phone, ...c })
+      );
+    }
     return items;
-  }, [q, results]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [q, results, role]);
 
   // Keyboard within the palette
   useEffect(() => {

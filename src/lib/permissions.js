@@ -1,20 +1,20 @@
 import { useAdmin } from "../context/AdminContext.jsx";
+import { can } from "../config/permissions.js";
 
 /**
- * usePermission(key)
+ * usePermission(key | [keys])
  *
- * Minimal permission gate for admin pages that want a named check
- * ("can I manage this?") instead of hardcoding a role comparison.
+ * True when the signed-in admin's role grants the key (or any of
+ * the keys). The role → permission map lives in
+ * src/config/permissions.js. No role (or a deactivated account)
+ * → false for everything.
  *
- * Current behaviour: any admin with a real role (gm or staff) is
- * granted every permission — this matches how every other admin
- * page (including Collections) already behaves today, gated only
- * by AdminGuard. `key` isn't used for branching yet, but keeping it
- * in the signature means individual permissions can be split apart
- * by role later without touching call sites like
- * usePermission("catalog.offers.manage").
+ *   const canCancel = usePermission("orders.cancel");
  */
-export function usePermission(key) { // eslint-disable-line no-unused-vars
-  const { isGM, isStaff } = useAdmin();
-  return isGM || isStaff;
+export function usePermission(key) {
+  const { role } = useAdmin();
+  return can(role, key);
 }
+
+/** Tooltip for a control the current role can't use. */
+export const NO_ACCESS_TIP = "Your role doesn't allow this. Ask the GM.";

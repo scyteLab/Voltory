@@ -11,6 +11,9 @@ import {
 } from "../../lib/priceBulkImport.js";
 import ImportDropzone from "../../components/admin/catalog/ImportDropzone.jsx";
 import { naira } from "../../utils/format.js";
+import { useAdmin } from "../../context/AdminContext.jsx";
+import { usePermission } from "../../lib/permissions.js";
+import { proposeBulkPriceChange } from "../../lib/approvalActions.js";
 
 /**
  * CatalogPriceImport \u2014 /admin/pricing/update
@@ -20,9 +23,14 @@ import { naira } from "../../utils/format.js";
  *
  * SAFETY: only updates price + was columns. Never touches stock,
  * images, or anything else.
+ *
+ * Without prices.approve (Store) nothing is written: the changed
+ * rows go to the GM as one price_bulk_change approval.
  */
 export default function CatalogPriceImport() {
   const navigate = useNavigate();
+  const { admin } = useAdmin();
+  const canApprove = usePermission("prices.approve");
 
   const [refs, setRefs]           = useState(null);
   const [refsError, setRefsError] = useState(null);
@@ -113,10 +121,19 @@ export default function CatalogPriceImport() {
     if (!rowsWithVerdict) return;
     setCommitting(true);
     setProgress({ done: 0, total: 0 });
+    if (!canApprove) {
+      const rows = rowsWithVerdict.filter((r) => r.verdict === "update").map((r) => r.resolved);
+      const res = await proposeBulkPriceChange({ createdBy: admin?.id, rows });
+      setCommitting(false);
+      setResult(res.ok
+        ? { proposed: rows.length, updated: 0, errors: [] }
+        : { updated: 0, errors: [{ rowIndex: -1, sku: null, message: res.error || "Couldn't send for approval." }] });
+      return;
+    }
     const res = await commitRows(rowsWithVerdict, (done, total) => setProgress({ done, total }));
     setCommitting(false);
     setResult(res);
-  }, [rowsWithVerdict]);
+  }, [rowsWithVerdict, canApprove, admin?.id]);
 
   /* ---------- reset ---------- */
 
@@ -176,7 +193,7 @@ export default function CatalogPriceImport() {
 
         <header className="adm-page__head">
           <div>
-            <h1>Price update complete</h1>
+            <h1>{result.proposed ? "Sent for GM approval" : "Price update complete"}</h1>
           </div>
         </header>
 
@@ -185,8 +202,8 @@ export default function CatalogPriceImport() {
             <div className="adm-import__stat adm-import__stat--good">
               <CheckCircle2 size={22} />
               <div>
-                <b>{result.updated}</b>
-                <span>products updated</span>
+                <b>{result.proposed ?? result.updated}</b>
+                <span>{result.proposed ? "price changes awaiting GM approval" : "products updated"}</span>
               </div>
             </div>
             <div className="adm-import__stat adm-import__stat--warn">
@@ -204,7 +221,7 @@ export default function CatalogPriceImport() {
               <ul>
                 {result.errors.map((e, i) => (
                   <li key={i}>
-                    Row {e.rowIndex + 2} ({e.sku || "\u2014"}): {e.message}
+                    {e.rowIndex >= 0 ? `Row ${e.rowIndex + 2} (${e.sku || "\u2014"}): ` : ""}{e.message}
                   </li>
                 ))}
               </ul>
@@ -382,7 +399,7 @@ export default function CatalogPriceImport() {
                   onClick={handleCommit}
                   disabled={totalToApply === 0}
                 >
-                  <Upload size={14} /> Update {totalToApply} product{totalToApply === 1 ? "" : "s"}
+                  <Upload size={14} /> {canApprove ? "Update" : "Send"} {totalToApply} product{totalToApply === 1 ? "" : "s"}{canApprove ? "" : " for GM approval"}
                 </button>
               </>
             )}

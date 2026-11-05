@@ -7,6 +7,9 @@ import {
 } from "lucide-react";
 import { useDashboardData, computeDelta } from "../../hooks/useDashboardData.js";
 import KpiCard from "../../components/admin/KpiCard.jsx";
+import { usePermission } from "../../lib/permissions.js";
+import { useAdmin } from "../../context/AdminContext.jsx";
+import { canOpenPage } from "../../config/permissions.js";
 
 /**
  * Admin dashboard — Voltory operator's home page.
@@ -53,6 +56,10 @@ const WARR_STATUS_STYLES = {
 
 export default function AdminDashboard() {
   const [tick, setTick] = useState(0);
+  // Revenue is GM-only (reports.full); everyone else sees counts.
+  const showRevenue = usePermission("reports.full");
+  const { role } = useAdmin();
+  const canOpen = (to) => canOpenPage(role, to);
   const { loading, error, data } = useDashboardData(tick);
 
   if (loading) {
@@ -101,7 +108,7 @@ export default function AdminDashboard() {
 
       {/* ---- KPI row ---- */}
       <section className="adm-kpi-row">
-        <KpiCard
+        {showRevenue && <KpiCard
           label="Revenue (this month)"
           value={kpisReady ? naira(k.revenue_this_month) : "—"}
           icon={Banknote}
@@ -110,7 +117,7 @@ export default function AdminDashboard() {
           deltaLabel="vs same period last month"
           note={kpisReady ? undefined : "Dashboard views need updating"}
           sparkline={revenueSpark}
-        />
+        />}
         <KpiCard
           label="Orders (this month)"
           value={kpisReady ? Number(k.orders_this_month || 0).toLocaleString() : "—"}
@@ -152,7 +159,7 @@ export default function AdminDashboard() {
                 <b>{o.id}</b>
                 <small>{o.customer_name}</small>
               </span>
-              <span className="adm-row-item__val">{naira(o.total)}</span>
+              {showRevenue && <span className="adm-row-item__val">{naira(o.total)}</span>}
               <span className={"adm-chip " + (STATUS_STYLES[o.status]?.cls || "adm-chip--info")}>
                 {STATUS_STYLES[o.status]?.label || o.status}
               </span>
@@ -166,7 +173,8 @@ export default function AdminDashboard() {
           subtitle={`${k.low_stock_count || 0} items`}
           empty={data.lowStock.length === 0}
           emptyText="All stock levels healthy."
-          viewAllTo="/admin/products"
+          viewAllTo={canOpen("/admin/products") ? "/admin/products" : undefined}
+          viewAllDisabled={!canOpen("/admin/products")}
         >
           {data.lowStock.map((p) => (
             <div key={p.sku} className="adm-row-item">
@@ -207,7 +215,9 @@ export default function AdminDashboard() {
 
         <Widget title="Quick Actions" subtitle="One-click shortcuts">
           <div className="adm-quickgrid">
-            <QuickAction icon={PackagePlus} label="Add Product"      to="/admin/products?new=1" />
+            {canOpen("/admin/products")
+              ? <QuickAction icon={PackagePlus} label="Add Product"      to="/admin/products?new=1" />
+              : <QuickAction icon={PackagePlus} label="Add Product"      disabled />}
             <QuickAction icon={DownloadCloud} label="Import Products" disabled />
             <QuickAction icon={FileSpreadsheet} label="Export Catalog" disabled />
             <QuickAction icon={LayoutGrid} label="Manage Categories"  disabled />
@@ -243,13 +253,13 @@ export default function AdminDashboard() {
             {kpisReady && ` · ${Number(k.awaiting_payment || 0)} awaiting payment`}
           </small>
         </div>
-        <div className="adm-catalog-summary__cell">
+        {showRevenue && <div className="adm-catalog-summary__cell">
           <span className="adm-catalog-summary__label">Total revenue (all time)</span>
           <span className="adm-catalog-summary__value">
             <Banknote size={18} /> {kpisReady ? naira(k.total_revenue) : "—"}
           </span>
           <small>{Number(k.total_orders || 0)} orders · excl. cancelled, refunded, unpaid</small>
-        </div>
+        </div>}
       </section>
     </div>
   );

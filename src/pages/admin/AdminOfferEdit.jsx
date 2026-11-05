@@ -6,6 +6,8 @@ import {
 } from "lucide-react";
 import { useCatalog } from "../../context/CatalogContext.jsx";
 import { usePermission } from "../../lib/permissions.js";
+import { proposeOfferChange } from "../../lib/approvalActions.js";
+import { useAdmin } from "../../context/AdminContext.jsx";
 import { adminToast } from "../../lib/adminToast.js";
 import {
   fetchOfferById,
@@ -35,7 +37,10 @@ export default function AdminOfferEdit() {
   const navigate = useNavigate();
 
   const { products, upsertOffer, loading: catalogLoading } = useCatalog();
-  const canManage = usePermission("catalog.offers.manage");
+  // GM saves directly; Store's save becomes a GM approval.
+  const canManage = usePermission(["offers.manage", "offers.propose"]);
+  const canDirect = usePermission("offers.manage");
+  const { admin } = useAdmin();
 
   const [form, setForm] = useState({
     product_sku: "",
@@ -185,6 +190,19 @@ export default function AdminOfferEdit() {
         is_active:        !!form.is_active,
       };
 
+      if (!canDirect) {
+        const res = await proposeOfferChange({
+          createdBy: admin?.id,
+          op: isEdit ? "update" : "create",
+          offerId: isEdit ? id : null,
+          label: payload.title,
+          offer: payload,
+        });
+        if (!res.ok) throw new Error(res.error);
+        adminToast.success("Sent to the GM for approval.");
+        navigate("/admin/offers");
+        return;
+      }
       await upsertOffer(payload);
       adminToast.success(isEdit ? "Offer updated." : "Offer created.");
       navigate("/admin/offers");
@@ -418,7 +436,7 @@ export default function AdminOfferEdit() {
             className="adm-btn adm-btn--primary"
             disabled={saving || !canManage}
           >
-            <Save size={13} /> {saving ? "Saving…" : (isEdit ? "Save changes" : "Create offer")}
+            <Save size={13} /> {saving ? "Saving…" : !canDirect ? "Send for GM approval" : (isEdit ? "Save changes" : "Create offer")}
           </button>
         </div>
       </form>

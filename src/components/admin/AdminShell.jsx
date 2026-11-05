@@ -6,6 +6,9 @@ import AdminSidebar from "./AdminSidebar.jsx";
 import AdminTopbar from "./AdminTopbar.jsx";
 import CommandPalette from "./CommandPalette.jsx";
 import AdminToastHost from "./AdminToastHost.jsx";
+import NoAccess from "./NoAccess.jsx";
+import { useAdmin } from "../../context/AdminContext.jsx";
+import { canOpenPage } from "../../config/permissions.js";
 
 /**
  * The primary admin layout. Replaces the older AdminLayout.jsx
@@ -74,6 +77,14 @@ function Breadcrumbs() {
   );
 }
 
+/** The page itself, or NoAccess when the role can't open this path. */
+function GatedOutlet() {
+  const { pathname } = useLocation();
+  const { role, roleLoading } = useAdmin();
+  if (roleLoading) return <div className="adm-empty adm-empty--loading">Checking access…</div>;
+  return canOpenPage(role, pathname) ? <Outlet /> : <NoAccess />;
+}
+
 function ShellInner() {
   const { theme, themeVars } = useAdminTheme();
   const [drawerOpen, setDrawerOpen] = useState(false);
@@ -117,7 +128,7 @@ function ShellInner() {
         />
         <Breadcrumbs />
         <main className="adm-content">
-          <Outlet />
+          <GatedOutlet />
         </main>
       </div>
 

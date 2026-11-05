@@ -6,6 +6,10 @@ import CatalogFilters from "../../components/admin/CatalogFilters.jsx";
 import ProductTable from "../../components/admin/ProductTable.jsx";
 import ProductEditPanel from "../../components/admin/ProductEditPanel.jsx";
 import BulkActionBar from "../../components/admin/BulkActionBar.jsx";
+import { useAdmin } from "../../context/AdminContext.jsx";
+import { usePermission } from "../../lib/permissions.js";
+import { proposePriceChange } from "../../lib/approvalActions.js";
+import { adminToast } from "../../lib/adminToast.js";
 
 /**
  * Catalog Products page — the operator's primary workhorse.
@@ -22,6 +26,11 @@ import BulkActionBar from "../../components/admin/BulkActionBar.jsx";
  * Selection: bulk-select checkboxes populate a Set<sku>. Bulk
  * actions themselves come in a follow-up session; scaffolding is
  * here so the wiring is done.
+ *
+ * Roles: without prices.approve (Store), editing an existing
+ * product's price or compare-at price saves everything else and
+ * sends the price change to the GM as an approval. New products
+ * keep the price they're created with. Delete needs catalog.delete.
  */
 export default function CatalogProducts() {
   const [params, setParams] = useSearchParams();
@@ -42,6 +51,9 @@ export default function CatalogProducts() {
   const [editing, setEditing] = useState(null);
   const [saving, setSaving] = useState(false);
   const [selectedSkus, setSelectedSkus] = useState(new Set());
+  const { admin } = useAdmin();
+  const canApprovePrices = usePermission("prices.approve");
+  const canDelete = usePermission("catalog.delete");
 
   // Deep-link handling: run once on mount and again if params change
   useEffect(() => {
@@ -87,7 +99,29 @@ export default function CatalogProducts() {
   const handleSave = useCallback(async (payload) => {
     setSaving(true);
     try {
-      const saved = await upsertProduct(payload);
+      const before = editMode === "edit" ? editing : null;
+      const num = (v) => (v === "" || v == null ? null : Number(v));
+      const priceChanged = before && (
+        num(payload.price) !== num(before.price) || num(payload.was) !== num(before.was)
+      );
+      let toSave = payload;
+      if (priceChanged && !canApprovePrices) {
+        toSave = { ...payload, price: before.price, was: before.was ?? null };
+      }
+      const saved = await upsertProduct(toSave);
+      if (priceChanged && !canApprovePrices) {
+        const res = await proposePriceChange({
+          createdBy: admin?.id,
+          sku: before.sku,
+          name: payload.name || before.name,
+          currentPrice: before.price,
+          currentWas: before.was,
+          newPrice: payload.price,
+          newWas: payload.was,
+        });
+        if (res.ok) adminToast.success("Saved. The price change was sent to the GM for approval.");
+        else adminToast.error("Saved, but the price change couldn't be sent for approval: " + (res.error || "unknown error"));
+      }
       // After a fresh create, flip into edit mode on the saved row
       if (editMode === "new") {
         setEditing(saved);
@@ -98,7 +132,7 @@ export default function CatalogProducts() {
     } finally {
       setSaving(false);
     }
-  }, [upsertProduct, editMode]);
+  }, [upsertProduct, editMode, editing, canApprovePrices, admin?.id]);
 
   const handleDelete = useCallback(async (sku) => {
     await deleteProduct(sku);
@@ -184,7 +218,7 @@ export default function CatalogProducts() {
       <BulkActionBar
         count={selectedSkus.size}
         onSetStatus={handleBulkStatus}
-        onDelete={handleBulkDelete}
+        onDelete={canDelete ? handleBulkDelete : undefined}
         onClear={() => setSelectedSkus(new Set())}
       />
 
@@ -217,7 +251,8 @@ export default function CatalogProducts() {
             saving={saving}
             onSave={handleSave}
             onCancel={closePanel}
-            onDelete={handleDelete}
+            onDelete={canDelete ? handleDelete : undefined}
+            priceNeedsApproval={!canApprovePrices}
           />
         )}
       </div>

@@ -4,7 +4,10 @@ import {
   AlertTriangle, ArrowLeft, Ban, Check, Copy, CreditCard, MapPin,
   Phone, RefreshCw, RotateCcw, ShoppingCart, User,
 } from "lucide-react";
-import { fetchOrderWithItems, setOrderStatus } from "../../hooks/useOrders.js";
+import { fetchOrderWithItems, setOrderAdminNote, setOrderStatus } from "../../hooks/useOrders.js";
+import { useAdmin } from "../../context/AdminContext.jsx";
+import { NO_ACCESS_TIP, usePermission } from "../../lib/permissions.js";
+import { requestOrderCancel } from "../../lib/approvalActions.js";
 import { ORDER_STATUSES, PAYMENT_LABELS, STATUS_TRANSITIONS, paymentStateChip } from "../../config/orderStatus.js";
 import OrderStatusTimeline from "../../components/admin/OrderStatusTimeline.jsx";
 
@@ -24,7 +27,10 @@ function fmtDateLong(iso) {
  * Left column: status timeline + line items + totals summary.
  * Right column: customer, address, payment, action buttons.
  * The available action buttons are computed from STATUS_TRANSITIONS
- * so operators never see an invalid next-state.
+ * so operators never see an invalid next-state, then filtered by
+ * role: cancel / refund are GM-only; Store gets "Request
+ * cancellation" (a GM approval) instead; Support only views and
+ * adds internal notes.
  */
 export default function AdminOrderDetail() {
   const { id } = useParams();
@@ -34,6 +40,13 @@ export default function AdminOrderDetail() {
   const [error, setError] = useState(null);
   const [saving, setSaving] = useState(null); // the target status while saving
   const [confirming, setConfirming] = useState(null); // target status while confirming
+  const canUpdateStatus  = usePermission("orders.updateStatus");
+  const canCancel        = usePermission("orders.cancel");
+  const canRefund        = usePermission("orders.refund");
+  const canRequestCancel = usePermission("orders.requestCancel");
+  const canNotes         = usePermission("orders.notes");
+  const mayFire = (target) =>
+    target === "cancelled" ? canCancel : target === "refunded" ? canRefund : canUpdateStatus;
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -151,6 +164,16 @@ export default function AdminOrderDetail() {
                     const targetMeta = ORDER_STATUSES[target];
                     const isConfirming = confirming === target;
                     const isSaving = saving === target;
+                    if (!mayFire(target)) {
+                      if (target === "cancelled" && canRequestCancel) {
+                        return <RequestCancelButton key={target} order={order} />;
+                      }
+                      return (
+                        <button key={target} className="adm-btn adm-btn--secondary" disabled title={NO_ACCESS_TIP}>
+                          Mark as {targetMeta.label}
+                        </button>
+                      );
+                    }
                     return (
                       <TransitionButton
                         key={target}
@@ -276,15 +299,128 @@ export default function AdminOrderDetail() {
             </div>
           </div>
 
+          <InternalNotes order={order} canEdit={canNotes} onSaved={(admin_note) => setOrder((o) => ({ ...o, admin_note }))} />
+
           {order.notes && (
             <div className="adm-widget">
-              <header><div><b>Notes</b></div></header>
+              <header><div><b>Customer notes</b></div></header>
               <div className="adm-widget__body" style={{ padding: "12px 20px 16px" }}>
                 <p style={{ fontSize: 12.5, lineHeight: 1.55, color: "var(--adm-ink-2)" }}>{order.notes}</p>
               </div>
             </div>
           )}
         </aside>
+      </div>
+    </div>
+  );
+}
+
+/** Store: ask the GM to cancel (creates an order_cancel approval). */
+function RequestCancelButton({ order }) {
+  const { admin } = useAdmin();
+  const [open, setOpen] = useState(false);
+  const [reason, setReason] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [msg, setMsg] = useState(null);
+
+  async function submit() {
+    setBusy(true);
+    setMsg(null);
+    const res = await requestOrderCancel({ createdBy: admin?.id, order, reason });
+    setBusy(false);
+    if (res.ok) {
+      setMsg({ kind: "ok", text: "Sent to the GM for approval." });
+      setOpen(false);
+      setReason("");
+    } else {
+      setMsg({ kind: "err", text: res.error || "Couldn't send the request." });
+    }
+  }
+
+  const msgStyle = (kind) => ({ color: kind === "ok" ? "var(--adm-ok, #047857)" : "var(--adm-err, #b91c1c)" });
+
+  if (!open) {
+    return (
+      <span style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
+        <button className="adm-btn adm-btn--ghost-danger" onClick={() => setOpen(true)} title="Cancelling needs the GM's approval">
+          <Ban size={13} /> Request cancellation
+        </button>
+        {msg && <small style={msgStyle(msg.kind)}>{msg.text}</small>}
+      </span>
+    );
+  }
+  return (
+    <span className="adm-orderdetail__confirm" style={{ flexWrap: "wrap" }}>
+      <input
+        type="text"
+        placeholder="Reason (required)"
+        value={reason}
+        onChange={(e) => setReason(e.target.value)}
+        disabled={busy}
+        maxLength={500}
+        style={{ minWidth: 220, padding: "7px 10px", border: "1px solid var(--adm-border)", borderRadius: 6, font: "inherit" }}
+        autoFocus
+      />
+      <button className="adm-btn adm-btn--secondary" onClick={() => setOpen(false)} disabled={busy}>Back</button>
+      <button className="adm-btn adm-btn--danger" onClick={submit} disabled={busy || !reason.trim()}>
+        {busy ? "Sending…" : "Send to GM"}
+      </button>
+      {msg && <small style={msgStyle(msg.kind)}>{msg.text}</small>}
+    </span>
+  );
+}
+
+/** Staff-only notes on the order (orders.admin_note). */
+function InternalNotes({ order, canEdit, onSaved }) {
+  const [draft, setDraft] = useState(order.admin_note || "");
+  const [busy, setBusy] = useState(false);
+  const [msg, setMsg] = useState(null);
+  const dirty = draft !== (order.admin_note || "");
+
+  async function save() {
+    setBusy(true);
+    setMsg(null);
+    try {
+      const saved = await setOrderAdminNote(order.id, draft.trim() || null);
+      onSaved(saved.admin_note ?? null);
+      setMsg({ kind: "ok", text: "Saved." });
+    } catch (e) {
+      setMsg({ kind: "err", text: e.message || "Couldn't save the note." });
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  if (!canEdit && !order.admin_note) return null;
+  return (
+    <div className="adm-widget">
+      <header><div><b>Internal notes</b><small>Only staff see these</small></div></header>
+      <div className="adm-widget__body" style={{ padding: "12px 20px 16px" }}>
+        {canEdit ? (
+          <>
+            <textarea
+              rows={4}
+              value={draft}
+              onChange={(e) => { setDraft(e.target.value); setMsg(null); }}
+              maxLength={5000}
+              disabled={busy}
+              placeholder="Called the customer, delivery moved to Friday…"
+              style={{ width: "100%", boxSizing: "border-box", padding: 10, border: "1px solid var(--adm-border)", borderRadius: 6, font: "inherit", fontSize: 13, resize: "vertical" }}
+            />
+            <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 8 }}>
+              <button className="adm-btn adm-btn--primary" onClick={save} disabled={busy || !dirty}>
+                {busy ? "Saving…" : "Save note"}
+              </button>
+              {msg && (
+                <small style={{ color: msg.kind === "ok" ? "var(--adm-ok, #047857)" : "var(--adm-err, #b91c1c)" }}>
+                  {msg.text}
+                </small>
+              )}
+            </div>
+          </>
+        ) : (
+          <p style={{ fontSize: 12.5, lineHeight: 1.55, color: "var(--adm-ink-2)", whiteSpace: "pre-wrap" }}>{order.admin_note}</p>
+        )}
       </div>
     </div>
   );

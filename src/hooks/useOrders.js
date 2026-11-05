@@ -111,3 +111,18 @@ export async function setOrderStatus(id, status) {
   if (error) throw error;
   return data;
 }
+
+/**
+ * Save the staff-only note on an order (orders.admin_note, added by
+ * supabase/admin_roles_update.sql).
+ */
+export async function setOrderAdminNote(id, note) {
+  const { data, error } = await supabase
+    .from("orders")
+    .update({ admin_note: note })
+    .eq("id", id)
+    .select("id, admin_note")
+    .single();
+  if (error) throw error;
+  return data;
+}

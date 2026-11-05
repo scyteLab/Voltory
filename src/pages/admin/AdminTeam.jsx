@@ -1,149 +1,125 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import {
-  AlertTriangle, Check, Loader2, Mail, ShieldCheck, UserCog, UserPlus,
+  AlertTriangle, Check, KeyRound, Loader2, Mail, ShieldCheck, UserCog, UserPlus,
 } from "lucide-react";
 import { useAdmin } from "../../context/AdminContext.jsx";
 import {
-  fetchAdminTeam, findAuthUserByEmail, proposeRoleChange,
+  addStaffMember, changeStaffRole, deactivateStaff, fetchAdminTeam, reactivateStaff, removeStaff,
 } from "../../lib/adminTeamClient.js";
+import { ASSIGNABLE_ROLES, ROLES, normaliseRole, roleLabel } from "../../config/permissions.js";
 
 /**
- * AdminTeam  \u2014  /admin/team
+ * AdminTeam  —  /admin/team  (GM only: team.manage)
  *
- * Lists everyone with an admin role and lets any admin propose
- * role changes. Proposals do NOT execute directly \u2014 they land
- * in the GM Approvals queue for GM sign-off.
+ * Who has which role, plus:
+ *   · Add a staff member: email + role + temporary password. Creates
+ *     the sign-in account (or gives an existing account a role).
+ *   · Change role, deactivate / reactivate (blocks sign-in, keeps
+ *     the row), remove (deletes the role, blocks sign-in).
  *
- * Two sections:
- *   1. Current team \u2014 table of existing admins with a
- *      "Change role" action per row
- *   2. Add existing user \u2014 look up an auth user by email,
- *      propose granting them a first role
- *
- * NOT included in this session:
- *   \u00B7 Creating brand-new auth accounts (do that via Supabase
- *     Dashboard \u2192 Authentication \u2192 Users \u2192 Add user)
- *   \u00B7 Removing an admin (only role changes)
- *   \u00B7 Direct role edits (everything goes through approvals)
+ * All of it runs in the admin-team Netlify function, which re-checks
+ * the caller is the GM. The GM can't change their own account here.
  */
+
+/** 14 random characters, no look-alikes (0/O, 1/l/I). */
+function randomPassword() {
+  const chars = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789";
+  const bytes = crypto.getRandomValues(new Uint8Array(14));
+  return Array.from(bytes, (b) => chars[b % chars.length]).join("");
+}
+
+function fmtDate(iso) {
+  if (!iso) return "Never";
+  return new Date(iso).toLocaleString("en-NG", { dateStyle: "medium", timeStyle: "short" });
+}
+
 export default function AdminTeam() {
   const { admin } = useAdmin();
   const [team, setTeam] = useState([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState(null);
+  const [rowBusy, setRowBusy] = useState(null); // user_id while an action runs
+  const [rowMsg, setRowMsg] = useState(null);    // { kind, message }
 
-  const [changeTarget, setChangeTarget] = useState(null); // row being edited
-  const [newRole, setNewRole] = useState("staff");
-  const [reason, setReason] = useState("");
-  const [submitting, setSubmitting] = useState(false);
-  const [feedback, setFeedback] = useState(null); // { kind: 'ok'|'err', message }
+  const [changeTarget, setChangeTarget] = useState(null);
+  const [newRole, setNewRole] = useState("store");
+  const [confirm, setConfirm] = useState(null);  // { member, action: 'deactivate'|'remove' }
 
   const [addEmail, setAddEmail] = useState("");
-  const [addRole, setAddRole] = useState("staff");
-  const [addLooking, setAddLooking] = useState(false);
+  const [addRole, setAddRole] = useState("store");
+  const [addPassword, setAddPassword] = useState(randomPassword);
+  const [adding, setAdding] = useState(false);
   const [addFeedback, setAddFeedback] = useState(null);
 
-  useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      const res = await fetchAdminTeam();
-      if (cancelled) return;
-      if (res.ok) {
-        setTeam(res.rows);
-        setLoadError(null);
-      } else {
-        setLoadError(res.error || "Couldn't load team.");
-      }
-      setLoading(false);
-    })();
-    return () => { cancelled = true; };
+  const load = useCallback(async () => {
+    const res = await fetchAdminTeam();
+    if (res.ok) {
+      setTeam(res.rows || []);
+      setLoadError(null);
+    } else {
+      setLoadError(res.error || "Couldn't load the team.");
+    }
+    setLoading(false);
   }, []);
 
-  async function refreshTeam() {
-    const res = await fetchAdminTeam();
-    if (res.ok) setTeam(res.rows);
+  useEffect(() => { load(); }, [load]);
+
+  async function runRowAction(member, fn, okMessage) {
+    setRowBusy(member.user_id);
+    setRowMsg(null);
+    const res = await fn();
+    setRowBusy(null);
+    if (res.ok) {
+      setRowMsg({ kind: "ok", message: okMessage });
+      await load();
+    } else {
+      setRowMsg({ kind: "err", message: res.error || "That didn't work." });
+    }
+    return res;
   }
 
-  /* ---- Propose role change for an existing admin ---- */
   async function submitRoleChange() {
-    if (!changeTarget || !admin?.id) return;
-    setFeedback(null);
-    setSubmitting(true);
-    const res = await proposeRoleChange({
-      createdBy:    admin.id,
-      targetUserId: changeTarget.user_id,
-      targetEmail:  changeTarget.email,
-      currentRole:  changeTarget.role,
-      newRole,
-      reason,
-    });
-    setSubmitting(false);
-    if (res.ok) {
-      setFeedback({ kind: "ok", message: "Change submitted. Awaiting GM approval." });
-      setTimeout(() => {
-        setChangeTarget(null);
-        setReason("");
-        setFeedback(null);
-      }, 1500);
-    } else {
-      setFeedback({ kind: "err", message: res.error || "Couldn't submit." });
-    }
+    if (!changeTarget) return;
+    const res = await runRowAction(
+      changeTarget,
+      () => changeStaffRole(changeTarget.user_id, newRole),
+      `${changeTarget.email} is now ${roleLabel(newRole)}.`,
+    );
+    if (res.ok) setChangeTarget(null);
   }
 
-  /* ---- Propose adding an existing auth user as an admin ---- */
-  async function submitAdd() {
+  async function submitConfirm() {
+    if (!confirm) return;
+    const { member, action } = confirm;
+    const res = action === "remove"
+      ? await runRowAction(member, () => removeStaff(member.user_id), `${member.email} was removed and can no longer sign in.`)
+      : await runRowAction(member, () => deactivateStaff(member.user_id), `${member.email} is deactivated and can no longer sign in.`);
+    if (res.ok) setConfirm(null);
+  }
+
+  async function submitAdd(e) {
+    e.preventDefault();
     setAddFeedback(null);
-    if (!addEmail.trim() || !admin?.id) return;
-    setAddLooking(true);
-
-    const lookup = await findAuthUserByEmail(addEmail);
-    if (!lookup.ok) {
-      setAddLooking(false);
-      setAddFeedback({ kind: "err", message: lookup.error || "Lookup failed." });
+    setAdding(true);
+    const email = addEmail.trim().toLowerCase();
+    const res = await addStaffMember({ email, role: addRole, password: addPassword });
+    setAdding(false);
+    if (!res.ok) {
+      setAddFeedback({ kind: "err", message: res.error || "Couldn't add them." });
       return;
     }
-    if (!lookup.user) {
-      setAddLooking(false);
-      setAddFeedback({
-        kind: "err",
-        message: "No auth user with that email. Create the account first in Supabase Auth."
-      });
-      return;
-    }
-
-    // Check if they already have a role
-    const existing = team.find((t) => t.user_id === lookup.user.user_id);
-    if (existing) {
-      setAddLooking(false);
-      setAddFeedback({
-        kind: "err",
-        message: `That user already has role '${existing.role}'. Use "Change role" instead.`
-      });
-      return;
-    }
-
-    const res = await proposeRoleChange({
-      createdBy:    admin.id,
-      targetUserId: lookup.user.user_id,
-      targetEmail:  lookup.user.email,
-      currentRole:  null,
-      newRole:      addRole,
-      reason:       null,
+    setAddFeedback({
+      kind: "ok",
+      message: `${email} added as ${roleLabel(addRole)}${res.existed ? " (existing account)" : ""}. `
+        + `Share the temporary password privately: ${addPassword} — they should change it after signing in (key icon, top right).`,
     });
-    setAddLooking(false);
-    if (res.ok) {
-      setAddFeedback({
-        kind: "ok",
-        message: "Proposal submitted. GM approval required."
-      });
-      setAddEmail("");
-    } else {
-      setAddFeedback({ kind: "err", message: res.error || "Couldn't submit." });
-    }
+    setAddEmail("");
+    setAddPassword(randomPassword());
+    await load();
   }
 
   if (loading) {
-    return <div className="adm-page"><div className="hb__loading">Loading team\u2026</div></div>;
+    return <div className="adm-page"><div className="hb__loading">Loading team…</div></div>;
   }
 
   return (
@@ -151,20 +127,38 @@ export default function AdminTeam() {
       <header className="adm-page__head">
         <div>
           <h1>Team</h1>
-          <p>Admins who have access to this console. Role changes require GM approval.</p>
+          <p>Who can use this console, and what their role lets them do.</p>
         </div>
       </header>
 
-      {loadError && <div className="team-warn">{loadError}</div>}
+      {loadError && (
+        <div className="team-warn">
+          <AlertTriangle size={13} /> {loadError}
+          {" "}(If this mentions <code>deactivated_at</code>, run <code>supabase/admin_roles_update.sql</code> first.)
+        </div>
+      )}
+
+      <section className="team-section">
+        <h2><ShieldCheck size={16} /> Roles</h2>
+        <ul className="team-roles-legend">
+          {ASSIGNABLE_ROLES.map((r) => (
+            <li key={r}><b>{ROLES[r].label}:</b> {ROLES[r].description}</li>
+          ))}
+        </ul>
+      </section>
 
       {/* -------- Current team -------- */}
       <section className="team-section">
         <h2><UserCog size={16} /> Current team</h2>
 
-        {team.length === 0 ? (
-          <div className="team-empty">
-            No admins yet. Add one below.
+        {rowMsg && (
+          <div className={"team-msg team-msg--" + rowMsg.kind}>
+            {rowMsg.kind === "err" ? <AlertTriangle size={13} /> : <Check size={13} />} {rowMsg.message}
           </div>
+        )}
+
+        {team.length === 0 ? (
+          <div className="team-empty">No one yet. Add a staff member below.</div>
         ) : (
           <table className="team-table">
             <thead>
@@ -172,92 +166,136 @@ export default function AdminTeam() {
                 <th>Email</th>
                 <th>Role</th>
                 <th>2FA</th>
+                <th>Last sign-in</th>
                 <th></th>
               </tr>
             </thead>
             <tbody>
-              {team.map((m) => (
-                <tr key={m.user_id}>
-                  <td>
-                    <span className="team-email">{m.email}</span>
-                    {m.user_id === admin?.id && <em className="team-you">You</em>}
-                  </td>
-                  <td>
-                    <span className={"team-role team-role--" + m.role}>
-                      {m.role === "gm" ? "GM" : "Staff"}
-                    </span>
-                  </td>
-                  <td>
-                    {m.totp_enrolled_at
-                      ? <span className="team-2fa"><Check size={12} /> Enrolled</span>
-                      : <span className="team-2fa team-2fa--off">Not set up</span>}
-                  </td>
-                  <td>
-                    <button
-                      className="adm-btn adm-btn--secondary"
-                      onClick={() => {
-                        setChangeTarget(m);
-                        setNewRole(m.role === "gm" ? "staff" : "gm");
-                        setReason("");
-                        setFeedback(null);
-                      }}
-                    >
-                      Change role
-                    </button>
-                  </td>
-                </tr>
-              ))}
+              {team.map((m) => {
+                const isYou = m.user_id === admin?.id;
+                const off = Boolean(m.deactivated_at);
+                const busy = rowBusy === m.user_id;
+                const role = normaliseRole(m.role) || "none";
+                return (
+                  <tr key={m.user_id} className={off ? "team-row--off" : ""}>
+                    <td>
+                      <span className="team-email">{m.email}</span>
+                      {isYou && <em className="team-you">You</em>}
+                      {off && <span className="team-off">Deactivated</span>}
+                    </td>
+                    <td><span className={"team-role team-role--" + role}>{roleLabel(m.role)}</span></td>
+                    <td>
+                      {m.totp_enrolled
+                        ? <span className="team-2fa"><Check size={12} /> Enrolled</span>
+                        : <span className="team-2fa team-2fa--off">{role === "gm" ? "Not set up" : "—"}</span>}
+                    </td>
+                    <td>{fmtDate(m.last_sign_in_at)}</td>
+                    <td>
+                      {isYou ? (
+                        <span className="team-help" title="You can't change your own account here.">—</span>
+                      ) : (
+                        <div className="team-actions">
+                          {busy && <Loader2 size={14} className="waq-spin" />}
+                          {!off && (
+                            <button
+                              className="adm-btn adm-btn--secondary"
+                              disabled={busy}
+                              onClick={() => {
+                                setChangeTarget(m);
+                                setNewRole(ASSIGNABLE_ROLES.find((r) => r !== role) || "store");
+                              }}
+                            >
+                              Change role
+                            </button>
+                          )}
+                          {off ? (
+                            <button
+                              className="adm-btn adm-btn--secondary"
+                              disabled={busy}
+                              onClick={() => runRowAction(m, () => reactivateStaff(m.user_id), `${m.email} can sign in again.`)}
+                            >
+                              Reactivate
+                            </button>
+                          ) : (
+                            <button
+                              className="adm-btn adm-btn--secondary"
+                              disabled={busy}
+                              onClick={() => setConfirm({ member: m, action: "deactivate" })}
+                            >
+                              Deactivate
+                            </button>
+                          )}
+                          <button
+                            className="adm-btn adm-btn--secondary"
+                            disabled={busy}
+                            onClick={() => setConfirm({ member: m, action: "remove" })}
+                          >
+                            Remove
+                          </button>
+                        </div>
+                      )}
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         )}
       </section>
 
-      {/* -------- Add existing user -------- */}
+      {/* -------- Add staff member -------- */}
       <section className="team-section">
-        <h2><UserPlus size={16} /> Add an existing user</h2>
+        <h2><UserPlus size={16} /> Add a staff member</h2>
         <p className="team-help">
-          Grant an admin role to a user who already has a Supabase Auth account.
-          To create a brand-new user, use Supabase Dashboard \u2192 Authentication \u2192 Users.
+          Creates their sign-in account with a temporary password (or gives an existing
+          account a role). They sign in at <b>/admin/login</b> and should change the password straight away.
         </p>
 
-        <div className="team-add">
+        <form className="team-add" onSubmit={submitAdd}>
           <div className="team-add__field">
             <label>Email</label>
             <div className="team-add__input">
               <Mail size={14} />
               <input
                 type="email"
-                placeholder="person@mynaven.com"
+                placeholder="store@mynaven.com"
                 value={addEmail}
                 onChange={(e) => { setAddEmail(e.target.value); setAddFeedback(null); }}
-                disabled={addLooking}
+                disabled={adding}
+                required
               />
             </div>
           </div>
           <div className="team-add__field">
-            <label>Grant role</label>
-            <select
-              value={addRole}
-              onChange={(e) => setAddRole(e.target.value)}
-              disabled={addLooking}
-            >
-              <option value="staff">Staff</option>
-              <option value="gm">GM</option>
+            <label>Role</label>
+            <select value={addRole} onChange={(e) => setAddRole(e.target.value)} disabled={adding}>
+              {ASSIGNABLE_ROLES.map((r) => <option key={r} value={r}>{ROLES[r].label}</option>)}
             </select>
           </div>
-          <button
-            className="adm-btn adm-btn--primary"
-            onClick={submitAdd}
-            disabled={addLooking || !addEmail.trim()}
-          >
-            {addLooking ? "Submitting\u2026" : "Propose"}
+          <div className="team-add__field">
+            <label>Temporary password</label>
+            <div className="team-add__input">
+              <KeyRound size={14} />
+              <input
+                type="text"
+                value={addPassword}
+                onChange={(e) => setAddPassword(e.target.value)}
+                disabled={adding}
+                minLength={10}
+                autoComplete="off"
+                spellCheck={false}
+                required
+              />
+            </div>
+          </div>
+          <button className="adm-btn adm-btn--primary" type="submit" disabled={adding || !addEmail.trim()}>
+            {adding ? "Adding…" : "Add"}
           </button>
-        </div>
+        </form>
 
         {addFeedback && (
           <div className={"team-msg team-msg--" + addFeedback.kind}>
-            {addFeedback.kind === "err" && <AlertTriangle size={13} />}
-            {addFeedback.kind === "ok"  && <ShieldCheck size={13} />}
+            {addFeedback.kind === "err" ? <AlertTriangle size={13} /> : <ShieldCheck size={13} />}
             {addFeedback.message}
           </div>
         )}
@@ -265,62 +303,52 @@ export default function AdminTeam() {
 
       {/* -------- Change role modal -------- */}
       {changeTarget && (
-        <div className="team-modal" onClick={() => !submitting && setChangeTarget(null)}>
+        <div className="team-modal" onClick={() => !rowBusy && setChangeTarget(null)}>
           <div className="team-modal__card" onClick={(e) => e.stopPropagation()}>
             <h3>Change role</h3>
             <p>
-              Propose changing <b>{changeTarget.email}</b> from{" "}
-              <b>{changeTarget.role === "gm" ? "GM" : "Staff"}</b> to{" "}
-              a new role. This proposal awaits GM approval.
+              <b>{changeTarget.email}</b> is currently <b>{roleLabel(changeTarget.role)}</b>.
+              The change applies the next time their page loads.
             </p>
-
             <div className="team-modal__field">
               <label>New role</label>
-              <select
-                value={newRole}
-                onChange={(e) => setNewRole(e.target.value)}
-                disabled={submitting}
-              >
-                <option value="staff">Staff</option>
-                <option value="gm">GM</option>
+              <select value={newRole} onChange={(e) => setNewRole(e.target.value)} disabled={!!rowBusy}>
+                {ASSIGNABLE_ROLES.map((r) => <option key={r} value={r}>{ROLES[r].label}</option>)}
               </select>
             </div>
-
-            <div className="team-modal__field">
-              <label>Reason (optional)</label>
-              <textarea
-                rows={3}
-                placeholder="Why is this change needed?"
-                value={reason}
-                onChange={(e) => setReason(e.target.value)}
-                disabled={submitting}
-              />
-            </div>
-
-            {feedback && (
-              <div className={"team-msg team-msg--" + feedback.kind}>
-                {feedback.kind === "err" && <AlertTriangle size={13} />}
-                {feedback.kind === "ok"  && <ShieldCheck size={13} />}
-                {feedback.message}
-              </div>
-            )}
-
+            <p className="team-help">{ROLES[newRole]?.description}</p>
             <div className="team-modal__actions">
-              <button
-                className="adm-btn adm-btn--secondary"
-                onClick={() => setChangeTarget(null)}
-                disabled={submitting}
-              >
+              <button className="adm-btn adm-btn--secondary" onClick={() => setChangeTarget(null)} disabled={!!rowBusy}>
                 Cancel
               </button>
               <button
                 className="adm-btn adm-btn--primary"
                 onClick={submitRoleChange}
-                disabled={submitting || newRole === changeTarget.role}
+                disabled={!!rowBusy || newRole === normaliseRole(changeTarget.role)}
               >
-                {submitting
-                  ? <><Loader2 size={13} className="waq-spin" /> Submitting\u2026</>
-                  : "Submit for approval"}
+                {rowBusy ? "Saving…" : "Save role"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* -------- Deactivate / remove confirm -------- */}
+      {confirm && (
+        <div className="team-modal" onClick={() => !rowBusy && setConfirm(null)}>
+          <div className="team-modal__card" onClick={(e) => e.stopPropagation()}>
+            <h3>{confirm.action === "remove" ? "Remove from team" : "Deactivate account"}</h3>
+            <p>
+              {confirm.action === "remove"
+                ? <>Remove <b>{confirm.member.email}</b>&rsquo;s role and block their sign-in? You can add them again later.</>
+                : <>Block <b>{confirm.member.email}</b> from signing in? Their role is kept so you can reactivate them later.</>}
+            </p>
+            <div className="team-modal__actions">
+              <button className="adm-btn adm-btn--secondary" onClick={() => setConfirm(null)} disabled={!!rowBusy}>
+                Cancel
+              </button>
+              <button className="adm-btn adm-btn--primary" onClick={submitConfirm} disabled={!!rowBusy}>
+                {rowBusy ? "Working…" : confirm.action === "remove" ? "Remove" : "Deactivate"}
               </button>
             </div>
           </div>

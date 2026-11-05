@@ -69,7 +69,7 @@ function autoSlug(name) {
 
 export default function ProductEditPanel({
   mode, product, brands, categories,
-  onSave, onCancel, onDelete, saving,
+  onSave, onCancel, onDelete, saving, priceNeedsApproval = false,
 }) {
   const [form, setForm] = useState(() => toEditable(product));
   const [errors, setErrors] = useState({});
@@ -328,6 +328,11 @@ export default function ProductEditPanel({
             />
           </Field>
         </FormRow>
+        {priceNeedsApproval && mode === "edit" && (
+          <p className="adm-specs-section__hint">
+            Price changes are sent to the GM for approval. Everything else saves straight away.
+          </p>
+        )}
 
         <FormRow cols={2}>
           <Field label="SKU" error={errors.sku} required>
@@ -511,7 +516,7 @@ export default function ProductEditPanel({
 
         <footer className="adm-editpanel__foot">
           <div className="adm-editpanel__foot-left">
-            {mode === "edit" && (
+            {mode === "edit" && onDelete && (
               confirmDelete
                 ? (
                   <>

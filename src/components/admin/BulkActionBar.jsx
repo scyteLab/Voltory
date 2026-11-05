@@ -64,14 +64,16 @@ export default function BulkActionBar({
             >
               {busy === "inactive" ? "Working…" : <><CircleSlash size={13} /> Set Inactive</>}
             </button>
-            <button
-              type="button"
-              className="adm-btn adm-btn--ghost-danger"
-              disabled={busy != null}
-              onClick={() => setConfirmDelete(true)}
-            >
-              <Trash2 size={13} /> Delete
-            </button>
+            {onDelete && (
+              <button
+                type="button"
+                className="adm-btn adm-btn--ghost-danger"
+                disabled={busy != null}
+                onClick={() => setConfirmDelete(true)}
+              >
+                <Trash2 size={13} /> Delete
+              </button>
+            )}
           </>
         )}
 

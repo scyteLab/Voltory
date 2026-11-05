@@ -426,8 +426,12 @@ export function validateRows(rows, refs) {
  * Rows with verdict 'error' are skipped.
  *
  * onProgress(done, total) is called after each row.
+ *
+ * keepExistingPrices: leave price / was alone on SKUs that already
+ * exist (roles without prices.approve change prices through a GM
+ * approval instead). New SKUs still get the CSV price.
  */
-export async function commitRows(rowsWithVerdict, onProgress) {
+export async function commitRows(rowsWithVerdict, onProgress, { keepExistingPrices = false } = {}) {
   const validRows = rowsWithVerdict.filter(
     (r) => r.verdict === "create" || r.verdict === "update"
   );
@@ -468,6 +472,10 @@ export async function commitRows(rowsWithVerdict, onProgress) {
       doors:            r.doors,
       inverter:         r.inverter,
     };
+    if (keepExistingPrices && wasUpdate) {
+      delete payload.price;
+      delete payload.was;
+    }
 
     const { error } = await supabase
       .from("products")

@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useState } from "react";
 import { supabase } from "../lib/supabaseClient.js";
 import { fetchAdminRole } from "../lib/gmPortalClient.js";
+import { normaliseRole } from "../config/permissions.js";
 
 /**
  * Admin session state, backed by Supabase Auth (real, server-checked \u2014
@@ -11,6 +12,10 @@ import { fetchAdminRole } from "../lib/gmPortalClient.js";
  * useAdmin() continue to work \u2014 session / admin / adminLoading /
  * signInAdmin / signOutAdmin / changePassword are unchanged.
  * New: role, isGM, isStaff, roleLoading, totpEnrolled, refreshRole.
+ *
+ * role is normalised by config/permissions.js: 'gm' | 'store' |
+ * 'support' | null. The legacy 'staff' value reads as 'store', and
+ * a row with deactivated_at set reads as no role at all.
  */
 const Ctx = createContext(null);
 
@@ -57,14 +62,12 @@ export function AdminProvider({ children }) {
   useEffect(() => {
     let cancelled = false;
     async function loadRole() {
-      console.log("[AdminContext] loadRole called, user id =", session?.user?.id);
       if (!session?.user?.id) {
         if (!cancelled) setRoleData(null);
         return;
       }
       setRoleData(undefined);
       const data = await fetchAdminRole(session.user.id);
-      console.log("[AdminContext] fetchAdminRole returned =", data);
       if (!cancelled) setRoleData(data);
     }
     loadRole();
@@ -103,9 +106,9 @@ export function AdminProvider({ children }) {
     setRoleData(data);
   };
 
-  const role         = roleData?.role ?? null;
+  const role         = roleData && !roleData.deactivated_at ? normaliseRole(roleData.role) : null;
   const isGM         = role === "gm";
-  const isStaff      = role === "staff";
+  const isStaff      = role === "store" || role === "support";
   const totpEnrolled = Boolean(roleData?.totp_enrolled_at);
 
   return (

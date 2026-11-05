@@ -8,6 +8,7 @@ import { supabase } from "../../lib/supabaseClient.js";
 import {
   parseCsvFile, validateRows, commitRows, TEMPLATE_CSV, COLUMNS,
 } from "../../lib/productsBulkImport.js";
+import { usePermission } from "../../lib/permissions.js";
 import ImportDropzone from "../../components/admin/catalog/ImportDropzone.jsx";
 import ImportPreviewTable from "../../components/admin/catalog/ImportPreviewTable.jsx";
 
@@ -27,6 +28,7 @@ import ImportPreviewTable from "../../components/admin/catalog/ImportPreviewTabl
  */
 export default function CatalogProductsImport() {
   const navigate = useNavigate();
+  const canSetPrices = usePermission("prices.approve");
 
   // Reference data used by the validator. Loaded once on mount.
   const [refs, setRefs]           = useState(null);
@@ -116,10 +118,12 @@ export default function CatalogProductsImport() {
     if (!rowsWithVerdict) return;
     setCommitting(true);
     setProgress({ done: 0, total: 0 });
-    const res = await commitRows(rowsWithVerdict, (done, total) => setProgress({ done, total }));
+    const res = await commitRows(rowsWithVerdict, (done, total) => setProgress({ done, total }), {
+      keepExistingPrices: !canSetPrices,
+    });
     setCommitting(false);
     setResult(res);
-  }, [rowsWithVerdict]);
+  }, [rowsWithVerdict, canSetPrices]);
 
   /* ---------- reset ---------- */
 
@@ -250,6 +254,9 @@ export default function CatalogProductsImport() {
         <div>
           <h1>Bulk import products</h1>
           <p>Upload a CSV to create or update products in bulk. Existing products (matched by SKU) get updated; new SKUs are inserted.</p>
+          {!canSetPrices && (
+            <p><b>Prices of existing products are not changed by this import.</b> Use Pricing to send price changes to the GM for approval.</p>
+          )}
         </div>
         <button
           type="button"

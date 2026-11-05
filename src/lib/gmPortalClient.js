@@ -43,14 +43,18 @@ export async function fetchAdminRole(userId) {
   try {
     const { data, error } = await supabase
       .from("admin_roles")
-      .select("role, totp_enrolled_at")
+      // "*" rather than a column list: deactivated_at only exists
+      // once supabase/admin_roles_update.sql has run.
+      .select("*")
       .eq("user_id", userId)
       .maybeSingle();
     if (error) {
       console.warn("[gm-portal] fetchAdminRole failed:", error.message);
       return null;
     }
-    return data; // { role, totp_enrolled_at } or null
+    if (!data) return null;
+    const { totp_secret: _secret, ...row } = data; // keep the TOTP secret out of React state
+    return row; // { role, totp_enrolled_at, deactivated_at? }
   } catch (err) {
     console.warn("[gm-portal] fetchAdminRole threw:", err);
     return null;
