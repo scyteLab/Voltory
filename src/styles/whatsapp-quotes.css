@@ -1,7 +1,9 @@
 /* ============================================================
    SEND CART TO WHATSAPP — cart page button + modal
    Prefix: .cart-wa / .swa-*
-   WhatsApp brand green: #25D366 (hover #1EBE5A)
+   Text on green uses #128645 (white text 4.64:1, hover #0F7A40 5.41:1).
+   WhatsApp green #25D366 is only for icons / accents, never behind
+   text (white on it is 1.98:1). Borders #8592A6 are 3:1 (WCAG 1.4.11).
    ============================================================ */
 
 /* ---- "or" separator between checkout buttons ---- */
@@ -31,7 +33,7 @@
   gap: 8px;
   width: 100%;
   padding: 14px 20px;
-  background: #25D366;
+  background: #128645;
   color: #fff;
   border: none;
   border-radius: 10px;
@@ -41,7 +43,7 @@
   cursor: pointer;
   transition: background 140ms, transform 60ms;
 }
-.cart-wa:hover  { background: #1EBE5A; }
+.cart-wa:hover  { background: #0F7A40; }
 .cart-wa:active { transform: translateY(1px); }
 
 /* ---- MODAL ----------------------------------------------------
@@ -100,8 +102,8 @@
   width: 40px;
   height: 40px;
   border-radius: 50%;
-  background: #E8FAF0;
-  color: #128C4A;
+  background: #25D366;   /* accent behind the icon only */
+  color: #FFFFFF;
 }
 .swa-head h2 {
   flex: 1;
@@ -162,7 +164,7 @@
   height: 48px;
   box-sizing: border-box;
   background: #FFFFFF;
-  border: 1px solid #CBD5E1;
+  border: 1px solid #8592A6;
   border-radius: 10px;
   transition: border-color 120ms, box-shadow 120ms;
 }
@@ -173,9 +175,9 @@
   font-size: 15px;
   color: #0F172A;
 }
-.swa-field input::placeholder { color: #94A3B8; opacity: 1; }
+.swa-field input::placeholder { color: #64748B; opacity: 1; }
 .swa-field > input:hover,
-.swa-phone:hover { border-color: #94A3B8; }
+.swa-phone:hover { border-color: #64748B; }
 .swa-field > input:focus,
 .swa-phone:focus-within {
   outline: none;
@@ -199,7 +201,7 @@
   align-items: center;
   padding: 0 12px;
   background: #F1F5F9;
-  border-right: 1px solid #CBD5E1;
+  border-right: 1px solid #8592A6;
   font-size: 15px;
   font-weight: 600;
   color: #334155;
@@ -339,16 +341,16 @@
 .swa-btn:focus-visible { outline: 3px solid rgba(18, 15, 76, 0.35); outline-offset: 2px; }
 .swa-btn--ghost {
   background: #FFFFFF;
-  border: 1px solid #CBD5E1;
+  border: 1px solid #8592A6;
   color: #0F172A;
 }
-.swa-btn--ghost:hover:not(:disabled) { border-color: #94A3B8; background: #F8FAFC; }
+.swa-btn--ghost:hover:not(:disabled) { border-color: #64748B; background: #F8FAFC; }
 .swa-btn--wa {
-  background: #25D366;
-  border: 1px solid #25D366;
+  background: #128645;
+  border: 1px solid #128645;
   color: #FFFFFF;
 }
-.swa-btn--wa:hover:not(:disabled) { background: #1EBE5A; border-color: #1EBE5A; }
+.swa-btn--wa:hover:not(:disabled) { background: #0F7A40; border-color: #0F7A40; }
 .swa-spin { animation: swa-spin 0.8s linear infinite; }
 @keyframes swa-spin { to { transform: rotate(360deg); } }
 
@@ -379,7 +381,7 @@
   align-items: center;
   gap: 4px;
   padding: 5px 10px;
-  border: 1px solid #CBD5E1;
+  border: 1px solid #8592A6;
   border-radius: 8px;
   background: #FFFFFF;
   font: inherit;
@@ -388,7 +390,7 @@
   color: #0F172A;
   cursor: pointer;
 }
-.swa-ref__copy:hover { border-color: #94A3B8; }
+.swa-ref__copy:hover { border-color: #64748B; }
 .swa-done__fallback { margin: 16px 0 0; font-size: 14px; color: #475569; }
 .swa-done__fallback a {
   display: inline-flex;

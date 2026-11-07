@@ -761,7 +761,7 @@
   border-radius: 999px;
   color: #fff;
 }
-.svcard__btn--wa { background: #25D366; }
+.svcard__btn--wa { background: #128645; }   /* white text: 4.64:1 (#25D366 was 1.98:1) */
 
 /* "bleed" layout — white card, photo fades into the background on the left edge */
 .svcard--bleed .svcard__body { max-width: 58%; }

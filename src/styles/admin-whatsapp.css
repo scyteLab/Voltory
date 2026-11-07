@@ -121,12 +121,13 @@
   background: var(--adm-hover);
 }
 .waq-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+/* #128645 not #25D366: white text needs 4.5:1 (see whatsapp-quotes.css) */
 .waq-btn--wa {
-  background: #25D366;
+  background: #128645;
   color: #fff;
-  border-color: #25D366;
+  border-color: #128645;
 }
-.waq-btn--wa:hover { background: #1FB959; border-color: #1FB959; }
+.waq-btn--wa:hover { background: #0F7A40; border-color: #0F7A40; }
 .waq-btn--danger:hover:not(:disabled) {
   background: var(--adm-err-bg);
   color: var(--adm-err);
@@ -344,13 +345,13 @@
 .waq-convert__btn {
   font-size: 14px;
   padding: 12px 20px;
-  background: #25D366 !important;
+  background: #128645 !important;
   color: #fff !important;
-  border-color: #25D366 !important;
+  border-color: #128645 !important;
 }
 .waq-convert__btn:hover:not(:disabled) {
-  background: #1FB959 !important;
-  border-color: #1FB959 !important;
+  background: #0F7A40 !important;
+  border-color: #0F7A40 !important;
 }
 .waq-convert__note {
   margin: 10px 0 0;

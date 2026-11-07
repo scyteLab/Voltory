@@ -20,8 +20,9 @@ import { cartMessage, whatsappUrl } from "../../utils/whatsappMessage.js";
  *   1. Opens WhatsApp with the cart message — synchronously, inside
  *      the click, before any await, so popup blockers allow it
  *      (mobile: same tab hand-off; desktop: new tab).
- *   2. Saves the quote (whatsapp_quotes + items) in the background
- *      with the same reference. A failed save is only logged.
+ *   2. Saves the quote (header + items) in the background with the
+ *      same reference: one keepalive call to create_whatsapp_quote().
+ *      A failed save is only logged.
  *   3. Shows a success state with the reference, a fallback link and
  *      "Copy message". The cart is NOT cleared.
  *
@@ -230,12 +231,12 @@ export default function SendToWhatsappModal({ onClose }) {
       console.warn("[SendToWhatsapp] couldn't open WhatsApp automatically:", err);
     }
 
-    // 2. Then remember the details and save the quote in the background.
+    // 2. Then remember the details and save the quote in the background
+    //    (one keepalive request; a failure is only logged).
     saveContact({ name: contact.name, phone: phoneRes.phone, email: contact.email });
     saveQuote({
       quoteId: ref,
-      items: buildQuoteItems(cart, bySku, ref),
-      subtotal: total,
+      items: buildQuoteItems(cart, bySku),
       customer,
       contact,
     });
