@@ -1,106 +1,118 @@
-import { supabase, supabaseConfigured } from "./supabaseClient.js";
+import { supabaseConfigured } from "./supabaseClient.js";
 
 /**
  * whatsappQuotesClient
  *
  * Handles the "Send Cart to WhatsApp" flow:
  *
- *   1. generateQuoteId()      — unique reference: VQ-YYYYMMDDHHmm-XXXX
- *   2. saveQuote()            — writes quote header + items to Supabase
+ *   1. generateQuoteRef()  — reference shown to the customer and saved
+ *                            as whatsapp_quotes.id: NAV-Q-MMDD-XXXXX
+ *   2. buildQuoteItems()   — cart lines → whatsapp_quote_items rows
+ *   3. saveQuote()         — writes quote header + items to Supabase
  *
- * The WhatsApp message itself is written by utils/whatsappMessage.js
- * (cartMessage), using the quoteId returned here as its "Quote ref".
+ * WhatsApp opens FIRST (synchronously in the click, so popup blockers
+ * allow it); the save runs afterwards in the background and never
+ * blocks or undoes the WhatsApp step. The message carries the same
+ * reference, so the sales rep can find the quote in admin.
  *
- * We save FIRST, open WhatsApp SECOND. If the save fails, the button
- * shows an error and doesn't open WhatsApp — otherwise the customer
- * could message the rep with a quote ID the rep can't find in admin.
+ * This writes ONLY to whatsapp_quotes / whatsapp_quote_items — never
+ * to form_submissions or contact_messages, so it doesn't trigger the
+ * "new form submission" email. (The whatsapp_quotes Database Webhook
+ * sends its own "WhatsApp quote" alert.)
  */
 
 /* ============================================================
-   ID generator (mirrors orders' VLT-YYYYMMDDHHmm-XXXX pattern)
+   Reference: NAV-Q-<month><day>-<5 random>, e.g. NAV-Q-1107-7F3K2
    ============================================================ */
 
-function pad(n) { return String(n).padStart(2, "0"); }
+// No 0/O or 1/I, so it can be read out over the phone.
+const REF_ALPHABET = "23456789ABCDEFGHJKLMNPQRSTUVWXYZ";
 
-export function generateQuoteId() {
+export function generateQuoteRef() {
   const d = new Date();
-  const stamp = `${d.getFullYear()}${pad(d.getMonth() + 1)}${pad(d.getDate())}${pad(d.getHours())}${pad(d.getMinutes())}`;
-  const rand = Math.random().toString(36).slice(2, 6).toUpperCase();
-  return `VQ-${stamp}-${rand}`;
+  const mmdd = String(d.getMonth() + 1).padStart(2, "0") + String(d.getDate()).padStart(2, "0");
+  const bytes = crypto.getRandomValues(new Uint8Array(5));
+  const rand = Array.from(bytes, (b) => REF_ALPHABET[b % REF_ALPHABET.length]).join("");
+  return `NAV-Q-${mmdd}-${rand}`;
 }
 
 /* ============================================================
-   Save to Supabase
+   Cart → quote item rows
    ============================================================ */
 
-/**
- * Save a quote to Supabase. Returns { ok, quoteId, error }.
- * We save even if Supabase isn't configured (dev fallback: ok=true,
- * quoteId still generated) so the button never blocks in dev.
- */
-export async function saveQuote({ cart, bySku, customer, contactName, contactPhone, contactEmail }) {
-  const quoteId = generateQuoteId();
+/** Paid cart lines → whatsapp_quote_items rows (gift lines have no catalog product). */
+export function buildQuoteItems(cart, bySku, quoteId) {
+  return cart
+    .filter((line) => !line.isGift)
+    .map((line) => {
+      const p = bySku(line.sku);
+      if (!p) return null;
+      return {
+        quote_id: quoteId,
+        sku: p.sku,
+        product_name: p.name,
+        qty: line.qty,
+        unit_price: p.price,
+        line_total: p.price * line.qty,
+        image: p.image || null,
+      };
+    })
+    .filter(Boolean);
+}
 
-  // Build the items array from the cart + product lookup
-  const items = cart.map((line) => {
-    const p = bySku(line.sku);
-    if (!p) return null;
-    return {
-      quote_id: quoteId,
-      sku: p.sku,
-      product_name: p.name,
-      qty: line.qty,
-      unit_price: p.price,
-      line_total: p.price * line.qty,
-      image: p.image || null,
-    };
-  }).filter(Boolean);
+/* ============================================================
+   Save to Supabase (background)
+   ============================================================ */
 
-  const subtotal = items.reduce((s, i) => s + i.line_total, 0);
-
-  if (!supabaseConfigured) {
-    // Dev fallback — return the ID without saving so WhatsApp still opens
-    // eslint-disable-next-line no-console
-    console.warn("[whatsappQuotes] Supabase not configured; quote not persisted:", quoteId);
-    return { ok: true, quoteId, subtotal, items };
+// Direct PostgREST calls with `keepalive`, so the save still completes
+// if opening WhatsApp moves this tab away (mobile without the app).
+async function insertRows(table, rows) {
+  const url = import.meta.env.VITE_SUPABASE_URL.replace(/\/$/, "");
+  const key = import.meta.env.VITE_SUPABASE_ANON_KEY;
+  const res = await fetch(`${url}/rest/v1/${table}`, {
+    method: "POST",
+    keepalive: true,
+    headers: {
+      apikey: key,
+      Authorization: `Bearer ${key}`,
+      "Content-Type": "application/json",
+      Prefer: "return=minimal",
+    },
+    body: JSON.stringify(rows),
+  });
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}));
+    throw new Error(`${table} insert failed: HTTP ${res.status} ${body.message || ""}`.trim());
   }
+}
 
+/**
+ * Save a quote. Resolves { ok: true } or { ok: false, error }; never
+ * throws, so callers can fire and forget.
+ *   contact: { name, phone, email } — phone in the stored "0803…" form
+ */
+export async function saveQuote({ quoteId, items, subtotal, customer = null, contact }) {
+  if (!supabaseConfigured) {
+    // eslint-disable-next-line no-console
+    console.warn("[whatsappQuotes] Supabase not configured; quote not saved:", quoteId);
+    return { ok: false, error: "not_configured" };
+  }
   try {
-    // Insert the quote header first
-    const { error: qErr } = await supabase
-      .from("whatsapp_quotes")
-      .insert({
-        id: quoteId,
-        customer_id: customer?.id || null,
-        customer_name:  contactName?.trim() || customer?.name  || null,
-        customer_phone: contactPhone?.trim() || customer?.phone || null,
-        customer_email: contactEmail?.trim() || customer?.email || null,
-        subtotal,
-        status: "new",
-      });
-    if (qErr) {
-      // eslint-disable-next-line no-console
-      console.error("[whatsappQuotes] quote insert failed:", qErr);
-      return { ok: false, error: qErr.message };
-    }
-
-    // Then insert all items in one shot
-    if (items.length > 0) {
-      const { error: iErr } = await supabase
-        .from("whatsapp_quote_items")
-        .insert(items);
-      if (iErr) {
-        // eslint-disable-next-line no-console
-        console.error("[whatsappQuotes] items insert failed:", iErr);
-        // Best-effort: we already have a quote header; the rep can still
-        // find the customer even if items are missing. Report the error
-        // but return ok=true so WhatsApp still opens.
-        return { ok: true, quoteId, subtotal, items, warning: iErr.message };
-      }
-    }
-
-    return { ok: true, quoteId, subtotal, items };
+    // Header first: whatsapp_quote_items has an FK to whatsapp_quotes.id.
+    await insertRows("whatsapp_quotes", {
+      id: quoteId,
+      customer_id: customer?.id || null,
+      customer_name:  contact.name?.trim() || customer?.name || null,
+      customer_phone: contact.phone || customer?.phone || null,
+      customer_email: contact.email?.trim() || null,
+      subtotal,
+      status: "new",
+    });
+    if (items.length) await insertRows("whatsapp_quote_items", items);
+    return { ok: true };
   } catch (err) {
+    // eslint-disable-next-line no-console
+    console.error("[whatsappQuotes] save failed (WhatsApp already opened):", quoteId, err?.message || err);
     return { ok: false, error: err?.message || String(err) };
   }
 }

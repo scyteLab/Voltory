@@ -155,7 +155,9 @@
 @keyframes cat-fadein { from { opacity: 0; } to { opacity: 1; } }
 
 .cat-modal {
-  background: var(--adm-surface);
+  /* Fallback: outside the admin shell --adm-surface is undefined and
+     the panel went transparent (account address form). */
+  background: var(--adm-surface, #ffffff);
   border-radius: var(--adm-r-lg);
   width: 100%;
   max-width: 560px;
