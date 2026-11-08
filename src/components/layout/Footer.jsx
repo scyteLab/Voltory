@@ -6,6 +6,7 @@ import {
   Phone, ShieldCheck, Truck, Twitter, Youtube,
 } from "lucide-react";
 import { SITE } from "../../config/site.js";
+import { legalNameWithReg } from "../../config/businessInfo.js";
 import { useStore } from "../../context/StoreContext.jsx";
 import { subscribeNewsletter } from "../../lib/publicFormsClient.js";
 import { usePublicFormGuard } from "../../hooks/usePublicFormGuard.js";
@@ -165,7 +166,7 @@ export default function Footer() {
 
       {/* bottom bar */}
       <div className="wrap ftr__base">
-        <span>&copy; {SITE.copyrightYear} {SITE.name}. All Rights Reserved.</span>
+        <span>&copy; {SITE.copyrightYear} {legalNameWithReg}</span>
         <span className="ftr__legal">
           <Link to="/privacy">Privacy Policy</Link>
           <Link to="/terms">Terms &amp; Conditions</Link>

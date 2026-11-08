@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 import { ChevronRight, Home as HomeIcon } from "lucide-react";
 import { SITE } from "../config/site.js";
+import { businessIdentity } from "../config/businessInfo.js";
 import { useStore } from "../context/StoreContext.jsx";
 import SEOHead from "../components/seo/SEOHead.jsx";
 
@@ -35,6 +36,9 @@ export default function Terms() {
           Nigeria Data Protection Act 2023 (NDPA) where personal data
           processing is involved. By accessing {SITE.name}, you accept these
           terms and the rights and obligations they create under Nigerian law.
+        </p>
+        <p className="legal__identity">
+          {SITE.name} is operated by {businessIdentity}
         </p>
         <p className="legal-updated">Last updated: 1 June 2026</p>
 
@@ -191,8 +195,8 @@ export default function Terms() {
 
         <h2>10. Indemnification</h2>
         <p>
-          You agree to indemnify, defend, and hold harmless {SITE.legalName}, its directors,
-          officers, employees, agents, and affiliates from and against any claims, liabilities,
+          You agree to indemnify, defend, and hold harmless {SITE.legalName}, its owners,
+          employees, agents, and affiliates from and against any claims, liabilities,
           damages, losses, and expenses (including reasonable legal fees) arising out of or in
           any way connected with your access to or use of {SITE.name}, your violation of these
           terms, or your infringement of any third-party rights.

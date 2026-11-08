@@ -1,92 +1,75 @@
-import { SITE } from "./site.js";
-
 /**
- * businessInfo.js  \u2014  legal business details for receipts
+ * businessInfo.js  —  NAVEN's legal / registration details
  *
- * These values appear on every receipt (customer-facing and
- * admin-viewable). For FIRS-compliant Nigerian invoicing you
- * need: legal name, TIN, RC number, registered address, VAT
- * registration status.
+ * Single source of truth for the business identity shown on
+ * receipts, legal pages, the footer, SEO structured data and
+ * customer emails. Don't hard-code any of this elsewhere.
  *
- * IMPORTANT: replace every TODO below with real values BEFORE
- * issuing receipts to real customers. Grep for "TODO(business)"
- * to find them:
+ * Source: CAC Business Name status report. NAVEN is a registered
+ * BUSINESS NAME, not a limited company, so never write "Ltd" /
+ * "Limited" / "RC" for it.
  *
- *     grep -rn "TODO(business)" src/
+ * No proprietor's personal details (name, phone, email, date of
+ * birth) belong in this file or anywhere on the site.
  *
- * Wrong values on receipts can create real accounting and
- * regulatory problems, so this file is the single source of
- * truth \u2014 don't hardcode business info anywhere else.
+ * Plain data (no browser APIs): also imported by Netlify functions
+ * via src/lib/emailTemplates.js. Standalone on purpose — site.js
+ * reads legalName from here, so this file must not import site.js.
  */
 
 export const BUSINESS_INFO = {
-  // ---- Legal identity -----------------------------------------
+  // ---- Legal identity (CAC) ------------------------------------
+  legalName:         "NAVEN Electronics Enterprises",  // CAC: NAVEN ELECTRONICS ENTERPRISES
+  brandName:         "NAVEN",
+  registrationType:  "Business Name",
+  registrationLabel: "BN",
+  registrationNo:    "9959219",
+  registeredOn:      "2026-10-23",
 
-  // TODO(business): replace with the exact legal entity name as
-  // registered with CAC (Corporate Affairs Commission).
-  legalName: "NAVEN Electronics Ltd",
-
-  // Consumer-facing brand \u2014 shown prominently on the receipt.
-  brandName: SITE.name,
-
-  // TODO(business): CAC RC number. Format is usually "RC-XXXXXXX"
-  // or just "RC XXXXXXX". Required alongside TIN.
-  rcNumber: "RC-XXXXXXX",
-
-  // TODO(business): Tax Identification Number issued by FIRS.
-  // 14 digits, hyphen-separated: NNNNNNNN-NNNN
-  tin: "PLACEHOLDER-TIN",
-
-  // TODO(business): are you VAT-registered with FIRS?
-  // If yes, receipts must show the VAT breakdown.
-  vatRegistered: true,
-
-  // ---- Address ------------------------------------------------
-
-  // TODO(business): registered business address as filed with CAC.
-  address: {
-    line1: "TODO update registered address line 1",
-    line2: "",
-    city:  "Lagos",
-    state: "Lagos",
-    country: "Nigeria",
+  // ---- Registered address ---------------------------------------
+  address: "7 Saliu Close, Ifako-Ijaiye, Lagos State, Nigeria",
+  addressParts: {
+    street:   "7 Saliu Close",
+    locality: "Ifako-Ijaiye",
+    region:   "Lagos State",
+    country:  "NG",
   },
 
-  // ---- Contact ------------------------------------------------
-  // Reuses SITE config so a single change updates everywhere.
-
-  phone:        SITE.phone,
-  whatsapp:     SITE.whatsapp,
-  whatsappLink: SITE.whatsappLink,
-  phoneDigits:  "2349064998654",
+  // ---- Contact ----------------------------------------------------
+  phone:        "+234 906 4998 654",
   phoneTelHref: "tel:+2349064998654",
-  whatsappHref: "https://wa.me/2349064998654",
-  supportEmail: SITE.supportEmail,
-  website:      "https://mynaven.com",
+  whatsapp:     "+234 906 4998 654",
+  whatsappLink: "https://wa.me/2349064998654",
+  email:        "support@mynaven.com",
+  supportEmail: "support@mynaven.com",
+  website:      "www.mynaven.com",
+  websiteUrl:   "https://mynaven.com",
 
-  // ---- Brand taglines (brand guide) --------------------------
-  taglinePrimary:   "THE PREMIUM ELECTRONICS",
-
-  // ---- Tax config ---------------------------------------------
-
-  // Nigerian standard VAT rate (7.5%). Stored per-order at issue
-  // time (see orders.vat_rate) so historical receipts stay right
-  // if the rate changes in future.
+  // ---- Tax --------------------------------------------------------
+  // Not issued yet: the TIN line is hidden while this is null.
+  tin: null,
+  // Not VAT-registered: every VAT line is hidden while false. If it
+  // becomes true, prices are treated as VAT-inclusive at vatRate.
+  vatRegistered: false,
   vatRate: 0.075,
 
-  // Are prices already VAT-inclusive?
-  // true  \u2192 \u20A6100 shown includes \u20A66.98 VAT
-  // false \u2192 \u20A6100 shown is base, VAT added at checkout
-  vatInclusive: true,
+  // ---- Brand ------------------------------------------------------
+  taglinePrimary: "THE PREMIUM ELECTRONICS",
 };
 
+/** "BN 9959219" */
+export const registrationDisplay =
+  `${BUSINESS_INFO.registrationLabel} ${BUSINESS_INFO.registrationNo}`;
+
+/** "NAVEN Electronics Enterprises · BN 9959219" */
+export const legalNameWithReg = `${BUSINESS_INFO.legalName} · ${registrationDisplay}`;
+
 /**
- * Compact formatted business address for the receipt header.
- * Skips blank lines cleanly.
+ * How the business is identified on legal pages:
+ * "NAVEN Electronics Enterprises (Business Name No. BN 9959219),
+ *  registered with the Corporate Affairs Commission, 7 Saliu Close,
+ *  Ifako-Ijaiye, Lagos State, Nigeria."
  */
-export function formatBusinessAddress() {
-  const a = BUSINESS_INFO.address;
-  return [a.line1, a.line2, `${a.city}, ${a.state}`, a.country]
-    .filter(Boolean)
-    .join("\n");
-}
+export const businessIdentity =
+  `${BUSINESS_INFO.legalName} (${BUSINESS_INFO.registrationType} No. ${registrationDisplay}), `
+  + `registered with the Corporate Affairs Commission, ${BUSINESS_INFO.address}.`;

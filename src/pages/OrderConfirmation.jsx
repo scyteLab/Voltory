@@ -253,7 +253,7 @@ export default function OrderConfirmation() {
             </div>
           </dl>
           <p className="conf-card__note" style={{ marginTop: 12 }}>
-            <Link to={receiptUrl}>View full receipt with VAT breakdown \u2192</Link>
+            <Link to={receiptUrl}>View full receipt \u2192</Link>
           </p>
         </section>
 

@@ -5,11 +5,13 @@
  *  edit THIS file only. No component hard-codes any of this.
  * ============================================================
  */
+import { BUSINESS_INFO } from "./businessInfo.js";
 
 export const SITE = {
   // ---- Identity (edit these to rename the business) ----
   name: "NAVEN",
-  legalName: "NAVEN Electronics Ltd",
+  // Registered Business Name (not a limited company): see businessInfo.js.
+  legalName: BUSINESS_INFO.legalName,
   tagline: "The Premium Electronics",
   copyrightYear: 2026,
 

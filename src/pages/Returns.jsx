@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 import { ChevronRight, Home as HomeIcon } from "lucide-react";
 import { SITE } from "../config/site.js";
+import { businessIdentity } from "../config/businessInfo.js";
 import { useStore } from "../context/StoreContext.jsx";
 import SEOHead from "../components/seo/SEOHead.jsx";
 
@@ -35,6 +36,9 @@ export default function Returns() {
           right to goods of merchantable quality, fit for purpose, and matching
           the description provided at the point of sale. Nothing in this policy
           limits any statutory consumer right you have under Nigerian law.
+        </p>
+        <p className="legal__identity">
+          {SITE.name} is operated by {businessIdentity}
         </p>
         <p className="legal-updated">Last updated: 1 June 2026</p>
 

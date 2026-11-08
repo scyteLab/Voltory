@@ -1304,6 +1304,13 @@
   margin: 0 0 16px;
   font-weight: 500;
 }
+/* Who operates the site (CAC registration), from businessInfo.js. */
+.legal-page .legal__identity {
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--ink);
+  margin: 0 0 16px;
+}
 @media (max-width: 920px) {
   .legal-page { padding: 22px 20px; }
   .legal-page .legal__intro {

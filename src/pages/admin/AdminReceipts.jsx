@@ -7,6 +7,11 @@ import {
 import { supabase, supabaseConfigured } from "../../lib/supabaseClient.js";
 import { naira } from "../../utils/format.js";
 import { receiptStatus } from "../../lib/receiptCalculator.js";
+
+/** receiptStatus() for a raw orders row (paid / pending / cancelled). */
+const rowStatus = (o) => receiptStatus({
+  status: o.status, paymentStatus: o.payment_status, payment: { method: o.payment_method },
+});
 import { BUSINESS_INFO } from "../../config/businessInfo.js";
 
 /**
@@ -61,7 +66,7 @@ export default function AdminReceipts() {
     return orders.filter((o) => {
       /* Status filter */
       if (statusFilter !== "all") {
-        const s = receiptStatus({ status: o.status });
+        const s = rowStatus(o);
         if (s !== statusFilter) return false;
       }
       /* Search across id, name, phone, email */
@@ -81,7 +86,7 @@ export default function AdminReceipts() {
   );
   const paidValue = useMemo(
     () => filtered
-      .filter((o) => receiptStatus({ status: o.status }) === "paid")
+      .filter((o) => rowStatus(o) === "paid")
       .reduce((sum, o) => sum + (o.total || 0), 0),
     [filtered]
   );
@@ -188,7 +193,7 @@ export default function AdminReceipts() {
             </thead>
             <tbody>
               {filtered.map((o) => {
-                const status = receiptStatus({ status: o.status });
+                const status = rowStatus(o);
                 return (
                   <tr key={o.id}>
                     <td className="mono">{o.id}</td>

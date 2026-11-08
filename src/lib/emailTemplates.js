@@ -1,4 +1,5 @@
 import { SITE } from "../config/site.js";
+import { BUSINESS_INFO, legalNameWithReg } from "../config/businessInfo.js";
 import { naira } from "../utils/format.js";
 
 /**
@@ -13,7 +14,7 @@ import { naira } from "../utils/format.js";
  * sensible fallback rather than "undefined".
  */
 
-const BRAND_COLOR    = "#2563eb"; // matches --p in the app
+const BRAND_COLOR    = "#120F4C"; // NAVEN Deep Navy (--p), same as the receipt
 const BRAND_INK      = "#0f172a";
 const BRAND_MUT      = "#64748b";
 const BRAND_LINE     = "#e2e8f0";
@@ -49,8 +50,9 @@ function shell({ title, body, preheader = "" }) {
           </tr>
           <tr>
             <td style="background:${BRAND_BG};padding:20px 28px;text-align:center;border-top:1px solid ${BRAND_LINE};font-size:12px;color:${BRAND_MUT};">
-              <p style="margin:0 0 6px;">${escapeHtml(SITE.name || "NAVEN")} — Nigerian appliance ecommerce</p>
-              <p style="margin:0;">Questions? WhatsApp us at <a href="${SITE.whatsappLink || "#"}" style="color:${BRAND_COLOR};text-decoration:none;">${escapeHtml(SITE.whatsapp || "")}</a></p>
+              <p style="margin:0 0 4px;font-weight:600;color:${BRAND_INK};">${escapeHtml(legalNameWithReg)}</p>
+              <p style="margin:0 0 6px;">${escapeHtml(BUSINESS_INFO.address)}</p>
+              <p style="margin:0;">Questions? WhatsApp us at <a href="${BUSINESS_INFO.whatsappLink}" style="color:${BRAND_COLOR};text-decoration:none;">${escapeHtml(BUSINESS_INFO.whatsapp)}</a> · <a href="mailto:${BUSINESS_INFO.email}" style="color:${BRAND_COLOR};text-decoration:none;">${escapeHtml(BUSINESS_INFO.email)}</a></p>
             </td>
           </tr>
         </table>

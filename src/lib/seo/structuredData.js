@@ -9,6 +9,7 @@
  */
 import { SITE_URL, DEFAULT_OG_IMAGE } from "./defaults.js";
 import { SITE } from "../../config/site.js";
+import { BUSINESS_INFO } from "../../config/businessInfo.js";
 
 /**
  * Organization schema — identifies NAVEN as a business entity.
@@ -19,8 +20,15 @@ export function organizationSchema() {
     "@context": "https://schema.org",
     "@type": "Organization",
     "name": SITE.name,
-    "legalName": SITE.legalName,
+    "legalName": BUSINESS_INFO.legalName,
     "url": SITE_URL,
+    "address": {
+      "@type": "PostalAddress",
+      "streetAddress": BUSINESS_INFO.addressParts.street,
+      "addressLocality": BUSINESS_INFO.addressParts.locality,
+      "addressRegion": BUSINESS_INFO.addressParts.region,
+      "addressCountry": BUSINESS_INFO.addressParts.country,
+    },
     "logo": `${SITE_URL}/og-default.png`,
     "sameAs": [
       "https://web.facebook.com/mynavenhq/",

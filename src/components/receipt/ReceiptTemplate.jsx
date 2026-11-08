@@ -1,266 +1,234 @@
-import { BUSINESS_INFO, formatBusinessAddress } from "../../config/businessInfo.js";
-import { computeReceiptTotals, formatVatRate, receiptStatus } from "../../lib/receiptCalculator.js";
+import { QRCodeSVG } from "qrcode.react";
+import Logo from "../layout/Logo.jsx";
+import { BUSINESS_INFO, legalNameWithReg, registrationDisplay } from "../../config/businessInfo.js";
+import {
+  computeReceiptTotals, documentNumber, formatVatRate, isGiftLine, receiptStatus,
+} from "../../lib/receiptCalculator.js";
+import { amountInWords } from "../../utils/amountInWords.js";
 import { naira } from "../../utils/format.js";
-import { Gift } from "lucide-react";
 
 /**
- * ReceiptTemplate
+ * ReceiptTemplate — the one receipt layout (A4).
  *
- * Renders a single order as an official-looking receipt.
- * Used by:
- *   · /receipt/:id (customer-facing, printable)
- *   · /admin/receipts/:id (admin viewing)
- *   · email templates (Phase 2 — same HTML embedded)
+ * Used by /receipt/:id (customer), /admin/receipts/:id (admin), the
+ * browser print view and the PDF download (lib/receiptPdf.js snapshots
+ * this DOM). Presentational only; parents fetch the order.
  *
- * Session 3 (2026-08-28) added:
- *   · Gift rows detected by item.isGift flag
- *   · Gift SKU replaced with "FREE GIFT" badge (the actual
- *     internal SKU is ugly — "gift:<uuid>" — and never useful
- *     to a customer)
- *   · Gift prices display as "FREE" instead of "₦0"
- *   · VAT calculations unchanged — gifts contribute ₦0
- *     via computeReceiptTotals, so they naturally exclude from VAT
+ * Title by receiptStatus():
+ *   paid      → OFFICIAL RECEIPT
+ *   pending   → PROFORMA INVOICE (+ "This is not a receipt" note)
+ *   cancelled → CANCELLED diagonal watermark
  *
- * Layout has three regions styled for both screen AND print:
- *   1. Header — business identity + receipt number/date
- *   2. Body   — customer + items + totals
- *   3. Footer — legal notice, contact, thank-you
+ * Business identity comes from config/businessInfo.js. TIN and VAT
+ * lines appear only when tin is set / vatRegistered is true.
  *
- * The component is intentionally presentational only. Data
- * fetching happens in parent pages. That keeps this reusable
- * across every context.
+ * PDF pagination: elements marked data-pdf-block (and every items-table
+ * row) are places where the PDF may start a new page; the table header
+ * is repeated on continuation pages.
  */
+
+const PAYMENT_METHODS = {
+  card:     "Card (Paystack)",
+  transfer: "Bank transfer (Paystack)",
+  ussd:     "USSD (Paystack)",
+  pod:      "Pay on Delivery",
+  paystack: "Paystack",
+};
+
+const lagosDateTime = new Intl.DateTimeFormat("en-NG", {
+  timeZone: "Africa/Lagos", day: "numeric", month: "short", year: "numeric",
+  hour: "2-digit", minute: "2-digit",
+});
+
+function paymentStatusLabel(order, status) {
+  const s = String(order.status || "").toLowerCase();
+  if (s === "refunded") return "Refunded";
+  if (s === "cancelled") return "Cancelled";
+  if (status === "paid") return "Paid";
+  const method = order.payment?.method || order.payment;
+  return method === "pod" ? "Due on delivery" : "Awaiting payment";
+}
+
 export default function ReceiptTemplate({ order }) {
   if (!order) return null;
 
   const totals = computeReceiptTotals(order);
   const status = receiptStatus(order);
-  const created = new Date(order.createdAt);
+  const method = order.payment?.method || order.payment;
+  const address = order.address || {};
+  const contact = order.contact || {};
+  const receiptUrl = `${BUSINESS_INFO.websiteUrl}/receipt/${encodeURIComponent(order.id)}`;
+  const title = status === "pending" ? "PROFORMA INVOICE" : status === "cancelled" ? "RECEIPT — CANCELLED" : "OFFICIAL RECEIPT";
+  const addressLines = [
+    address.street,
+    address.area,
+    [address.lga, address.state].filter(Boolean).join(", "),
+  ].filter(Boolean);
 
   return (
     <article className={`receipt receipt--${status}`}>
-      {/* ---- Status stamp (only for cancelled/refunded) ---- */}
       {status === "cancelled" && (
-        <div className="receipt__stamp receipt__stamp--cancelled">
-          CANCELLED
-        </div>
+        <div className="receipt__watermark" aria-hidden="true">CANCELLED</div>
       )}
 
-      {/* ============================================
-           HEADER
-           ============================================ */}
-      <header className="receipt__head">
-        <div className="receipt__brand">
-          <h1 className="receipt__brandname">{BUSINESS_INFO.brandName}</h1>
-          <p className="receipt__legalname">{BUSINESS_INFO.legalName}</p>
-          <address className="receipt__address">
-            {formatBusinessAddress().split("\n").map((line, i) => (
-              <span key={i}>{line}</span>
-            ))}
-          </address>
-          <p className="receipt__contact">
-            {BUSINESS_INFO.phone} · {BUSINESS_INFO.supportEmail}
-          </p>
-          <p className="receipt__legalids">
-            <span>RC: <b>{BUSINESS_INFO.rcNumber}</b></span>
-            {BUSINESS_INFO.vatRegistered && (
-              <span>TIN: <b>{BUSINESS_INFO.tin}</b></span>
-            )}
-          </p>
-        </div>
+      <div className="receipt__bar" aria-hidden="true" />
 
-        <div className="receipt__meta">
-          <span className="receipt__type">
-            {status === "paid" ? "OFFICIAL RECEIPT" : status === "cancelled" ? "RECEIPT (CANCELLED)" : "PROFORMA"}
-          </span>
-          <dl>
-            <div>
-              <dt>Receipt No.</dt>
-              <dd className="mono">{order.id}</dd>
-            </div>
-            <div>
-              <dt>Issued</dt>
-              <dd>{created.toLocaleDateString("en-NG", {
-                day: "numeric", month: "short", year: "numeric",
-              })}</dd>
-            </div>
-            <div>
-              <dt>Time</dt>
-              <dd>{created.toLocaleTimeString("en-NG", {
-                hour: "2-digit", minute: "2-digit",
-              })}</dd>
-            </div>
+      {/* ---- Header: logo | business identity ---- */}
+      <div className="receipt__head" data-pdf-block>
+        <Logo variant="lockup" className="receipt__logo" ariaLabel="NAVEN — The Premium Electronics" />
+        <div className="receipt__biz">
+          <b className="receipt__legalname">{BUSINESS_INFO.legalName}</b>
+          <span>{registrationDisplay}</span>
+          <span>{BUSINESS_INFO.address}</span>
+          <span>{BUSINESS_INFO.phone} · {BUSINESS_INFO.email} · {BUSINESS_INFO.website}</span>
+          {BUSINESS_INFO.tin && <span>TIN: {BUSINESS_INFO.tin}</span>}
+        </div>
+      </div>
+
+      {/* ---- Title ---- */}
+      <div className="receipt__titlebar" data-pdf-block>
+        <h1 className="receipt__title">{title}</h1>
+        {status === "pending" && (
+          <p className="receipt__notice">
+            This is not a receipt. A receipt is issued once payment is received.
+          </p>
+        )}
+      </div>
+
+      {/* ---- Details | Bill to | Deliver to ---- */}
+      <div className="receipt__grid" data-pdf-block>
+        <section className="receipt__box">
+          <h2>{status === "pending" ? "Invoice details" : "Receipt details"}</h2>
+          <dl className="receipt__kv">
+            <dt>{status === "pending" ? "Invoice No." : "Receipt No."}</dt>
+            <dd className="receipt__mono">{documentNumber(order, status)}</dd>
+            <dt>Order ID</dt>
+            <dd className="receipt__mono">{order.id}</dd>
+            <dt>Date &amp; time</dt>
+            <dd>{order.createdAt ? lagosDateTime.format(new Date(order.createdAt)) : "—"} (Lagos)</dd>
+            <dt>Payment method</dt>
+            <dd>{PAYMENT_METHODS[method] || method || "—"}</dd>
+            <dt>Payment status</dt>
+            <dd><b>{paymentStatusLabel(order, status)}</b></dd>
+            {order.paystackRef && (
+              <>
+                <dt>Paystack ref.</dt>
+                <dd className="receipt__mono receipt__wrap">{order.paystackRef}</dd>
+              </>
+            )}
           </dl>
-        </div>
-      </header>
+        </section>
 
-      {/* ============================================
-           CUSTOMER
-           ============================================ */}
-      <section className="receipt__section receipt__customer">
-        <h2>Bill To</h2>
-        <div className="receipt__customer-grid">
-          <div>
-            <b>{order.contact.name}</b>
-            <span>{order.contact.phone}</span>
-            {order.contact.email && <span>{order.contact.email}</span>}
-          </div>
-          <div>
-            <b>Delivery Address</b>
-            {order.address.street && <span>{order.address.street}</span>}
-            {order.address.lga && (
-              <span>{order.address.lga}, {order.address.state}</span>
-            )}
-            {order.address.landmark && (
-              <span className="receipt__muted">Landmark: {order.address.landmark}</span>
-            )}
-          </div>
-        </div>
-      </section>
+        <section className="receipt__box">
+          <h2>Bill to</h2>
+          <p className="receipt__lines">
+            <b>{contact.name || "—"}</b>
+            {contact.phone && <span>{contact.phone}</span>}
+            {contact.email && <span className="receipt__wrap">{contact.email}</span>}
+          </p>
+        </section>
 
-      {/* ============================================
-           ITEMS
-           ============================================ */}
-      <section className="receipt__section receipt__items">
-        <table>
-          <thead>
-            <tr>
-              <th className="receipt__col-desc">Description</th>
-              <th className="receipt__col-sku">SKU</th>
-              <th className="receipt__col-qty">Qty</th>
-              <th className="receipt__col-price">Unit Price</th>
-              <th className="receipt__col-line">Line Total</th>
-            </tr>
-          </thead>
-          <tbody>
-            {order.items.map((it) => {
-              /* Gift row — hide ugly SKU, show FREE badge instead */
-              if (it.isGift) {
-                return (
-                  <tr key={it.sku} className="receipt__row--gift">
-                    <td>
-                      <span className="receipt__gift-badge">
-                        <Gift size={11} /> FREE GIFT
-                      </span>
-                      {" "}
-                      {it.giftDescription || it.name}
-                    </td>
-                    <td className="receipt__gift-sku">—</td>
-                    <td className="receipt__col-qty">{it.qty}</td>
-                    <td className="receipt__col-price">FREE</td>
-                    <td className="receipt__col-line">FREE</td>
-                  </tr>
-                );
-              }
-              /* Paid row — unchanged from before */
-              return (
-                <tr key={it.sku}>
-                  <td>{it.name}</td>
-                  <td className="mono">{it.sku}</td>
-                  <td className="receipt__col-qty">{it.qty}</td>
-                  <td className="receipt__col-price">{naira(it.price)}</td>
-                  <td className="receipt__col-line">{naira(it.price * it.qty)}</td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
-      </section>
+        <section className="receipt__box">
+          <h2>Deliver to</h2>
+          <p className="receipt__lines">
+            {addressLines.length ? addressLines.map((l) => <span key={l}>{l}</span>) : <span>—</span>}
+            {address.landmark && <span className="receipt__muted">Landmark: {address.landmark}</span>}
+          </p>
+        </section>
+      </div>
 
-      {/* ============================================
-           TOTALS  —  with VAT breakdown
-           ============================================ */}
-      <section className="receipt__section receipt__totals">
-        <dl>
-          <div>
-            <dt>Subtotal (excl. VAT)</dt>
-            <dd>{naira(totals.subtotalExVat)}</dd>
-          </div>
-          <div>
-            <dt>VAT ({formatVatRate(totals.vatRate)})</dt>
-            <dd>{naira(totals.vatAmount)}</dd>
-          </div>
-          <div className="receipt__totals-sub">
-            <dt>Subtotal (incl. VAT)</dt>
-            <dd>{naira(totals.subtotalIncVat)}</dd>
-          </div>
+      {/* ---- Items ---- */}
+      <table className="receipt__items">
+        <thead>
+          <tr>
+            <th className="receipt__c-num">#</th>
+            <th className="receipt__c-prod">Product</th>
+            <th className="receipt__c-qty">Qty</th>
+            <th className="receipt__c-amt">Unit price</th>
+            <th className="receipt__c-amt">Amount</th>
+          </tr>
+        </thead>
+        <tbody>
+          {(order.items || []).map((it, i) => {
+            const gift = isGiftLine(it);
+            return (
+              <tr key={`${it.sku}-${i}`}>
+                <td className="receipt__c-num">{i + 1}</td>
+                <td className="receipt__c-prod">
+                  {gift ? (
+                    <span className="receipt__pname">Free gift: {it.giftDescription || it.name}</span>
+                  ) : (
+                    <>
+                      <span className="receipt__pname">{it.name}</span>
+                      <span className="receipt__sku">SKU {it.sku}</span>
+                    </>
+                  )}
+                </td>
+                <td className="receipt__c-qty">{it.qty}</td>
+                <td className="receipt__c-amt">{naira(gift ? 0 : it.price)}</td>
+                <td className="receipt__c-amt">{naira(gift ? 0 : it.price * it.qty)}</td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+
+      {/* ---- Totals ---- */}
+      <div className="receipt__summary" data-pdf-block>
+        <dl className="receipt__totals">
+          <dt>Subtotal</dt>
+          <dd>{naira(totals.subtotalIncVat)}</dd>
           {totals.discount > 0 && (
-            <div className="receipt__totals-discount">
+            <>
               <dt>Discount</dt>
               <dd>− {naira(totals.discount)}</dd>
-            </div>
+            </>
           )}
-          <div>
-            <dt>Delivery</dt>
-            <dd>{totals.deliveryFee === 0 ? "FREE" : naira(totals.deliveryFee)}</dd>
-          </div>
+          <dt>Delivery</dt>
+          <dd>{totals.deliveryFee > 0 ? naira(totals.deliveryFee) : "Free"}</dd>
           {totals.installationFee > 0 && (
-            <div>
+            <>
               <dt>Installation</dt>
               <dd>{naira(totals.installationFee)}</dd>
-            </div>
+            </>
           )}
-          <div className="receipt__totals-grand">
-            <dt>Total {status === "paid" ? "Paid" : "Due"}</dt>
-            <dd>{naira(totals.grandTotal)}</dd>
-          </div>
+          <dt className="receipt__grand">TOTAL</dt>
+          <dd className="receipt__grand">{naira(totals.grandTotal)}</dd>
+          {totals.vatRegistered && (
+            <>
+              <dt className="receipt__vat">VAT ({formatVatRate(totals.vatRate)}) included</dt>
+              <dd className="receipt__vat">{naira(totals.vatAmount)}</dd>
+              <dt className="receipt__vat">Amount excluding VAT</dt>
+              <dd className="receipt__vat">{naira(totals.totalExVat)}</dd>
+            </>
+          )}
         </dl>
-      </section>
+        <p className="receipt__words">
+          <span>Amount in words</span>
+          {amountInWords(totals.grandTotal)}
+        </p>
+      </div>
 
-      {/* ============================================
-           PAYMENT
-           ============================================ */}
-      <section className="receipt__section receipt__payment">
-        <div className="receipt__payment-info">
-          <b>Payment Method</b>
-          <span>{formatPaymentMethod(order.payment?.method || order.payment)}</span>
+      {/* ---- Footer ---- */}
+      <div className="receipt__foot" data-pdf-block>
+        <div className="receipt__foot-text">
+          <p className="receipt__thanks">Thank you for shopping with NAVEN.</p>
+          <p>Products are covered by the manufacturer&apos;s warranty. Keep this receipt for warranty claims.</p>
+          <p>Returns within 7 days, subject to our returns policy: mynaven.com/returns</p>
+          <p>
+            Support: {BUSINESS_INFO.phone} (call / WhatsApp) · {BUSINESS_INFO.email} · {BUSINESS_INFO.website}
+          </p>
+          <p className="receipt__muted">Computer-generated document; no signature required.</p>
         </div>
-        {status === "paid" && (
-          <div className="receipt__paid-stamp">PAID</div>
-        )}
-      </section>
+        <div className="receipt__qr">
+          <QRCodeSVG value={receiptUrl} size={76} level="M" fgColor="#0F172A" bgColor="#FFFFFF" />
+          <span>Scan to verify online</span>
+        </div>
+      </div>
 
-      {/* ============================================
-           FOOTER
-           ============================================ */}
-      <footer className="receipt__foot">
-        <p style={{
-          fontFamily: "Montserrat, sans-serif",
-          fontWeight: 300,
-          textTransform: "uppercase",
-          letterSpacing: "0.1em",
-          fontSize: "9px",
-          color: "#5B6776",
-          textAlign: "center",
-          margin: "12px 0 4px",
-        }}>
-          {BUSINESS_INFO.taglinePrimary}
-        </p>
-        <p className="receipt__thanks">
-          Thank you for shopping with {BUSINESS_INFO.brandName}.
-        </p>
-        <p className="receipt__legal">
-          This is a computer-generated receipt. No signature required.
-          {BUSINESS_INFO.vatRegistered && (
-            <> VAT reflected at {formatVatRate(totals.vatRate)} in accordance with Nigerian VAT regulations.</>
-          )}
-        </p>
-        <p className="receipt__support">
-          Questions about this receipt? Contact us on {BUSINESS_INFO.whatsapp} or{" "}
-          {BUSINESS_INFO.supportEmail}.
-        </p>
-      </footer>
+      <p className="receipt__bottom">
+        {legalNameWithReg} · {BUSINESS_INFO.taglinePrimary}
+      </p>
     </article>
   );
-}
-
-function formatPaymentMethod(method) {
-  const m = String(method || "").toLowerCase();
-  return ({
-    card:     "Card Payment",
-    transfer: "Bank Transfer",
-    pod:      "Pay on Delivery",
-    ussd:     "USSD Transfer",
-    paystack: "Paystack",
-  })[m] || (method || "—");
 }
