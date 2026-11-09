@@ -8,6 +8,7 @@ import { SITE } from "../../config/site.js";
 import RatingStars from "./RatingStars.jsx";
 import { fetchProductAttributes, attributesToSpecRows } from "../../lib/productAttributesClient.js";
 import { productHelpMessage, productReviewMessage, whatsappUrl } from "../../utils/whatsappMessage.js";
+import { WARRANTY_LABEL, withoutWarrantySpecs, withoutWarrantyHighlights } from "../../utils/warrantyDisplay.js";
 
 /**
  * SpecsTabs — tab strip + panels below the buy box.
@@ -54,7 +55,7 @@ export default function SpecsTabs({ product: p }) {
         {active === "specs" && <SpecsPanel product={p} />}
         {active === "desc" && <DescPanel product={p} />}
         {active === "delivery" && <DeliveryPanel product={p} />}
-        {active === "warranty" && <WarrantyPanel product={p} />}
+        {active === "warranty" && <WarrantyPanel />}
         {active === "reviews" && <ReviewsPanel product={p} />}
         {active === "qa" && <QAPanel product={p} />}
       </div>
@@ -106,7 +107,7 @@ function SpecsPanel({ product }) {
       if (cancelled) return;
       setLoading(false);
       if (res.ok) {
-        setAttrRows(attributesToSpecRows(res.data));
+        setAttrRows(withoutWarrantySpecs(attributesToSpecRows(res.data)));
       } else {
         /* Fail silently on the customer page — spec table just
            renders JSONB specs alone, which is what it did before. */
@@ -116,7 +117,8 @@ function SpecsPanel({ product }) {
     return () => { cancelled = true; };
   }, [product.sku]);
 
-  const jsonSpecs = normalizeSpecs(product.specs);
+  /* Warranty rows are hidden: no specific periods on the storefront. */
+  const jsonSpecs = withoutWarrantySpecs(normalizeSpecs(product.specs));
 
   /* Merge order: attributes first (they're the "structured" data
      admins have curated with intent), then JSONB specs as free-form
@@ -171,13 +173,14 @@ function SpecsPanel({ product }) {
 }
 
 function DescPanel({ product }) {
+  const highlights = withoutWarrantyHighlights(product.highlights);
   return (
     <div className="rich">
       <p>{product.description || `The ${product.name} is part of NAVEN's curated catalogue of original electronics, backed by official warranty and after-sales support across Nigeria.`}</p>
-      {product.highlights?.length > 0 && (
+      {highlights.length > 0 && (
         <>
           <h4>Key Highlights</h4>
-          <ul>{product.highlights.map((h) => <li key={h}>{h}</li>)}</ul>
+          <ul>{highlights.map((h) => <li key={h}>{h}</li>)}</ul>
         </>
       )}
     </div>
@@ -206,14 +209,13 @@ function DeliveryPanel() {
   );
 }
 
-function WarrantyPanel({ product }) {
-  const wTag = product.tags?.find((t) => t.toLowerCase().includes("warranty"));
+function WarrantyPanel() {
   return (
     <div className="info-grid">
       <div className="info-card">
         <ShieldCheck size={20} />
         <b>Manufacturer Warranty</b>
-        <p>{wTag || "Standard manufacturer warranty included"}. Activated automatically with your order.</p>
+        <p>{WARRANTY_LABEL}. Terms are set by each manufacturer. Activated automatically with your order.</p>
       </div>
       <div className="info-card">
         <ChevronRight size={20} />

@@ -100,7 +100,7 @@ export const HELP_TOPICS = [
     items: [
       {
         q: "Are your products covered by warranty?",
-        a: "Yes. Every product on NAVEN carries the manufacturer’s official warranty — typically 1 year on most appliances, and up to 10 years on AC compressors from certain brands. The warranty period is shown on each product page.",
+        a: "Yes. Every product on NAVEN is covered by the manufacturer’s official warranty. Warranty terms are set by each manufacturer and can differ between brands and products.",
       },
       {
         q: "How do I make a warranty claim?",

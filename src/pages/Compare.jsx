@@ -9,6 +9,7 @@ import { MAX_COMPARE } from "../utils/comparison.js";
 import { SITE } from "../config/site.js";
 import RatingStars from "../components/product/RatingStars.jsx";
 import SEOHead from "../components/seo/SEOHead.jsx";
+import { withoutWarrantyHighlights } from "../utils/warrantyDisplay.js";
 
 /**
  * Compare page — up to 4 products side-by-side.
@@ -33,7 +34,9 @@ const ATTRIBUTE_ROWS = [
 export default function Compare() {
   const { compare, removeFromComparison, clearComparison, addToCart } = useStore();
   const { bySku } = useCatalog();
-  const items = compare.map((sku) => bySku(sku)).filter(Boolean);
+  /* Warranty highlights are hidden: no specific periods on the storefront. */
+  const items = compare.map((sku) => bySku(sku)).filter(Boolean)
+    .map((p) => (p.highlights ? { ...p, highlights: withoutWarrantyHighlights(p.highlights) } : p));
   const slots = Array.from({ length: MAX_COMPARE }, (_, i) => items[i] || null);
 
 
