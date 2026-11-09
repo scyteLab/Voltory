@@ -50,19 +50,6 @@ export function productHelpMessage(product) {
   ].join("\n");
 }
 
-/** Product page "share a review" link. */
-export function productReviewMessage(product) {
-  return [
-    "Hello NAVEN 👋",
-    "I recently bought this product and would like to share a review:",
-    `*${clean(product.name, 120)}*`,
-    `SKU: ${product.sku}`,
-    productUrl(product),
-    "",
-    "My review:",
-  ].join("\n");
-}
-
 /**
  * Send Cart to WhatsApp message (plain text, no *bold*: it's what the
  * customer sends us, so it should read like they wrote it).

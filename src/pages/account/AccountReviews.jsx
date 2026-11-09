@@ -76,7 +76,7 @@ export default function AccountReviews() {
               </div>
 
               <div className="myrev-row__actions">
-                <Link to={r.productSlug ? `/p/${r.productSlug}#reviews-heading` : "/"} className="btn-ghost">
+                <Link to={r.productSlug ? `/product/${r.productSlug}#reviews-heading` : "/"} className="btn-ghost">
                   View / Edit
                 </Link>
                 <button

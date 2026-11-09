@@ -1,13 +1,11 @@
 import { useEffect, useState } from "react";
 import {
-  BadgeCheck, ChevronRight, MessageSquareText, ShieldCheck,
-  Star, ThumbsUp, Truck, Wrench,
+  ChevronRight, MessageSquareText, ShieldCheck, Truck, Wrench,
 } from "lucide-react";
 import { naira } from "../../utils/format.js";
 import { SITE } from "../../config/site.js";
-import RatingStars from "./RatingStars.jsx";
 import { fetchProductAttributes, attributesToSpecRows } from "../../lib/productAttributesClient.js";
-import { productHelpMessage, productReviewMessage, whatsappUrl } from "../../utils/whatsappMessage.js";
+import { productHelpMessage, whatsappUrl } from "../../utils/whatsappMessage.js";
 import { WARRANTY_LABEL, withoutWarrantySpecs, withoutWarrantyHighlights } from "../../utils/warrantyDisplay.js";
 
 /**
@@ -22,8 +20,8 @@ import { WARRANTY_LABEL, withoutWarrantySpecs, withoutWarrantyHighlights } from 
  *     (ordered by attribute.position), then JSONB specs
  *   · No visible distinction between the two sources
  *
- * Not changed: DescPanel, DeliveryPanel, WarrantyPanel,
- * ReviewsPanel, QAPanel — all preserved verbatim.
+ * Reviews live in ReviewsSection (real, approved reviews only);
+ * this component no longer has a reviews tab.
  */
 export default function SpecsTabs({ product: p }) {
   const tabs = [
@@ -31,8 +29,7 @@ export default function SpecsTabs({ product: p }) {
     { id: "desc", label: "Description" },
     { id: "delivery", label: "Delivery & Installation" },
     { id: "warranty", label: "Warranty & Returns" },
-    { id: "reviews", label: `Reviews (${p.reviews ?? 0})` },
-    { id: "qa", label: `Q&A (${p.questions ?? 0})` },
+    { id: "qa", label: "Q&A" },
   ];
   const [active, setActive] = useState("specs");
 
@@ -56,7 +53,6 @@ export default function SpecsTabs({ product: p }) {
         {active === "desc" && <DescPanel product={p} />}
         {active === "delivery" && <DeliveryPanel product={p} />}
         {active === "warranty" && <WarrantyPanel />}
-        {active === "reviews" && <ReviewsPanel product={p} />}
         {active === "qa" && <QAPanel product={p} />}
       </div>
     </section>
@@ -232,229 +228,14 @@ function WarrantyPanel() {
 }
 
 /* ============================================================
-   WhatsApp CTA helpers (messages: utils/whatsappMessage.js)
+   WhatsApp CTA helper (message text: utils/whatsappMessage.js)
    ============================================================ */
-function productWhatsappUrl(topic, product) {
-  return whatsappUrl(topic === "question" ? productHelpMessage(product) : productReviewMessage(product));
-}
-
-/* ---------- deterministic mock review generator ---------- */
-const REVIEWER_POOL = [
-  { name: "Chidi O.", city: "Lagos" },
-  { name: "Funmi A.", city: "Abuja" },
-  { name: "Bayo T.", city: "Port Harcourt" },
-  { name: "Ngozi E.", city: "Enugu" },
-  { name: "Emeka K.", city: "Lagos" },
-  { name: "Aisha M.", city: "Kano" },
-  { name: "Tolu D.", city: "Ibadan" },
-  { name: "Kemi S.", city: "Lagos" },
-];
-
-const REVIEW_TEMPLATES = [
-  {
-    rating: 5,
-    texts: [
-      "Excellent product! Delivery was fast and the item arrived in perfect condition. Very happy with this purchase.",
-      "Top quality, exactly as described on the website. NAVEN's packaging was superb. Would definitely recommend to friends and family.",
-      "This is my second purchase from NAVEN and I'm not disappointed. The product works perfectly and customer service was very responsive.",
-    ],
-  },
-  {
-    rating: 4,
-    texts: [
-      "Good value for money. Works well so far, though delivery took an extra day. Overall I'm satisfied with the purchase.",
-      "Very decent product. Installation was straightforward. Only giving 4 stars because the manual could be clearer.",
-      "Solid build quality and performs as expected. The only minor issue was a small scratch on the packaging, but the product itself is fine.",
-    ],
-  },
-  {
-    rating: 3,
-    texts: [
-      "Product is okay for the price. Does what it's supposed to do but nothing extraordinary. Average experience overall.",
-      "It works, but I expected a bit more based on the description. Delivery was smooth though, and customer support was helpful.",
-    ],
-  },
-  {
-    rating: 2,
-    texts: [
-      "Not fully satisfied. The product feels cheaper than expected. Still works but I had higher expectations for this brand.",
-    ],
-  },
-  {
-    rating: 1,
-    texts: [
-      "Disappointed with this purchase. Product did not meet expectations at all. Currently in touch with support for a resolution.",
-    ],
-  },
-];
-
-function hashSku(sku) {
-  let h = 0;
-  for (let i = 0; i < (sku || "PROD").length; i++) {
-    h = ((h << 5) - h + (sku || "PROD").charCodeAt(i)) | 0;
-  }
-  return Math.abs(h);
-}
-
-function generateRatingBreakdown(rating, total) {
-  const raw = [0, 0, 0, 0, 0];
-  const weights = [0, 0, 0, 0, 0];
-
-  for (let i = 0; i < 5; i++) {
-    const starVal = 5 - i;
-    weights[i] = Math.exp(-0.8 * Math.pow(starVal - rating, 2));
-  }
-  const wSum = weights.reduce((a, b) => a + b, 0);
-  let assigned = 0;
-  for (let i = 0; i < 5; i++) {
-    raw[i] = Math.round((weights[i] / wSum) * total);
-    assigned += raw[i];
-  }
-  raw[0] += total - assigned;
-
-  return [5, 4, 3, 2, 1].map((star, idx) => ({
-    star,
-    count: Math.max(0, raw[idx]),
-    pct: total ? Math.round((Math.max(0, raw[idx]) / total) * 100) : 0,
-  }));
-}
-
-function generateMockReviews(sku, rating, total) {
-  const seed = hashSku(sku);
-  const count = Math.min(total, Math.max(3, Math.min(5, total)));
-  const reviews = [];
-
-  for (let i = 0; i < count; i++) {
-    const idx = (seed + i * 37) % REVIEWER_POOL.length;
-    const reviewer = REVIEWER_POOL[idx];
-
-    let rBand;
-    const r = ((seed + i * 73) % 100);
-    if (rating >= 4.5) rBand = r < 70 ? 5 : r < 90 ? 4 : 3;
-    else if (rating >= 4.0) rBand = r < 45 ? 5 : r < 80 ? 4 : r < 95 ? 3 : 2;
-    else if (rating >= 3.0) rBand = r < 20 ? 5 : r < 45 ? 4 : r < 75 ? 3 : r < 90 ? 2 : 1;
-    else rBand = r < 10 ? 4 : r < 30 ? 3 : r < 60 ? 2 : 1;
-
-    const tpl = REVIEW_TEMPLATES.find((t) => t.rating === rBand) || REVIEW_TEMPLATES[0];
-    const textIdx = (seed + i * 19) % tpl.texts.length;
-
-    const daysAgo = ((seed + i * 53) % 180) + 1;
-    const d = new Date();
-    d.setDate(d.getDate() - daysAgo);
-
-    const verified = ((seed + i * 11) % 100) < 85;
-    const helpful = ((seed + i * 41) % 24);
-
-    reviews.push({
-      id: i,
-      name: reviewer.name,
-      city: reviewer.city,
-      rating: rBand,
-      text: tpl.texts[textIdx],
-      date: d.toLocaleDateString("en-NG", { year: "numeric", month: "short", day: "numeric" }),
-      verified,
-      helpful,
-    });
-  }
-  return reviews;
-}
-
-function ReviewsPanel({ product }) {
-  const rating = product.rating ?? 0;
-  const total = product.reviews ?? 0;
-
-  if (!total) return <Placeholder text="No reviews yet — be the first to share your experience after purchase." />;
-
-  const breakdown = generateRatingBreakdown(rating, total);
-  const mockReviews = generateMockReviews(product.sku, rating, total);
-  const reviewLink = productWhatsappUrl("review", product);
-
-  return (
-    <div className="reviews">
-      <div className="reviews__summary">
-        <span className="reviews__big">{rating.toFixed(1)}</span>
-        <div className="reviews__summary-right">
-          <RatingStars rating={rating} reviews={null} size={18} />
-          <p>Based on {total} verified customer review{total === 1 ? "" : "s"}</p>
-        </div>
-      </div>
-
-      <div className="rating-bars">
-        {breakdown.map((b) => (
-          <div className="rating-bars__row" key={b.star}>
-            <span className="rating-bars__label">{b.star} <Star size={12} fill="currentColor" strokeWidth={0} /></span>
-            <div className="rating-bars__track">
-              <div
-                className="rating-bars__fill"
-                style={{ width: `${b.pct}%` }}
-              />
-            </div>
-            <span className="rating-bars__count">{b.count}</span>
-          </div>
-        ))}
-      </div>
-
-      <div className="reviews__actions">
-        <a
-          className="reviews__write-btn"
-          href={reviewLink}
-          target="_blank"
-          rel="noreferrer"
-        >
-          Write a Review
-        </a>
-        <small className="reviews__write-hint">
-          Share your experience with our team on WhatsApp — we'll add verified reviews to the site.
-        </small>
-      </div>
-
-      <div className="reviews__list">
-        {mockReviews.map((rev) => (
-          <div className="review-card" key={rev.id}>
-            <div className="review-card__header">
-              <div className="review-card__author">
-                <span className="review-card__avatar">{rev.name.charAt(0)}</span>
-                <div>
-                  <b className="review-card__name">{rev.name}</b>
-                  <span className="review-card__meta">{rev.city} &middot; {rev.date}</span>
-                </div>
-              </div>
-              {rev.verified && (
-                <span className="review-card__verified">
-                  <BadgeCheck size={14} /> Verified Purchase
-                </span>
-              )}
-            </div>
-            <div className="review-card__stars">
-              {[1, 2, 3, 4, 5].map((s) => (
-                <Star
-                  key={s}
-                  size={14}
-                  fill="currentColor"
-                  strokeWidth={0}
-                  className={s <= rev.rating ? "stars__on" : "stars__off"}
-                />
-              ))}
-            </div>
-            <p className="review-card__text">{rev.text}</p>
-            <div className="review-card__footer">
-              <button
-                className="review-card__helpful"
-                onClick={(e) => { e.preventDefault(); }}
-              >
-                <ThumbsUp size={13} /> Helpful ({rev.helpful})
-              </button>
-            </div>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
+function productQuestionUrl(product) {
+  return whatsappUrl(productHelpMessage(product));
 }
 
 function QAPanel({ product }) {
-  const questionLink = productWhatsappUrl("question", product);
-  const count = product.questions ?? 0;
+  const questionLink = productQuestionUrl(product);
 
   return (
     <div className="qa-cta">
@@ -466,11 +247,6 @@ function QAPanel({ product }) {
         <p>
           Chat with our product experts on WhatsApp for personalized advice, availability,
           delivery timelines, or anything else you need to know before buying.
-          {count > 0 && (
-            <span className="qa-cta__count">
-              &nbsp;{count} customer{count === 1 ? " has" : "s have"} asked us about this product so far.
-            </span>
-          )}
         </p>
         <a
           className="qa-cta__btn"
