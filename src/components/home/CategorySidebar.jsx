@@ -1,16 +1,21 @@
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { ChevronRight, LayoutGrid } from "lucide-react";
 import { CATEGORIES } from "../../data/products.js";
 import { allMegaMenuImages } from "../../config/megaMenuMedia.js";
 import Icon from "../ui/Icon.jsx";
 import MegaMenuFeature from "./MegaMenuFeature.jsx";
+import { useCatalog } from "../../context/CatalogContext.jsx";
+import { makeBrandResolver } from "../../lib/brandFilter.js";
 
 export default function CategorySidebar() {
   const [active, setActive] = useState(null);
   const [failedImages, setFailedImages] = useState(() => new Set());
   const closeTimer = useRef(null);
   const preloaded = useRef(false);
+  /* "By Brand" items are brand names; link them by brand id. */
+  const { brands } = useCatalog();
+  const brandResolver = useMemo(() => makeBrandResolver(brands), [brands]);
 
   const markFailed = useCallback((src) => {
     setFailedImages((prev) => (prev.has(src) ? prev : new Set(prev).add(src)));
@@ -91,7 +96,9 @@ export default function CategorySidebar() {
                   {col.items.map((item) => (
                     <li key={item}>
                       <Link
-                        to={`/category/${activeCat.id}?q=${encodeURIComponent(item)}`}
+                        to={/brand/i.test(col.heading)
+                          ? `/category/${activeCat.id}?brand=${encodeURIComponent(brandResolver.slugOf(item))}`
+                          : `/category/${activeCat.id}?q=${encodeURIComponent(item)}`}
                         onClick={() => setActive(null)}
                       >
                         {item}

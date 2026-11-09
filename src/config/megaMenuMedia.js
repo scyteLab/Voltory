@@ -6,8 +6,8 @@
  * with no entry here shows no panel. Images live in public/menu/ —
  * file names and extensions must match exactly.
  *
- * Brand links use ?brand=<Name>, the filter the category page reads.
- * The name must match products.brand exactly (case-sensitive).
+ * Brand links use ?brand=<brand id>, the lowercase slug the category
+ * page's brand filter reads (it matches brand names case-insensitively).
  */
 export const MEGA_MENU_MEDIA = {
   "air-conditioners": {
@@ -16,7 +16,7 @@ export const MEGA_MENU_MEDIA = {
     eyebrow: "Featured: Midea",
     title: "Cool comfort, even in harmattan heat",
     ctaLabel: "Shop Midea ACs",
-    href: "/category/air-conditioners?brand=Midea",
+    href: "/category/air-conditioners?brand=midea",
   },
   "refrigerators-freezers": {
     image: "/menu/fridges-scanfrost.jpeg",
@@ -24,7 +24,7 @@ export const MEGA_MENU_MEDIA = {
     eyebrow: "Featured: Scanfrost",
     title: "Fresh food, every day of the week",
     ctaLabel: "Shop Scanfrost Fridges",
-    href: "/category/refrigerators-freezers?brand=Scanfrost",
+    href: "/category/refrigerators-freezers?brand=scanfrost",
   },
   "washing-machines": {
     image: "/menu/washing-midea.jpeg",
@@ -32,7 +32,7 @@ export const MEGA_MENU_MEDIA = {
     eyebrow: "Featured: Midea",
     title: "Laundry day, made easy",
     ctaLabel: "Shop Midea Washers",
-    href: "/category/washing-machines?brand=Midea",
+    href: "/category/washing-machines?brand=midea",
   },
   "televisions-audio": {
     image: "/menu/tv-sony.jpeg",
@@ -40,7 +40,7 @@ export const MEGA_MENU_MEDIA = {
     eyebrow: "Featured: Sony",
     title: "Match day, the way it should look",
     ctaLabel: "Shop Sony TVs",
-    href: "/category/televisions-audio?brand=Sony",
+    href: "/category/televisions-audio?brand=sony",
   },
   "kitchen-appliances": {
     image: "/menu/kitchen-kenwood.jpeg",
@@ -48,7 +48,7 @@ export const MEGA_MENU_MEDIA = {
     eyebrow: "Featured: Kenwood",
     title: "Bake, blend and create",
     ctaLabel: "Shop Kenwood",
-    href: "/category/kitchen-appliances?brand=Kenwood",
+    href: "/category/kitchen-appliances?brand=kenwood",
   },
   // NOTE: public/menu/small-kenwood.jpeg has not been supplied yet. Until
   // it exists the image fails to load and the panel hides itself; drop the
@@ -59,7 +59,7 @@ export const MEGA_MENU_MEDIA = {
     eyebrow: "Featured: Kenwood",
     title: "Little helpers, big difference",
     ctaLabel: "Shop Kenwood Small Appliances",
-    href: "/category/small-appliances?brand=Kenwood",
+    href: "/category/small-appliances?brand=kenwood",
   },
   "power-solutions": {
     image: "/menu/power.jpeg",

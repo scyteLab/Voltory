@@ -188,63 +188,49 @@
   text-decoration: line-through;
 }
 
-/* ---- Shop by Brand row ---- */
-.cbrands {
-  margin-top: 16px;
-  border-radius: var(--r-lg);
-  overflow: hidden;
-}
-.cbrands__header {
-  background: var(--p-dark);
-  color: #fff;
-  padding: 10px 20px;
-  font-size: 15px;
-  font-weight: 800;
-  text-align: center;
-}
-.cbrands__row {
+/* ---- Brand chips (filter in place) ---- */
+.cbchips {
+  position: relative;
   display: flex;
   flex-wrap: wrap;
-  gap: 12px;
-  padding: 14px;
-  background: #f3f5f8;
-  border: 1px solid var(--line);
-  border-top: none;
-  border-radius: 0 0 var(--r-lg) var(--r-lg);
+  gap: 8px;
+  margin: 16px 0 4px;
 }
-.cbrands__tile {
-  position: relative;
-  display: flex;
+.cbchip {
+  display: inline-flex;
   align-items: center;
-  justify-content: center;
-  width: 140px;
-  height: 80px;
-  border-radius: var(--r);
-  overflow: hidden;
-  background-color: #1a1a2e;
-  background-size: cover;
-  background-position: center;
+  gap: 6px;
+  height: 38px;
+  padding: 0 14px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: #f3f5f8;
+  color: var(--ink);
+  font: inherit;
+  font-size: 13.5px;
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: pointer;
   flex-shrink: 0;
-  transition: transform 0.15s, box-shadow 0.15s;
+  transition: background 0.12s, border-color 0.12s, color 0.12s;
 }
-.cbrands__tile:hover {
-  transform: translateY(-2px);
-  box-shadow: var(--shadow-sm);
+.cbchip:hover { border-color: #120F4C; background: #fff; }
+.cbchip:focus-visible { outline: 2px solid #120F4C; outline-offset: 2px; }
+.cbchip__logo {
+  width: 22px;
+  height: 22px;
+  object-fit: contain;
+  border-radius: 50%;
+  background: #fff;
 }
-.cbrands__overlay {
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(135deg, rgba(0,0,0,0.5), rgba(0,0,0,0.3));
+.cbchip__count { color: var(--mut); font-weight: 500; }
+.cbchip--on,
+.cbchip--on:hover {
+  background: #120F4C;
+  border-color: #120F4C;
+  color: #fff;
 }
-.cbrands__logo {
-  position: relative;
-  z-index: 1;
-}
-.cbrands__logo .blogo {
-  background: rgba(255,255,255,0.92);
-  border-radius: 8px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.12);
-}
+.cbchip--on .cbchip__count { color: rgba(255, 255, 255, 0.8); }
 
 /* ---- Sub-categories (sidebar) ---- */
 .csub {
@@ -301,11 +287,6 @@
   font-weight: 800;
   letter-spacing: -0.01em;
 }
-.cmain__found {
-  font-size: 13px;
-  color: var(--mut);
-}
-
 /* ---- mobile filter trigger (hidden on desktop) ---- */
 .cmob-trigger {
   display: none;
@@ -618,7 +599,17 @@
 
   .cmob-trigger { display: inline-flex; }
   .cdeals__grid { grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); }
-  .cbrands__tile { width: 120px; height: 70px; }
+  /* one sideways-scrolling row of brand chips */
+  .cbchips {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    scrollbar-width: none;
+    margin-left: -16px;
+    margin-right: -16px;
+    padding: 2px 16px;
+    scroll-padding: 0 16px;
+  }
+  .cbchips::-webkit-scrollbar { display: none; }
   .cmain__heading { flex-direction: column; gap: 2px; }
   .cmain__heading h2 { font-size: 16px; }
 

@@ -23,6 +23,9 @@ export default function FilterSidebar({
   setFilters,
   onClear,
   onClose,
+  /* Optional [{ slug, name, count }]: when given, the Brand group
+     uses brand slugs (the URL value) and shows display names. */
+  brandOptions = null,
   /* Session 3 additions — all optional so this component still
      works without attribute wiring */
   attributes = [],           // [{ id, slug, name, type, unit, allowed_values }]
@@ -95,7 +98,7 @@ export default function FilterSidebar({
       {config.map((key) => {
         const R = RENDERERS[key];
         if (!R) return null;
-        return <R key={key} counts={counts} filters={filters} toggleArray={toggleArray} setValue={setValue} />;
+        return <R key={key} counts={counts} filters={filters} toggleArray={toggleArray} setValue={setValue} brandOptions={brandOptions} />;
       })}
 
       {/* Dynamic attribute filters (Session 3) */}
@@ -400,13 +403,23 @@ function CheckGroup({ title, entries, active, onToggle, formatter = (k) => k }) 
 
 /* ---------- per-filter renderers ---------- */
 const RENDERERS = {
-  brand: ({ counts, filters, toggleArray }) => (
-    <CheckGroup
-      title="Brand"
-      entries={Object.entries(counts.brand).sort()}
-      active={filters.brand || []}
-      onToggle={(v) => toggleArray("brand", v)}
-    />
+  brand: ({ counts, filters, toggleArray, brandOptions }) => (
+    brandOptions ? (
+      <CheckGroup
+        title="Brand"
+        entries={[...brandOptions].sort((a, b) => a.name.localeCompare(b.name)).map((o) => [o.slug, o.count])}
+        active={filters.brand || []}
+        onToggle={(v) => toggleArray("brand", v)}
+        formatter={(slug) => brandOptions.find((o) => o.slug === slug)?.name || slug}
+      />
+    ) : (
+      <CheckGroup
+        title="Brand"
+        entries={Object.entries(counts.brand).sort()}
+        active={filters.brand || []}
+        onToggle={(v) => toggleArray("brand", v)}
+      />
+    )
   ),
   hp: ({ counts, filters, toggleArray }) => (
     <CheckGroup

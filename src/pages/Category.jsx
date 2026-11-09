@@ -1,16 +1,16 @@
 import { useEffect, useMemo, useState } from "react";
-import { Link, useParams, useSearchParams } from "react-router-dom";
+import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { ChevronRight, Home as HomeIcon, SlidersHorizontal, X } from "lucide-react";
 import { useCatalog } from "../context/CatalogContext.jsx";
 import CatalogLoading from "../components/ui/CatalogLoading.jsx";
-import { BRAND_PAGES } from "../config/brandPages.js";
 import { naira, discountPct } from "../utils/format.js";
 import { SITE } from "../config/site.js";
 import ProductCard from "../components/product/ProductCard.jsx";
 import FilterSidebar from "../components/category/FilterSidebar.jsx";
 import Pagination from "../components/ui/Pagination.jsx";
 import BuyingGuide from "../components/category/BuyingGuide.jsx";
-import BrandLogo from "../components/brand/BrandLogo.jsx";
+import BrandChips from "../components/category/BrandChips.jsx";
+import { makeBrandResolver, brandOptionsFor, normaliseBrandParam } from "../lib/brandFilter.js";
 import {
   fetchFilterableAttributesForCategory,
   fetchProductAttributesForCategory,
@@ -43,9 +43,12 @@ const ATTR_PREFIX = "attr_";
 
 export default function Category() {
   const { id: categoryId } = useParams();
-  const { products, brands, byCategory, byId, loading } = useCatalog();
+  const { brands, byCategory, byId, loading } = useCatalog();
   const category = byId(categoryId);
-  const [searchParams, setSearchParams] = useSearchParams();
+  const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
+  /* Writes the query with readable list separators (?brand=a,b). */
+  const setSearchParams = (sp, opts) => navigate({ search: readableQuery(new URLSearchParams(sp)) }, opts);
 
   /* ---- Attribute definitions + assigned values for this category ---- */
   const [attributes, setAttributes] = useState([]);      // filterable attribute defs
@@ -69,8 +72,16 @@ export default function Category() {
     return () => { cancelled = true; };
   }, [categoryId]);
 
-  /* ---- Filter state (hardcoded + attribute) ---- */
-  const filters = useMemo(() => readFiltersFromUrl(searchParams), [searchParams]);
+  /* ---- Brand resolver: URL slugs <-> products.brand, case-insensitive ---- */
+  const brandResolver = useMemo(() => makeBrandResolver(brands), [brands]);
+
+  /* ---- Filter state (hardcoded + attribute) ----
+     Brand values are normalised to lowercase slugs, so ?brand=Scanfrost
+     and ?brand=scanfrost both select the same brand. */
+  const filters = useMemo(() => {
+    const f = readFiltersFromUrl(searchParams);
+    return { ...f, brand: normaliseBrandParam(f.brand, brandResolver) };
+  }, [searchParams, brandResolver]);
   const attrFilters = useMemo(() => readAttrFiltersFromUrl(searchParams, attributes), [searchParams, attributes]);
 
   const sort = searchParams.get("sort") || "popular";
@@ -78,8 +89,8 @@ export default function Category() {
   const [drawerOpen, setDrawerOpen] = useState(false);
 
 
-  const baseProducts = byCategory(categoryId);
-  const filtered = applyAllFilters(baseProducts, filters, attrFilters, attributes, productAttrMap);
+  const baseProducts = useMemo(() => byCategory(categoryId), [byCategory, categoryId]);
+  const filtered = applyAllFilters(baseProducts, filters, attrFilters, attributes, productAttrMap, brandResolver.slugOf);
   const sorted = applySort(filtered, sort);
   const totalPages = Math.max(1, Math.ceil(sorted.length / PAGE_SIZE));
   const currentPage = Math.min(page, totalPages);
@@ -98,14 +109,14 @@ export default function Category() {
     const sp = new URLSearchParams(searchParams);
     writeFiltersToUrl(sp, next);
     sp.delete("page");
-    setSearchParams(sp, { replace: false });
+    setSearchParams(sp, { replace: true });
   }
 
   function setAttrFilter(slug, value) {
     const sp = new URLSearchParams(searchParams);
     writeAttrFilterToUrl(sp, slug, value);
     sp.delete("page");
-    setSearchParams(sp, { replace: false });
+    setSearchParams(sp, { replace: true });
   }
 
   function setSort(value) {
@@ -122,9 +133,33 @@ export default function Category() {
     window.scrollTo({ top: 500, behavior: "smooth" });
   }
 
-  function clearFilters() { setSearchParams({}); }
+  /* Clears every filter; keeps the chosen sort order. */
+  function clearFilters() {
+    const sp = new URLSearchParams();
+    if (searchParams.get("sort")) sp.set("sort", searchParams.get("sort"));
+    setSearchParams(sp, { replace: true });
+  }
 
-  const activeChips = buildActiveChips(filters, attrFilters, attributes);
+  /* Brand chips and sidebar share these; both write ?brand= */
+  function toggleBrand(slug) {
+    setFilters((f) => ({
+      ...f,
+      brand: f.brand.includes(slug) ? f.brand.filter((b) => b !== slug) : [...f.brand, slug],
+    }));
+  }
+  function clearBrands() { setFilters((f) => ({ ...f, brand: [] })); }
+
+  /* Brands with listed products in this category, most products first */
+  const brandOptions = useMemo(() => brandOptionsFor(baseProducts, brandResolver), [baseProducts, brandResolver]);
+  const brandName = (slug) => brandOptions.find((o) => o.slug === slug)?.name
+    || brandResolver.recordOf(slug)?.name || slug;
+  const selectedBrandNames = filters.brand.map(brandName);
+
+  const activeChips = buildActiveChips(filters, attrFilters, attributes, brandName);
+  function removeChip(c) {
+    if (c.type === "brand") setFilters((f) => ({ ...f, brand: f.brand.filter((b) => b !== c.value) }));
+    else clearOne(searchParams, setSearchParams, c);
+  }
 
   /* Top deals — scoped to CURRENT filter state (hardcoded + attribute),
      same as before */
@@ -133,24 +168,33 @@ export default function Category() {
     .sort((a, b) => discountPct(b.price, b.was) - discountPct(a.price, a.was))
     .slice(0, 8);
 
-  /* Brands strip — hides once brand filter is active, same as before */
-  const brandFilterActive = filters.brand && filters.brand.length > 0;
-  const categoryBrands = useMemo(() => {
-    if (brandFilterActive) return [];
-    const names = [...new Set(baseProducts.map((p) => p.brand))];
-    return names.map((n) => brands.find((b) => b.name === n)).filter(Boolean);
-  }, [baseProducts, brands, brandFilterActive]);
-
   if (!category) return loading ? <CatalogLoading label="Loading category" /> : <CategoryNotFound id={categoryId} />;
 
   const subCats = category.megamenu?.find((g) => g.heading === "By Type")?.items || [];
 
+  /* Results heading, empty state and SEO all reflect the brand filter */
+  const label = category.label;
+  const oneBrand = selectedBrandNames.length === 1 ? selectedBrandNames[0] : null;
+  const resultsHeading = oneBrand
+    ? `${sorted.length} ${oneBrand} ${label}`
+    : selectedBrandNames.length > 1
+      ? `${sorted.length} ${label} from ${selectedBrandNames.length} brands`
+      : `${sorted.length} ${label}`;
+  const emptyHeading = oneBrand
+    ? `No ${oneBrand} ${label.toLowerCase()} match these filters`
+    : selectedBrandNames.length > 1
+      ? `No ${label.toLowerCase()} from these brands match these filters`
+      : "No products match these filters";
+  const seoTitle = oneBrand ? `${oneBrand} ${label}` : label;
+  const seoDescription = oneBrand
+    ? `Shop ${oneBrand} ${label.toLowerCase()} at NAVEN. Genuine products with manufacturer warranty and nationwide delivery across Nigeria.`
+    : `Shop ${label || "appliances"} at NAVEN. Browse top brands with nationwide delivery across Nigeria.`;
+
   return (
     <main className="wrap">
-      <SEOHead
-        title={category?.label}
-        description={`Shop ${category?.label || "appliances"} at NAVEN. Browse top brands with nationwide delivery across Nigeria.`}
-      />
+      {/* Canonical stays the plain category URL (SEOHead builds it from
+          the pathname, never the query), so filtered views aren't duplicates. */}
+      <SEOHead title={seoTitle} description={seoDescription} />
       <nav className="crumb" aria-label="Breadcrumb">
         <Link to="/"><HomeIcon size={13} /> Home</Link>
         <ChevronRight size={12} />
@@ -177,7 +221,7 @@ export default function Category() {
           <div className="cdeals__header">
             <span>
               Top Deals on
-              {brandFilterActive && filters.brand.length === 1 ? ` ${filters.brand[0]} ` : " "}
+              {oneBrand ? ` ${oneBrand} ` : " "}
               {category.label}
             </span>
           </div>
@@ -197,34 +241,17 @@ export default function Category() {
         </section>
       )}
 
-      {/* === SHOP BY BRAND === */}
-      {categoryBrands.length > 1 && (
-        <section className="cbrands">
-          <div className="cbrands__header">
-            <span>Shop by Brand</span>
-          </div>
-          <div className="cbrands__row">
-            {categoryBrands.map((b) => {
-              const meta = BRAND_PAGES[b.id] || {};
-              return (
-                <Link
-                  to={`/brand/${b.id}`}
-                  key={b.id}
-                  className="cbrands__tile"
-                  style={b.logo ? { backgroundImage: `url(${products.find((p) => p.brand === b.name)?.image || ""})` } : undefined}
-                >
-                  <span className="cbrands__overlay" />
-                  <span className="cbrands__logo">
-                    <BrandLogo brand={b} size="md" />
-                  </span>
-                </Link>
-              );
-            })}
-          </div>
-        </section>
-      )}
-
       <BuyingGuide categoryId={categoryId} />
+
+      {/* === BRAND CHIPS: filter in place, same URL state as the sidebar === */}
+      {(brandOptions.length > 1 || filters.brand.length > 0) && (
+        <BrandChips
+          options={brandOptions}
+          selected={filters.brand}
+          onToggle={toggleBrand}
+          onClear={clearBrands}
+        />
+      )}
 
       {/* mobile filter trigger */}
       <button className="cmob-trigger" onClick={() => setDrawerOpen(true)}>
@@ -257,6 +284,7 @@ export default function Category() {
           <FilterSidebar
             category={category}
             products={baseProducts}
+            brandOptions={brandOptions}
             filters={filters}
             setFilters={setFilters}
             onClear={clearFilters}
@@ -272,8 +300,7 @@ export default function Category() {
 
         <section className="cmain">
           <div className="cmain__heading">
-            <h2>{category.label} in Nigeria</h2>
-            <span className="cmain__found">({baseProducts.length} products found)</span>
+            <h2 aria-live="polite">{resultsHeading}</h2>
           </div>
 
           <div className="ctoolbar">
@@ -295,8 +322,8 @@ export default function Category() {
             <ul className="cchips">
               {activeChips.map((c) => (
                 <li key={c.key}>
-                  <button onClick={() => clearOne(searchParams, setSearchParams, c)}>
-                    {c.label} <X size={12} />
+                  <button onClick={() => removeChip(c)} aria-label={`Remove filter: ${c.label}`}>
+                    {c.label} <X size={12} aria-hidden="true" />
                   </button>
                 </li>
               ))}
@@ -312,7 +339,7 @@ export default function Category() {
             </div>
           ) : (
             <div className="cempty">
-              <h3>No products match these filters</h3>
+              <h3>{emptyHeading}</h3>
               <p>Try removing a filter, or browse the full {category.label} catalogue.</p>
               <button className="btn-shop" onClick={clearFilters}>Clear filters</button>
             </div>
@@ -434,12 +461,12 @@ function writeAttrFilterToUrl(sp, slug, value) {
    FILTER APPLICATION
    ============================================================ */
 
-function applyAllFilters(products, f, attrF, attributes, productAttrMap) {
+function applyAllFilters(products, f, attrF, attributes, productAttrMap, slugOf = (v) => v) {
   const attrBySlug = new Map((attributes || []).map((a) => [a.slug, a]));
 
   return products.filter((p) => {
     /* ---- Hardcoded filters (unchanged) ---- */
-    if (f.brand.length && !f.brand.includes(p.brand)) return false;
+    if (f.brand.length && !f.brand.includes(slugOf(p.brand))) return false;
     if (f.hp.length && (p.hp == null || !f.hp.includes(String(p.hp)))) return false;
     if (f.inverter.length) {
       if (p.inverter == null) return false;
@@ -587,11 +614,11 @@ function computeAttributeCounts(filteredProducts, attributes, productAttrMap) {
 /* ============================================================
    ACTIVE FILTER CHIPS
    ============================================================ */
-function buildActiveChips(f, attrF, attributes) {
+function buildActiveChips(f, attrF, attributes, brandName = (v) => v) {
   const chips = [];
 
   /* Hardcoded chips (unchanged) */
-  for (const v of f.brand) chips.push({ key: `brand:${v}`, type: "brand", value: v, label: v });
+  for (const v of f.brand) chips.push({ key: `brand:${v}`, type: "brand", value: v, label: brandName(v) });
   for (const v of f.hp) chips.push({ key: `hp:${v}`, type: "hp", value: v, label: `${v} HP` });
   for (const v of f.inverter) chips.push({ key: `inverter:${v}`, type: "inverter", value: v, label: v });
   for (const v of f.litres) chips.push({ key: `litres:${v}`, type: "litres", value: v, label: v });
@@ -660,7 +687,7 @@ function clearOne(searchParams, setSearchParams, chip) {
       else sp.delete(key);
     }
     sp.delete("page");
-    setSearchParams(sp);
+    setSearchParams(sp, { replace: true });
     return;
   }
 
@@ -677,7 +704,7 @@ function clearOne(searchParams, setSearchParams, chip) {
     else sp.delete(chip.type);
   }
   sp.delete("page");
-  setSearchParams(sp);
+  setSearchParams(sp, { replace: true });
 }
 
 function CategoryNotFound({ id }) {
@@ -692,4 +719,9 @@ function CategoryNotFound({ id }) {
       </Link>
     </main>
   );
+}
+/* Keep list separators readable in the address bar:
+   ?brand=scanfrost,midea rather than ?brand=scanfrost%2Cmidea */
+function readableQuery(sp) {
+  return sp.toString().replace(/%2C/gi, ",");
 }
