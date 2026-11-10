@@ -218,14 +218,59 @@ alter table public.customer_credentials enable row level security;
 revoke all on public.customer_credentials from anon, authenticated;
 
 -- 0.5 Sessions: hashed tokens, revocation, audit columns.
+--     Live shape (inventory 2026-11): token text NOT NULL (the primary
+--     key), customer_id, created_at, last_seen_at, expires_at,
+--     user_agent; no id column. New-style sessions store only
+--     token_hash, so token must become nullable, which a primary key
+--     column can't be. So: add an id, move the primary key to it, keep
+--     token unique for old-style rows (until Step B deletes them), and
+--     only then drop NOT NULL on token. Every part checks the current
+--     state first, so re-running is a no-op.
 alter table public.customer_sessions add column if not exists token_hash   text;
 alter table public.customer_sessions add column if not exists last_seen_at timestamptz;
 alter table public.customer_sessions add column if not exists user_agent   text;
 alter table public.customer_sessions add column if not exists revoked_at   timestamptz;
 create unique index if not exists customer_sessions_token_hash_key
   on public.customer_sessions (token_hash) where token_hash is not null;
+
 do $$
+declare
+  v_pk_name text;
+  v_pk_cols text[];
 begin
+  -- 1. id column (existing rows get a value from the default).
+  if not exists (select 1 from information_schema.columns
+                  where table_schema = 'public' and table_name = 'customer_sessions'
+                    and column_name = 'id') then
+    alter table public.customer_sessions
+      add column id uuid not null default gen_random_uuid();
+  end if;
+
+  -- 2. Current primary key, whatever it is called.
+  select c.conname, array_agg(a.attname::text order by a.attnum)
+    into v_pk_name, v_pk_cols
+    from pg_constraint c
+    join pg_attribute a on a.attrelid = c.conrelid and a.attnum = any (c.conkey)
+   where c.conrelid = 'public.customer_sessions'::regclass and c.contype = 'p'
+   group by c.conname;
+
+  -- 3. A primary key that includes token is replaced by one on id.
+  --    (Fails loudly if a foreign key elsewhere references it; none
+  --    is expected.)
+  if v_pk_name is not null and 'token' = any (v_pk_cols) then
+    execute format('alter table public.customer_sessions drop constraint %I', v_pk_name);
+    v_pk_name := null;
+  end if;
+  if v_pk_name is null then
+    alter table public.customer_sessions
+      add constraint customer_sessions_pkey primary key (id);
+  end if;
+
+  -- 4. Old-style (plain token) sessions stay unique until Step B.
+  execute 'create unique index if not exists customer_sessions_token_legacy_key
+             on public.customer_sessions (token) where token is not null';
+
+  -- 5. Now token can be nullable.
   if exists (select 1 from information_schema.columns
               where table_schema = 'public' and table_name = 'customer_sessions'
                 and column_name = 'token' and is_nullable = 'NO') then
@@ -404,7 +449,10 @@ create policy lockdown_anon_checkout_insert on public.order_items
   for insert to anon
   with check (public.order_accepts_items(order_id::text));
 
-revoke all on public.orders, public.order_items from anon;
+-- Live grants are ALL (incl. TRUNCATE, TRIGGER, REFERENCES, MAINTAIN)
+-- for both roles. TRUNCATE ignores RLS, so strip everything from BOTH
+-- roles, then grant back only what is needed.
+revoke all on public.orders, public.order_items from anon, authenticated;
 grant insert on public.orders, public.order_items to anon;
 grant select, insert, update, delete on public.orders, public.order_items to authenticated;
 
@@ -457,10 +505,10 @@ create policy lockdown_admin_all on public.customer_addresses
 -- customer_sessions, customer_otp_challenges, customer_credentials:
 -- no policies at all = service role only.
 
+-- Strip ALL (incl. TRUNCATE etc.) from both roles, then give admins
+-- back plain read/write on the two tables they use.
 revoke all on public.customers, public.customer_sessions, public.customer_addresses,
-              public.customer_otp_challenges, public.customer_credentials from anon;
-revoke all on public.customer_sessions, public.customer_otp_challenges,
-              public.customer_credentials from authenticated;
+              public.customer_otp_challenges, public.customer_credentials from anon, authenticated;
 grant select, insert, update, delete on public.customers, public.customer_addresses to authenticated;
 
 commit;
@@ -523,7 +571,7 @@ select public.lockdown_drop_policies(array['reviews']);
 alter table public.reviews enable row level security;
 create policy lockdown_admin_all on public.reviews
   for all to authenticated using (public.is_admin()) with check (public.is_admin());
-revoke all on public.reviews from anon;
+revoke all on public.reviews from anon, authenticated;   -- incl. TRUNCATE etc.
 grant select, insert, update, delete on public.reviews to authenticated;
 
 commit;
