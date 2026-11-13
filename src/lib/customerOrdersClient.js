@@ -36,7 +36,7 @@ export const LOOKUP_MESSAGES = {
    ============================================================ */
 
 /** POST to customer-data. Never throws: { status, data } (status 0 = offline / no function). */
-async function callCustomerData(payload) {
+export async function callCustomerData(payload) {
   const headers = { "Content-Type": "application/json" };
   const token = getSessionToken();
   if (token) headers["X-Customer-Session"] = token;

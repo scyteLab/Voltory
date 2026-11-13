@@ -91,8 +91,14 @@ export function websiteSchema() {
 /**
  * Product schema — rich snippet with price, availability, ratings.
  * Used on Product pages. Google uses this for product rich cards.
+ *
+ * Ratings are only ever real, APPROVED reviews:
+ *   reviewData.summary  { average, total }  from product_review_summary
+ *   reviewData.reviews  up to 5 approved reviews (author "First L.")
+ * aggregateRating is added only when at least 1 approved review
+ * exists; nothing is added otherwise.
  */
-export function productSchema(product) {
+export function productSchema(product, reviewData = {}) {
   if (!product) return null;
   const url = `${SITE_URL}/product/${product.slug}`;
   const image = product.image ? (product.image.startsWith("http") ? product.image : `${SITE_URL}${product.image}`) : DEFAULT_OG_IMAGE;
@@ -122,12 +128,28 @@ export function productSchema(product) {
     },
   };
 
-  if (product.rating && product.reviews) {
+  const summary = reviewData.summary;
+  const count = summary ? Number(summary.total) || 0 : Number(product.reviews) || 0;
+  const average = summary ? Number(summary.average) || 0 : Number(product.rating) || 0;
+  if (count >= 1 && average > 0) {
     schema.aggregateRating = {
       "@type": "AggregateRating",
-      "ratingValue": product.rating,
-      "reviewCount": product.reviews,
+      "ratingValue": average.toFixed(1),
+      "reviewCount": count,
+      "bestRating": 5,
+      "worstRating": 1,
     };
+    const items = (reviewData.reviews || []).filter((r) => r && r.rating >= 1).slice(0, 5);
+    if (items.length) {
+      schema.review = items.map((r) => ({
+        "@type": "Review",
+        "author": { "@type": "Person", "name": r.author },
+        "datePublished": String(r.createdAt || "").slice(0, 10),
+        "reviewRating": { "@type": "Rating", "ratingValue": r.rating, "bestRating": 5, "worstRating": 1 },
+        ...(r.title ? { "name": r.title } : {}),
+        ...(r.body ? { "reviewBody": r.body } : {}),
+      }));
+    }
   }
 
   return schema;

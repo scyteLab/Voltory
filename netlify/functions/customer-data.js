@@ -20,13 +20,25 @@
  *   { action: "track", id, phone }
  *       Same check, tracking fields only (no name, street, email).
  *
+ *   Reviews (signed-in only; see _shared/reviewActions.js):
+ *   { action: "review-eligibility", sku }
+ *   { action: "review-upsert", sku, rating, title?, body? }
+ *   { action: "review-delete", sku }
+ *   { action: "my-reviews" }
+ *       Public review reads don't come here: the product page calls the
+ *       product_reviews_public / product_review_summary RPCs (Step C).
+ *
  * Responses: 200 { ok:true, orders } | { ok:true, order }
  *            400 bad input · 401 no session · 403 bad origin
  *            404 { error:"not_found" } (unknown id and wrong phone look
  *                the same) · 405 · 413 · 415 · 429 + Retry-After · 500
  *
- * Rate limits (failed lookups only, per 10 minutes):
- *   5 per order id, 10 per IP. See _shared/rateLimit.js.
+ * Rate limits: order lookups 5 per order id / 10 per IP per 10 min
+ * (failed only); review writes 10 per customer per hour (all).
+ * See _shared/rateLimit.js.
+ *
+ * Sessions: sessionFromEvent() is the ONE place a request becomes a
+ * signed-in customer. Phase 2 swaps the header for the cookie there.
  */
 import { normaliseNgPhone, samePhone } from "../../src/utils/phone.js";
 import { toStorefrontShape, toTrackingShape } from "../../src/lib/orderShape.js";
@@ -34,8 +46,9 @@ import { createRest, enc, serviceDbConfigured } from "./_shared/serviceDb.js";
 import {
   RateLimitConfigError, clientIp, createRateLimiter, restAttemptStore, tooManyRequests,
 } from "./_shared/rateLimit.js";
+import { createReviewActions } from "./_shared/reviewActions.js";
 
-const MAX_BODY = 4 * 1024;
+const MAX_BODY = 8 * 1024;   // a 2000-character review plus JSON escaping
 const LOOKUP_WINDOW_SEC = 10 * 60;
 const LIMIT_PER_ORDER = 5;
 const LIMIT_PER_IP = 10;
@@ -92,6 +105,13 @@ export function originAllowed(origin, env) {
 /*  Data access (service role). Injected so tests can use a fake.     */
 /* ------------------------------------------------------------------ */
 
+/** PostgREST or=(…) matching a customer's orders by id or phone. */
+function ownerFilter(customerId, phones) {
+  const parts = [`customer_id.eq.${customerId}`];
+  if (phones.length) parts.push(`customer_phone.in.(${phones.map((p) => `"${p}"`).join(",")})`);
+  return `or=${enc(`(${parts.join(",")})`)}`;
+}
+
 export function restDb(rest) {
   return {
     async getSession(token) {
@@ -110,13 +130,69 @@ export function restDb(rest) {
       return r.data?.[0] || null;
     },
     async listOrdersForCustomer(customerId, phones) {
-      const parts = [`customer_id.eq.${customerId}`];
-      if (phones.length) parts.push(`customer_phone.in.(${phones.map((p) => `"${p}"`).join(",")})`);
       const r = await rest(
         "GET",
-        `orders?select=*,order_items(*)&or=${enc(`(${parts.join(",")})`)}&order=created_at.desc`,
+        `orders?select=*,order_items(*)&${ownerFilter(customerId, phones)}&order=created_at.desc`,
       );
       return r.data || [];
+    },
+
+    /* ---- reviews ---- */
+    async findDeliveredOrderWithSku(customerId, phones, sku) {
+      const r = await rest(
+        "GET",
+        `orders?select=id,order_items!inner(sku)&status=eq.delivered&order_items.sku=eq.${enc(sku)}` +
+          `&${ownerFilter(customerId, phones)}&order=created_at.desc&limit=1`,
+      );
+      return r.data?.[0] || null;
+    },
+    async listDeliveredOrders(customerId, phones) {
+      const r = await rest(
+        "GET",
+        `orders?select=id,created_at,order_items(*)&status=eq.delivered&${ownerFilter(customerId, phones)}` +
+          `&order=created_at.desc&limit=200`,
+      );
+      return r.data || [];
+    },
+    async getProduct(sku) {
+      const r = await rest("GET", `products?select=sku,name,slug,image&sku=eq.${enc(sku)}&limit=1`);
+      return r.data?.[0] || null;
+    },
+    async getProducts(skus) {
+      const list = skus.map((s) => `"${String(s).replace(/"/g, "")}"`).join(",");
+      const r = await rest("GET", `products?select=sku,name,slug,image&sku=in.${enc(`(${list})`)}`);
+      return r.data || [];
+    },
+    async getOwnReview(customerId, sku) {
+      const r = await rest(
+        "GET",
+        `reviews?select=*&customer_id=eq.${enc(customerId)}&product_sku=eq.${enc(sku)}&limit=1`,
+      );
+      return r.data?.[0] || null;
+    },
+    async listOwnReviews(customerId) {
+      const r = await rest("GET", `reviews?select=*&customer_id=eq.${enc(customerId)}&order=created_at.desc`);
+      return r.data || [];
+    },
+    async insertReview(row) {
+      const r = await rest("POST", "reviews", { body: row, prefer: "return=representation" });
+      return r.data?.[0] || null;
+    },
+    async updateOwnReview(id, customerId, patch) {
+      const r = await rest(
+        "PATCH",
+        `reviews?id=eq.${enc(id)}&customer_id=eq.${enc(customerId)}`,
+        { body: patch, prefer: "return=representation" },
+      );
+      return r.data?.[0] || null;
+    },
+    async deleteOwnReview(customerId, sku) {
+      const r = await rest(
+        "DELETE",
+        `reviews?customer_id=eq.${enc(customerId)}&product_sku=eq.${enc(sku)}`,
+        { prefer: "return=representation" },
+      );
+      return Array.isArray(r.data) && r.data.length > 0;
     },
   };
 }
@@ -126,7 +202,13 @@ export function restDb(rest) {
 /* ------------------------------------------------------------------ */
 
 export function createHandler({ env, db, attemptStore, now = () => Date.now(), log = console }) {
-  async function resolveSession(token) {
+  /**
+   * THE session check: request → { customer:{ id, phone } } or null.
+   * Phase 1/3: X-Customer-Session header against customer_sessions.
+   * Phase 2 replaces only this function (HttpOnly cookie).
+   */
+  async function sessionFromEvent(event) {
+    const token = header(event, "x-customer-session");
     if (!token || !TOKEN_RE.test(token)) return null;
     const s = await db.getSession(token);
     if (!s || s.revoked_at || !s.expires_at || new Date(s.expires_at).getTime() <= now()) return null;
@@ -181,6 +263,8 @@ export function createHandler({ env, db, attemptStore, now = () => Date.now(), l
     return reply(200, { ok: true, order: toStorefrontShape(row) });
   }
 
+  const reviewActions = createReviewActions({ db, env, attemptStore, now, log, reply, phoneSpellings });
+
   return async function handler(event) {
     if (event.httpMethod !== "POST") return reply(405, { ok: false, error: "method_not_allowed" });
     if (!originAllowed(header(event, "origin"), env)) return reply(403, { ok: false, error: "forbidden_origin" });
@@ -198,7 +282,14 @@ export function createHandler({ env, db, attemptStore, now = () => Date.now(), l
     if (!body || typeof body !== "object") return reply(400, { ok: false, error: "invalid_json" });
 
     try {
-      const session = await resolveSession(header(event, "x-customer-session"));
+      const session = await sessionFromEvent(event);
+
+      const reviewAction = typeof body.action === "string" && Object.hasOwn(reviewActions, body.action)
+        ? reviewActions[body.action] : null;
+      if (reviewAction) {
+        if (!session) return reply(401, { ok: false, error: "unauthorized" });
+        return await reviewAction(body, session);
+      }
 
       switch (body.action) {
         case "orders": {

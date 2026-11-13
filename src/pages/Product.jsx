@@ -17,6 +17,7 @@ import Gallery from "../components/product/Gallery.jsx";
 import SpecsTabs from "../components/product/SpecsTabs.jsx";
 import ProductSpecsSection from "../components/product/ProductSpecsSection.jsx";
 import ReviewsSection from "../components/product/ReviewsSection.jsx";
+import { useProductReviews } from "../hooks/useProductReviews.js";
 import AddToCartBar from "../components/product/AddToCartBar.jsx";
 import ProductCard from "../components/product/ProductCard.jsx";
 import LastViewed from "../components/home/LastViewed.jsx";
@@ -91,6 +92,8 @@ export default function Product() {
   } = useStore();
   const [qty, setQty] = useState(1);
   const buyBoxRef = useRef(null);
+  // Approved reviews: feeds both the reviews section and the structured data.
+  const reviews = useProductReviews(product?.sku);
 
   useEffect(() => {
     if (!product) return;
@@ -141,7 +144,10 @@ export default function Product() {
         description={product ? `Buy ${product.name} at NAVEN. ${(product.description || "").slice(0, 100)}` : undefined}
         image={product?.image}
         type="product"
-        jsonLd={product ? [productSchema(product), breadcrumbSchema([
+        jsonLd={product ? [productSchema(product, {
+          summary: reviews.summaryLoaded ? reviews.summary : null,
+          reviews: reviews.seoReviews,
+        }), breadcrumbSchema([
           { name: "Home", url: "/" },
           { name: "Products", url: "/categories" },
           { name: product.name, url: `/product/${product.slug}` },
@@ -171,7 +177,13 @@ export default function Product() {
           </div>
           <h1 className="pdp__name">{product.name}</h1>
           <div className="pdp__meta">
-            <RatingStars rating={product.rating} reviews={product.reviews} size={14} />
+            {Number(product.reviews) > 0 && Number(product.rating) > 0 ? (
+              <a href="#reviews-heading" className="pdp__rating-link" aria-label={`Rated ${product.rating} out of 5 from ${product.reviews} ratings. See reviews`}>
+                <RatingStars rating={product.rating} reviews={product.reviews} size={14} />
+              </a>
+            ) : (
+              <RatingStars rating={product.rating} reviews={product.reviews} size={14} />
+            )}
             <span className="pdp__sku">SKU <b className="mono">{product.sku}</b></span>
             {product.model && <span className="pdp__sku">Model <b className="mono">{product.model}</b></span>}
           </div>
@@ -292,7 +304,7 @@ export default function Product() {
 
       <ProductSpecsSection product={product} />
 
-      <ReviewsSection productSku={product.sku} productName={product.name} />
+      <ReviewsSection productName={product.name} productSlug={product.slug} reviews={reviews} />
 
       {related.length > 0 && (
         <>

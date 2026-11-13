@@ -10,6 +10,8 @@
  *   warranty_claims         INSERT          → NOTIFY_SUPPORT_TO
  *   form_submissions        INSERT          → NOTIFY_SUPPORT_TO
  *   newsletter_subscribers  INSERT          → NOTIFY_SUPPORT_TO
+ *   reviews                 INSERT + UPDATE → NOTIFY_SUPPORT_TO  (when a review
+ *                           needs moderating: new, or edited back to pending)
  *
  * Supabase sends:  { type, table, schema, record, old_record }
  * with our header  x-webhook-secret: <WEBHOOK_SECRET>
@@ -186,6 +188,53 @@ async function handleWhatsappQuote({ record: q }) {
 }
 
 /* ------------------------------------------------------------------
+   reviews
+   ------------------------------------------------------------------ */
+
+const STARS = (n) => "★".repeat(Math.max(0, Math.min(5, n || 0))) + "☆".repeat(5 - Math.max(0, Math.min(5, n || 0)));
+
+/** New review, or an edit / status change that put it back in the queue. */
+export function reviewNeedsModeration(type, record, old) {
+  if (record?.status !== "pending") return false;
+  if (type === "INSERT") return true;
+  if (type !== "UPDATE") return false;
+  if (!old) return true;
+  return old.status !== "pending"
+    || old.rating !== record.rating || (old.title || "") !== (record.title || "") || (old.body || "") !== (record.body || "");
+}
+
+async function handleReview({ type, record: r, old_record: old }) {
+  if (!reviewNeedsModeration(type, r, old)) return { skipped: "not_pending_change" };
+
+  let productName = r.product_sku;
+  let customerName = "";
+  if (supabaseConfigured()) {
+    const [prod, cust] = await Promise.all([
+      supabaseGet(`products?sku=eq.${encodeURIComponent(r.product_sku)}&select=name&limit=1`),
+      r.customer_id ? supabaseGet(`customers?id=eq.${encodeURIComponent(r.customer_id)}&select=name&limit=1`) : null,
+    ]);
+    productName = prod?.[0]?.name || productName;
+    customerName = cust?.[0]?.name || "";
+  }
+  const edited = type === "UPDATE";
+  const text = [r.title ? `“${r.title}”` : "", r.body || ""].filter(Boolean).join("\n\n") || "(rating only, no comment)";
+
+  return supportEmail({
+    subject: `⭐ New review to moderate — ${productName} (${r.rating}/5)${edited ? " · edited" : ""}`,
+    heading: edited ? "Edited review to moderate" : "New review to moderate",
+    rows: [
+      ["Product", `${productName} (${r.product_sku})`],
+      ["Rating", `${STARS(r.rating)}  ${r.rating}/5`],
+      ["Customer", customerName],
+      ["Delivered order", r.order_id],
+      ["Received", lagosTime(edited ? r.updated_at || r.created_at : r.created_at)],
+    ].filter(([, v]) => v != null && v !== ""),
+    longText: ["Review", text],
+    adminPath: "/admin/reviews",
+  });
+}
+
+/* ------------------------------------------------------------------
    Support forms
    ------------------------------------------------------------------ */
 
@@ -285,6 +334,7 @@ function secretMatches(given) {
 /** table + event → async builder of { to, subject, html, text, replyTo, onFail? }, or null. */
 function route(type, table) {
   if (table === "orders" && (type === "INSERT" || type === "UPDATE")) return handleOrder;
+  if (table === "reviews" && (type === "INSERT" || type === "UPDATE")) return handleReview;
   if (type !== "INSERT") return null;
   if (table === "whatsapp_quotes") return handleWhatsappQuote;
   const build = SUPPORT[table];

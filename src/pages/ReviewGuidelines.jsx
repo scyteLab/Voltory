@@ -41,16 +41,18 @@ export default function ReviewGuidelines() {
         <h2><BadgeCheck size={22} /> How reviews work</h2>
         <ul>
           <li>
-            <b>Only verified buyers can review a product.</b> If we don't have a record of you
-            purchasing a product, you won't see the write-review option for it.
+            <b>Only customers who received the product can review it.</b> Sign in with the phone
+            number you ordered with. Once your order is marked delivered, you can rate each item in it.
+            Every published review carries a <b>Verified Purchase</b> badge.
           </li>
           <li>
-            <b>Verified reviews go live immediately.</b> You don't wait for our team's approval.
-            The review is visible on the product page the moment you submit it.
+            <b>Every review gets a quick check by our team before it appears.</b> This includes
+            edits. Only published reviews count toward a product's star rating.
           </li>
           <li>
             <b>You can edit or delete your own review anytime</b> from your account's
-            <Link to="/account/reviews"> My Reviews</Link> page. Your name is shown alongside your review.
+            <Link to="/account/reviews"> My Reviews</Link> page. Reviews show your first name and the
+            initial of your surname (for example "Ada O."). We never show your phone number.
           </li>
           <li>
             <b>All reviews — positive and negative — are welcome.</b> A three-star review from

@@ -10,8 +10,8 @@
 /* ---- Aggregate summary ---- */
 
 .revs__summary {
-  display: flex;
-  justify-content: space-between;
+  display: grid;
+  grid-template-columns: minmax(140px, auto) minmax(200px, 1fr) minmax(220px, auto);
   align-items: center;
   gap: 24px;
   padding: 20px 22px;
@@ -23,12 +23,12 @@
 
 .revs__big {
   display: flex;
-  align-items: center;
-  gap: 12px;
-  flex-wrap: wrap;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
 }
 .revs__bignum {
-  font-size: 34px;
+  font-size: 40px;
   font-weight: 800;
   color: var(--ink);
   line-height: 1;
@@ -315,3 +315,205 @@
   }
   .myrev-row__actions { flex-direction: row; }
 }
+
+/* ============================================================
+   Jumia-style additions: star bars, toolbar, load more, CTA
+   ============================================================ */
+
+.revs__bignum--empty { color: var(--mut); }
+
+.revs__bars { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.revs__bar {
+  display: grid;
+  grid-template-columns: 34px 1fr 34px;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 3px 6px;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  background: none;
+  color: var(--ink);
+  font: inherit;
+  font-size: 12.5px;
+  cursor: pointer;
+}
+.revs__bar:hover:not(:disabled) { background: var(--p-soft); }
+.revs__bar:focus-visible { outline: 2px solid var(--p); outline-offset: 1px; }
+.revs__bar:disabled { cursor: default; opacity: 0.55; }
+.revs__bar--on { border-color: var(--p); background: var(--p-soft); }
+.revs__bar-lbl { display: inline-flex; align-items: center; gap: 3px; font-weight: 700; color: #b45309; }
+.revs__bar-track { height: 8px; border-radius: 99px; background: var(--line); overflow: hidden; }
+.revs__bar-fill { display: block; height: 100%; background: #f59e0b; border-radius: 99px; }
+.revs__bar-n { text-align: right; color: var(--mut); font-variant-numeric: tabular-nums; }
+
+.revs__cta { justify-content: flex-end; }
+.revs__gate-text { margin: 0; color: var(--mut); font-size: 13px; max-width: 280px; }
+.revs__yours { flex-direction: column; align-items: stretch; min-width: 220px; }
+.revs__yours-top { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.revs__yours-note { margin: 0; font-size: 12px; color: #991b1b; }
+.revs__yours-actions { margin-left: 0; }
+
+.revs__notice {
+  margin-top: 12px;
+  padding: 10px 14px;
+  border-radius: 8px;
+  background: #ecfdf5;
+  color: #047857;
+  border: 1px solid #a7f3d0;
+  font-size: 13px;
+}
+
+.revs__toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-top: 20px;
+  font-size: 13px;
+  color: var(--mut);
+}
+.revs__chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 99px;
+  border: 1px solid var(--p);
+  background: var(--p-soft);
+  color: var(--ink);
+  font: inherit;
+  font-size: 12.5px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.revs__sort { display: inline-flex; align-items: center; gap: 6px; }
+.revs__sort select {
+  padding: 6px 8px;
+  border: 1.5px solid var(--line);
+  border-radius: 8px;
+  background: #fff;
+  color: var(--ink);
+  font: inherit;
+  font-size: 13px;
+}
+.revs__toolbar + .revs__list { margin-top: 12px; }
+.revs__more { display: flex; justify-content: center; margin-top: 16px; }
+
+.rev-form__req { color: #b91c1c; }
+.rev-form__star:focus-visible { outline: 2px solid var(--p); outline-offset: 2px; border-radius: 6px; }
+
+.pdp__rating-link { color: inherit; text-decoration: none; }
+.pdp__rating-link:hover .stars__meta { text-decoration: underline; }
+
+@media (max-width: 760px) {
+  .revs__summary { grid-template-columns: 1fr; gap: 16px; }
+  .revs__big { flex-direction: row; align-items: center; flex-wrap: wrap; }
+  .revs__cta { justify-content: flex-start; }
+  .revs__yours { min-width: 0; }
+}
+
+/* ---- Account: waiting for review ---- */
+
+.myrev-err {
+  margin-bottom: 12px;
+  padding: 10px 14px;
+  border-radius: 8px;
+  background: #fee2e2;
+  color: #991b1b;
+  font-size: 13px;
+}
+.myrev-waiting { margin-bottom: 22px; }
+.myrev-waiting h2 { margin: 0 0 10px; font-size: 15px; font-weight: 700; color: var(--ink); }
+.myrev-waiting__list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.myrev-waiting__row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+  background: #fff;
+  border: 1.5px dashed var(--p-line, var(--line));
+  border-radius: 10px;
+}
+.myrev-waiting__row img, .myrev-waiting__ph {
+  width: 44px;
+  height: 44px;
+  object-fit: contain;
+  background: var(--bg, #f8fafc);
+  border-radius: 6px;
+  flex-shrink: 0;
+}
+.myrev-waiting__info { flex: 1; min-width: 0; }
+.myrev-waiting__info b { display: block; font-size: 13px; color: var(--ink); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.myrev-waiting__info small { font-size: 11px; color: var(--mut); }
+.myrev-waiting__btn { flex-shrink: 0; padding: 7px 12px; font-size: 12.5px; display: inline-flex; align-items: center; gap: 5px; }
+
+/* ---- Account: My Orders "Rate & review" strip ---- */
+
+.ord-rate {
+  list-style: none;
+  margin: -1px 0 0;
+  padding: 8px 18px 10px;
+  border: 1px solid var(--line);
+  border-top: 1px dashed var(--line);
+  border-radius: 0 0 var(--r) var(--r);
+  background: #fff;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.ord-rate__item { display: flex; align-items: center; justify-content: space-between; gap: 10px; font-size: 13px; }
+.ord-rate__name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--ink); }
+.ord-rate__item .btn-shop, .ord-rate__item .btn-ghost {
+  flex-shrink: 0;
+  padding: 5px 10px;
+  font-size: 12px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.revq-row__text--empty { color: var(--mut); font-style: italic; }
+
+/* ---- Buttons inside reviews UI ----
+   .btn-shop is a white banner button elsewhere and .btn-ghost has no
+   global style, so both get a proper look in these areas. */
+:is(.revs, .myrev-waiting, .myrev-list, .ord-rate) .btn-shop {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  align-self: auto;
+  padding: 10px 18px;
+  border: 0;
+  border-radius: 8px;
+  background: var(--p);
+  color: #fff;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  text-decoration: none;
+  cursor: pointer;
+}
+:is(.revs, .myrev-waiting, .myrev-list, .ord-rate) .btn-shop:disabled { opacity: 0.6; cursor: default; transform: none; }
+:is(.revs, .myrev-waiting, .myrev-list, .ord-rate) .btn-ghost {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  padding: 8px 14px;
+  border: 1.5px solid var(--line);
+  border-radius: 8px;
+  background: #fff;
+  color: var(--ink);
+  font: inherit;
+  font-size: 12.5px;
+  font-weight: 600;
+  text-decoration: none;
+  cursor: pointer;
+}
+:is(.revs, .myrev-waiting, .myrev-list, .ord-rate) .btn-ghost:hover:not(:disabled) { border-color: var(--p); }
+:is(.revs, .myrev-waiting, .myrev-list, .ord-rate) .btn-ghost--danger { color: #b91c1c; }
+:is(.revs, .myrev-waiting, .myrev-list, .ord-rate) .btn-ghost--danger:hover:not(:disabled) { border-color: #b91c1c; }
+:is(.revs, .myrev-waiting, .myrev-list, .ord-rate) :is(.btn-shop, .btn-ghost):focus-visible { outline: 2px solid var(--p); outline-offset: 2px; }
+.revs__more .btn-ghost { padding: 10px 22px; font-size: 13px; }

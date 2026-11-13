@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { Eye, EyeOff, KeyRound, Phone } from "lucide-react";
 import { useCustomerAuth } from "../context/AuthContext.jsx";
 import AuthShell from "../components/auth/AuthShell.jsx";
@@ -17,8 +17,14 @@ import { checkPhoneField, phoneBlur } from "../utils/phone.js";
  * password (legacy row from guest checkout), the API returns
  * needsSignup: true so we can nudge them to the signup page.
  */
+/** ?return=/product/x#write-review → same-site paths only (no open redirect). */
+function safeReturn(v) {
+  return typeof v === "string" && /^\/(?![/\\])/.test(v) ? v : "/account";
+}
+
 export default function Login() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { signIn } = useCustomerAuth();
 
   const [phone, setPhone]           = useState("");
@@ -49,7 +55,7 @@ export default function Login() {
       if (res.needsSignup) setNeedsSignup(true);
       return;
     }
-    navigate("/account", { replace: true });
+    navigate(safeReturn(searchParams.get("return")), { replace: true });
   }
 
   return (

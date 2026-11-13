@@ -1,8 +1,8 @@
 import { BadgeCheck, Star } from "lucide-react";
 
 /**
- * ReviewCard — one approved review on the product page.
- * Verified-buyer badge if the review was linked to an order.
+ * ReviewCard — one approved review on the product page. Author is
+ * already shortened to "First L." by the database function.
  */
 export default function ReviewCard({ review }) {
   const dateStr = review.createdAt
@@ -12,31 +12,32 @@ export default function ReviewCard({ review }) {
   return (
     <article className="rev-card">
       <header className="rev-card__head">
-        <div className="rev-card__stars" aria-label={`${review.rating} out of 5`}>
+        <div className="rev-card__stars" role="img" aria-label={`${review.rating} out of 5 stars`}>
           {[1, 2, 3, 4, 5].map((n) => (
             <Star
               key={n}
               size={14}
               fill={n <= review.rating ? "#f59e0b" : "none"}
               stroke={n <= review.rating ? "#f59e0b" : "#cbd5e1"}
+              aria-hidden="true"
             />
           ))}
         </div>
         {review.title && <b className="rev-card__title">{review.title}</b>}
       </header>
 
-      <p className="rev-card__body">{review.body}</p>
+      {review.body && <p className="rev-card__body">{review.body}</p>}
 
       <footer className="rev-card__foot">
         <span className="rev-card__author">
-          <b>{review.authorName}</b>
-          {review.verifiedBuyer && (
-            <span className="rev-card__verified" title="Verified buyer">
-              <BadgeCheck size={12} /> Verified buyer
+          <b>{review.author}</b>
+          {review.verified && (
+            <span className="rev-card__verified">
+              <BadgeCheck size={12} aria-hidden="true" /> Verified Purchase
             </span>
           )}
         </span>
-        <span className="rev-card__date">{dateStr}</span>
+        {dateStr && <time className="rev-card__date" dateTime={review.createdAt}>{dateStr}</time>}
       </footer>
     </article>
   );

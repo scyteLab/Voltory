@@ -1,6 +1,8 @@
 import { Link } from "react-router-dom";
-import { ChevronRight, Package } from "lucide-react";
+import { ChevronRight, Package, Pencil, Star } from "lucide-react";
 import { useCustomerOrders } from "../../hooks/useCustomerOrders.js";
+import { useCustomerReviews } from "../../hooks/useCustomerReviews.js";
+import { useCatalog } from "../../context/CatalogContext.jsx";
 import { STATUS_LABEL } from "../../utils/orders.js";
 import { naira } from "../../utils/format.js";
 
@@ -13,6 +15,9 @@ import { naira } from "../../utils/format.js";
  */
 export default function AccountOrders() {
   const { orders, loading } = useCustomerOrders();
+  const { reviews } = useCustomerReviews();
+  const { bySku } = useCatalog();
+  const reviewed = new Set(reviews.map((r) => r.productSku));
 
   if (loading) {
     return (
@@ -83,6 +88,31 @@ export default function AccountOrders() {
                     </span>
                   </div>
                 </Link>
+
+                {/* Delivered: one "Rate & review" per item (form opens on the product page). */}
+                {(() => {
+                  if (o.status !== "delivered") return null;
+                  // Only items still in the catalogue (they need a product page).
+                  const rateable = (o.items || [])
+                    .map((it) => ({ ...it, slug: bySku(it.sku)?.slug }))
+                    .filter((it) => it.slug);
+                  if (rateable.length === 0) return null;
+                  return (
+                    <ul className="ord-rate" aria-label={`Review the items in order ${o.id}`}>
+                      {rateable.map((it) => {
+                        const done = reviewed.has(it.sku);
+                        return (
+                          <li key={it.sku} className="ord-rate__item">
+                            <span className="ord-rate__name">{it.name || it.sku}</span>
+                            <Link to={`/product/${it.slug}#write-review`} className={done ? "btn-ghost" : "btn-shop ord-rate__btn"}>
+                              {done ? <><Pencil size={12} /> Your review</> : <><Star size={12} /> Rate &amp; review</>}
+                            </Link>
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  );
+                })()}
               </li>
             );
           })}

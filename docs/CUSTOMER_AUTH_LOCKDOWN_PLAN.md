@@ -234,8 +234,8 @@ loses INSERT on both tables.
 | `src/lib/ordersClient.js` `insertOrderToSupabase` | INSERT `orders`, `order_items` | Unchanged (INSERT stays, constrained) until Phase 4 | 4 |
 | `src/context/StoreContext.jsx` `syncOrder` | `upsertFromCheckout` then insert | Stop calling `upsertFromCheckout`; send `customer_id: null` | 1 |
 | `src/lib/customerAddressesClient.js` (all 6 functions) | SELECT/INSERT/UPDATE/DELETE `customer_addresses` | `customer-data` addresses | 2 |
-| `src/lib/reviewsClient.js` `fetchProductReviews` | SELECT approved `reviews` joined with `customers(name)` | RPC `product_reviews_public(sku)`, which returns a display name (first name + initial) and never `customer_id` | 3 |
-| ″ `checkReviewEligibility`, `upsertReview`, `deleteReview`, `fetchCustomerReviews` | `reviews`, `order_items`, `orders` | `customer-data` my-reviews (eligibility checked on the server) | 3 |
+| `src/lib/reviewsClient.js` `fetchProductReviews` | SELECT approved `reviews` joined with `customers(name)` | RPCs `product_reviews_public(sku, limit, offset, rating, sort)` and `product_review_summary(sku)`: approved only, display name (first name + initial), never `customer_id` | 3 (done) |
+| ″ `checkReviewEligibility`, `upsertReview`, `deleteReview`, `fetchCustomerReviews` | `reviews`, `order_items`, `orders` | `customer-data` review-eligibility / review-upsert / review-delete / my-reviews (eligibility checked on the server) | 3 (done) |
 | `src/lib/whatsappQuotesClient.js` | RPC `create_whatsapp_quote` (SECURITY INVOKER, `whatsapp_quotes` only) | Unchanged; it doesn't touch the locked tables | — |
 
 Read-only users of `useCustomerAuth()`, which need no change once
@@ -423,6 +423,15 @@ Everything else in Step 0 is additive and harmless.
     every direct anon right on `reviews`.
 
   This is the foundation for the Jumia-style reviews upgrade.
+
+  **Built (Jumia-style):**
+  - `customer-data` actions `review-eligibility`, `review-upsert`,
+    `review-delete` and `my-reviews` (`netlify/functions/_shared/reviewActions.js`).
+    Writes are limited to 10 per hour per customer.
+  - Every new review and every edit is saved as `pending`. The
+    `reviews_recompute` trigger counts **approved** reviews only.
+  - The `notify-event` webhook on `reviews` (INSERT + UPDATE) emails
+    support@ and business@ when a review needs moderating.
 
 **Test:**
 - A customer with a delivered order can review it; one without can't.

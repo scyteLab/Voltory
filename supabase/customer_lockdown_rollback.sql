@@ -66,8 +66,25 @@ revoke all on function public.lockdown_restore(text) from public, anon, authenti
 /*
 begin;
 select public.lockdown_restore('C');
+drop function if exists public.product_reviews_public(text, int, int, int, text);
 drop function if exists public.product_reviews_public(text, int, int);
 drop function if exists public.product_review_summary(text);
+
+-- Put back the recompute function + triggers saved by Step C.1 (if
+-- there were none, the new approved-only trigger stays: it is safe).
+do $$
+declare b record;
+begin
+  if exists (select 1 from public.lockdown_function_backup where step = 'C') then
+    drop trigger if exists reviews_recompute on public.reviews;
+    for b in select definition from public.lockdown_function_backup
+              where step = 'C' order by (kind = 'trigger'), id loop
+      execute b.definition;
+    end loop;
+    drop function if exists public.reviews_recompute_product(text);
+  end if;
+end;
+$$;
 commit;
 */
 

@@ -4,9 +4,10 @@
  *
  * Rows hold an HMAC of the subject ("ip:1.2.3.4", "order:VLT-…",
  * "phone:0803…"), keyed with AUTH_PEPPER, never the raw value (NDPA).
- * Only FAILED attempts count toward a limit, so a customer reopening
- * their own order or receipt never locks themselves out, while
- * guessing IDs/phones does. Rows older than 24 h are deleted on every
+ * Lookups: only FAILED attempts count toward a limit, so a customer
+ * reopening their own order or receipt never locks themselves out,
+ * while guessing IDs/phones does. Writes (reviews): rules with
+ * countAll: true count EVERY attempt, recorded with record(). Rows older than 24 h are deleted on every
  * check.
  *
  * AUTH_PEPPER missing → createRateLimiter throws RateLimitConfigError
@@ -28,11 +29,11 @@ export function clientIp(event) {
 /** PostgREST storage for auth_attempts. */
 export function restAttemptStore(rest) {
   return {
-    async countFailures(kind, keyHash, sinceIso) {
+    async countFailures(kind, keyHash, sinceIso, { includeSuccess = false } = {}) {
       const r = await rest(
         "GET",
         `auth_attempts?select=created_at&kind=eq.${enc(kind)}&key_hash=eq.${enc(keyHash)}` +
-          `&success=is.false&created_at=gt.${enc(sinceIso)}&order=created_at.asc&limit=1`,
+          `${includeSuccess ? "" : "&success=is.false"}&created_at=gt.${enc(sinceIso)}&order=created_at.asc&limit=1`,
         { prefer: "count=exact" },
       );
       return { count: countFromContentRange(r.contentRange), oldest: r.data?.[0]?.created_at || null };
@@ -47,13 +48,16 @@ export function restAttemptStore(rest) {
 }
 
 /**
- * rules: [{ kind, subject, limit, windowSec }]
- *   check(rules)            → { blocked, retryAfter (seconds) }
- *   recordFailure(rules)    → logs one failed attempt per rule
+ * rules: [{ kind, subject, limit, windowSec, countAll? }]
+ *   check(rules)                 → { blocked, retryAfter (seconds) }
+ *   recordFailure(rules)         → logs one failed attempt per rule
+ *   record(rules, { success })   → logs one attempt per rule
  */
 export function createRateLimiter({ store, pepper, now = () => Date.now() }) {
   if (!pepper) throw new RateLimitConfigError("AUTH_PEPPER is not set");
   const hash = (kind, subject) => createHmac("sha256", pepper).update(`${kind}|${subject}`).digest("hex");
+  const record = (rules, { success = false } = {}) =>
+    store.insert(rules.map((r) => ({ kind: r.kind, key_hash: hash(r.kind, r.subject), success: Boolean(success) })));
 
   return {
     async check(rules) {
@@ -63,7 +67,9 @@ export function createRateLimiter({ store, pepper, now = () => Date.now() }) {
       let retryAfter = 0;
       for (const r of rules) {
         const since = new Date(t - r.windowSec * 1000).toISOString();
-        const { count, oldest } = await store.countFailures(r.kind, hash(r.kind, r.subject), since);
+        const { count, oldest } = await store.countFailures(
+          r.kind, hash(r.kind, r.subject), since, { includeSuccess: Boolean(r.countAll) },
+        );
         if (count >= r.limit) {
           const frees = oldest ? new Date(oldest).getTime() + r.windowSec * 1000 : t + r.windowSec * 1000;
           retryAfter = Math.max(retryAfter, Math.ceil((frees - t) / 1000), 1);
@@ -71,9 +77,8 @@ export function createRateLimiter({ store, pepper, now = () => Date.now() }) {
       }
       return { blocked: retryAfter > 0, retryAfter };
     },
-    async recordFailure(rules) {
-      await store.insert(rules.map((r) => ({ kind: r.kind, key_hash: hash(r.kind, r.subject), success: false })));
-    },
+    recordFailure: (rules) => record(rules, { success: false }),
+    record,
   };
 }
 

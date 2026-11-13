@@ -50,7 +50,9 @@ export default function ReviewRow({ review, onApprove, onReject, onUnapprove, on
 
       <div className="revq-row__body">
         {review.title && <b className="revq-row__title">{review.title}</b>}
-        <p className="revq-row__text">{review.body}</p>
+        {review.body
+          ? <p className="revq-row__text">{review.body}</p>
+          : <p className="revq-row__text revq-row__text--empty">Rating only, no comment.</p>}
       </div>
 
       <div className="revq-row__foot">
