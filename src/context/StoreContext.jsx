@@ -9,7 +9,6 @@ import {
 import { insertOrderToSupabase } from "../lib/ordersClient.js";
 import { switchOrderToPod } from "../lib/paystackClient.js";
 import { sendOrderConfirmation } from "../lib/emailClient.js";
-import { upsertFromCheckout } from "../lib/customerAuth.js";
 import { getStoredWishlist, saveWishlist } from "../utils/wishlist.js";
 import {
   getStoredComparison, saveComparison, MAX_COMPARE,
@@ -483,7 +482,7 @@ export function StoreProvider({ children }) {
       totals: { subtotal, discount, deliveryFee, installationFee: installFee, grand },
       account: { phone: next.phone, name: next.name },
       accountCreated,
-      customer_id: null, // filled by syncOrder below; may stay null if Supabase is unreachable
+      customer_id: null, // linked by the database (orders_link_customer trigger) on insert
       paystackRef,
       // The browser only ever writes 'unpaid' or 'pending'. 'paid' is
       // set server-side by the paystack-verify / paystack-webhook functions.
@@ -492,21 +491,15 @@ export function StoreProvider({ children }) {
     };
   };
 
-  // Silently create-or-find the customer record, link this order to
-  // it, then upsert the order into Supabase. If the customer link
-  // fails the order still syncs (just without a customer_id). Resolves
-  // with the insert result; never rejects.
+  // Insert the order into Supabase. The database links it to the
+  // customer by phone (orders_link_customer trigger, Step 0 of
+  // supabase/customer_lockdown.sql), so the browser never reads the
+  // customers table. Resolves with the insert result; never rejects.
   const syncOrder = (order) =>
-    upsertFromCheckout({ phone: order.contact.phone, name: order.contact.name, email: order.contact.email })
-      .then((res) => (res.ok && res.id ? { ...order, customer_id: res.id } : order))
-      .catch(() => order)
-      .then((o) => {
-        if (o !== order) saveOrder(o);
-        return insertOrderToSupabase(o).then((r) => {
-          if (r.ok) markOrderSynced(o.id);
-          return r;
-        });
-      });
+    insertOrderToSupabase(order).then((r) => {
+      if (r.ok) markOrderSynced(order.id);
+      return r;
+    });
 
   // After a successful order: a buy-now order clears only the buy-now
   // item, so the customer's cart stays exactly as it was.

@@ -4,7 +4,7 @@ import {
   AlertCircle, ArrowLeft, Download, Home as HomeIcon,
   Printer, Receipt as ReceiptIcon, Search,
 } from "lucide-react";
-import { fetchOrderByIdAndPhone } from "../lib/customerOrdersClient.js";
+import { fetchOrderByIdAndPhone, LOOKUP_MESSAGES } from "../lib/customerOrdersClient.js";
 import { getOrder } from "../utils/orders.js";
 import { SITE } from "../config/site.js";
 import ReceiptTemplate from "../components/receipt/ReceiptTemplate.jsx";
@@ -58,7 +58,9 @@ export default function Receipt() {
     if (res.order) {
       setOrder(res.order);
     } else {
-      setError(res.error || "We couldn't find that receipt.");
+      // 404 → "We couldn't find an order with that ID and phone number."
+      // 429 → "Too many attempts. Please try again in a few minutes."
+      setError(res.error || LOOKUP_MESSAGES.notFound);
     }
   }
 

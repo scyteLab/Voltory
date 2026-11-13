@@ -49,7 +49,9 @@ function toSupabaseShape(order) {
     customer_name:  order.contact?.name  || order.account?.name  || "",
     customer_phone: order.contact?.phone || order.account?.phone || "",
     customer_email: order.contact?.email || null,
-    customer_id: order.customer_id || null,
+    // Linked by the database trigger (orders_link_customer) from the phone;
+    // anything the browser sent would be ignored anyway.
+    customer_id: null,
     address: order.address || {},
     payment_method: paymentMethod,
     subtotal:         Math.round(order.totals?.subtotal      ?? 0),

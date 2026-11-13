@@ -13,6 +13,7 @@ import { normaliseNgPhone, validateNgPhone } from "../utils/phone.js";
  *   signUp({ phone, password, name, email? })
  *   signIn({ phone, password })
  *   signOutCurrent()
+ *   getSessionToken()
  *   updateProfile(patch)
  *   changePassword({ currentPassword, newPassword })
  *
@@ -261,50 +262,21 @@ function logFailedAttempt(phone) {
 }
 
 /* ============================================================
-   Guest checkout (silent — no session, no password)
-   ============================================================
-   Called from StoreContext.placeOrder on every checkout to ensure a
-   `customers` row exists for the phone number, so the order can be
-   linked to it. Does NOT set a password or mint a session — the
-   shopper stays a guest until they explicitly sign up.
-*/
-
-export async function upsertFromCheckout({ phone, name, email }) {
-  const normalizedPhone = normalizePhone(phone);
-  if (!normalizedPhone) return { ok: false, error: "Phone number is required.", id: null };
-
-  const cleanEmail = email?.trim() ? email.trim().toLowerCase() : null;
-
-  try {
-    const { data: existing, error: findErr } = await findCustomerByPhone(normalizedPhone, "id, name, email");
-    if (findErr) return { ok: false, error: findErr.message, id: null };
-
-    if (existing) {
-      const patch = {};
-      if (name && !existing.name) patch.name = name;
-      if (cleanEmail && !existing.email) patch.email = cleanEmail;
-      if (Object.keys(patch).length) {
-        await supabase.from("customers").update(patch).eq("id", existing.id);
-      }
-      return { ok: true, id: existing.id };
-    }
-
-    const { data: created, error: insErr } = await supabase
-      .from("customers")
-      .insert({ phone: normalizedPhone, name: name || null, email: cleanEmail })
-      .select("id")
-      .single();
-    if (insErr) return { ok: false, error: insErr.message, id: null };
-
-    return { ok: true, id: created.id };
-  } catch (err) {
-    return { ok: false, error: err?.message || String(err), id: null };
-  }
-}
-
-/* ============================================================
    Session management
    ============================================================ */
+
+/**
+ * The current session token (Phase 1 of the lockdown plan sends it to
+ * the customer-data function as X-Customer-Session). Phase 2 replaces
+ * this with an HttpOnly cookie the page can't read.
+ */
+export function getSessionToken() {
+  try {
+    return typeof localStorage !== "undefined" ? localStorage.getItem(SESSION_KEY) : null;
+  } catch {
+    return null;
+  }
+}
 
 async function mintSession(customerId) {
   try {

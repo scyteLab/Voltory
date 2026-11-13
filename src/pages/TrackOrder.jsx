@@ -5,7 +5,7 @@ import {
   Package, Phone, Receipt, Search, Truck,
 } from "lucide-react";
 import { STATUS_FLOW, STATUS_LABEL, ORDER_STATUS } from "../utils/orders.js";
-import { fetchOrderByIdAndPhone } from "../lib/customerOrdersClient.js";
+import { fetchOrderByIdAndPhone, LOOKUP_MESSAGES } from "../lib/customerOrdersClient.js";
 import { naira } from "../utils/format.js";
 import { SITE } from "../config/site.js";
 import SEOHead from "../components/seo/SEOHead.jsx";
@@ -33,7 +33,8 @@ export default function TrackOrder() {
   const [submitted, setSubmitted]   = useState(null);
   const [order, setOrder]           = useState(null);
   const [looking, setLooking]       = useState(false);
-  const [error, setError]           = useState(null);
+  const [error, setError]           = useState(null);   // form validation
+  const [lookup, setLookup]         = useState(null);   // { status, message } from the server
 
 
   /* Auto-submit if both params were in the URL */
@@ -50,20 +51,22 @@ export default function TrackOrder() {
     setOrder(null);
     setLooking(true);
     setError(null);
+    setLookup(null);
 
-    const res = await fetchOrderByIdAndPhone({ orderId: cleanedId, phone: phone.trim() });
+    const res = await fetchOrderByIdAndPhone({ orderId: cleanedId, phone: phone.trim(), mode: "track" });
     setLooking(false);
 
     if (res.order) {
       setOrder(res.order);
     } else {
-      setError(res.error || "We couldn’t find that order.");
+      setLookup({ status: res.status, message: res.error || LOOKUP_MESSAGES.notFound });
     }
   }
 
   function onSubmit(e) {
     e.preventDefault();
     setError(null);
+    setLookup(null);
 
     const cleanedId = idInput.trim().toUpperCase();
     if (!cleanedId) {
@@ -117,7 +120,7 @@ export default function TrackOrder() {
               <input
                 type="text"
                 value={idInput}
-                onChange={(e) => { setIdInput(e.target.value); setError(null); }}
+                onChange={(e) => { setIdInput(e.target.value); setError(null); setLookup(null); }}
                 placeholder="e.g. VLT-202611031245-A8C2"
                 autoComplete="off"
                 spellCheck="false"
@@ -137,7 +140,7 @@ export default function TrackOrder() {
                 type="tel"
                 inputMode="tel"
                 value={phoneInput}
-                onChange={(e) => { setPhoneInput(e.target.value); setError(null); }}
+                onChange={(e) => { setPhoneInput(e.target.value); setError(null); setLookup(null); }}
                 onBlur={() => phoneBlur(phoneInput, setPhoneInput, setError)}
                 maxLength={20}
                 placeholder="0803 123 4567"
@@ -173,15 +176,21 @@ export default function TrackOrder() {
         </div>
       )}
 
-      {submitted && !looking && !order && error && (
-        <div className="track-noresult">
+      {submitted && !looking && !order && lookup && (
+        <div className="track-noresult" role="alert">
           <span className="track-noresult__icon"><AlertCircle size={24} /></span>
           <div>
-            <h3>We couldn’t find that order</h3>
-            <p>
-              Double-check both the ID (like <b className="mono">VLT-YYYYMMDDHHmm-XXXX</b>) and the phone number
-              you used at checkout. If you’re still stuck, our team can help.
-            </p>
+            <h3>{lookup.message}</h3>
+            {lookup.status === 404 ? (
+              <p>
+                Double-check both the ID (like <b className="mono">VLT-YYYYMMDDHHmm-XXXX</b>) and the phone number
+                you used at checkout. If you’re still stuck, our team can help.
+              </p>
+            ) : lookup.status === 429 ? (
+              <p>For your security we pause lookups after several unsuccessful tries. If you need help now, chat with us.</p>
+            ) : (
+              <p>Please check your connection and try again. If it keeps happening, our team can help.</p>
+            )}
             <div className="track-noresult__actions">
               <a href={SITE.whatsappLink} target="_blank" rel="noreferrer" className="btn-shop">
                 <MessageCircle size={14} /> Chat on WhatsApp
@@ -194,12 +203,12 @@ export default function TrackOrder() {
         </div>
       )}
 
-      {order && <OrderTrack order={order} />}
+      {order && <OrderTrack order={order} phone={submitted?.phone} />}
     </main>
   );
 }
 
-function OrderTrack({ order }) {
+function OrderTrack({ order, phone }) {
   const currentIndex = STATUS_FLOW.indexOf(order.status);
 
   return (
@@ -223,7 +232,9 @@ function OrderTrack({ order }) {
         <div className="track-result__total">
           <span>Order total</span>
           <b>{naira(order.totals.grand)}</b>
-          <Link to={`/order/${order.id}`}>
+          {/* The phone travels in router state (not the URL) so the
+              confirmation page can load the order on any device. */}
+          <Link to={`/order/${order.id}`} state={{ phone }}>
             {order.status === ORDER_STATUS.PENDING_PAYMENT ? "Pay now →" : "View full receipt →"}
           </Link>
         </div>
@@ -270,10 +281,12 @@ function OrderTrack({ order }) {
         </div>
         <div className="track-summary__col">
           <h4><MapPin size={14} /> Delivery to</h4>
+          {/* Guest tracking answers carry the delivery area only (no
+              name or street); orders from this device show in full. */}
           <p>
-            <b>{order.contact.name}</b><br />
-            {order.address.street}<br />
-            {order.address.lga}, {order.address.state}
+            {order.contact.name && <><b>{order.contact.name}</b><br /></>}
+            {order.address.street && <>{order.address.street}<br /></>}
+            {[order.address.lga, order.address.state].filter(Boolean).join(", ")}
           </p>
           <small><Phone size={11} /> <span className="mono">{order.contact.phone}</span></small>
         </div>

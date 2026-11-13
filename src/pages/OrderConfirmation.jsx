@@ -1,12 +1,13 @@
 import { useEffect, useState } from "react";
-import { Link, Navigate, useParams } from "react-router-dom";
+import { Link, useLocation, useParams } from "react-router-dom";
 import {
   AlertCircle, BadgeCheck, Check, ChevronRight, CircleCheck, Cloud, CloudOff,
   CreditCard, Home as HomeIcon, Mail, MapPin, MessageCircle, Phone, Printer,
-  Receipt, ShieldCheck, Truck,
+  Receipt, Search, ShieldCheck, Truck,
 } from "lucide-react";
 import { getOrder, STATUS_FLOW, STATUS_LABEL, ORDER_STATUS } from "../utils/orders.js";
-import { fetchOrderById } from "../lib/customerOrdersClient.js";
+import { fetchOrderById, LOOKUP_MESSAGES } from "../lib/customerOrdersClient.js";
+import { checkPhoneField, phoneBlur } from "../utils/phone.js";
 import { isPaystackConfigured, payForExistingOrder } from "../lib/paystackClient.js";
 import { useStore } from "../context/StoreContext.jsx";
 import { naira } from "../utils/format.js";
@@ -21,6 +22,8 @@ const PAYMENT_LABEL = {
 
 export default function OrderConfirmation() {
   const { id } = useParams();
+  // Track Order passes the phone the visitor proved, in router state.
+  const passedPhone = useLocation().state?.phone || "";
   const [order, setOrder] = useState(() => getOrder(id));
   const [remoteChecked, setRemoteChecked] = useState(false);
   const { completePaidOrder } = useStore();
@@ -36,12 +39,13 @@ export default function OrderConfirmation() {
     if (!awaitingPayment || pendingRefreshed) return;
     let cancelled = false;
     (async () => {
-      const res = await fetchOrderById(id);
+      const res = await fetchOrderById(id, { phone: order?.contact?.phone });
       if (cancelled) return;
       if (res.order && res.source === "supabase") setOrder(res.order);
       setPendingRefreshed(true);
     })();
     return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id, awaitingPayment, pendingRefreshed]);
 
   async function onPayNow() {
@@ -68,13 +72,15 @@ export default function OrderConfirmation() {
     if (order || remoteChecked) return;
     let cancelled = false;
     (async () => {
-      const res = await fetchOrderById(id);
+      // Not on this device: only the phone used for the order (or a
+      // signed-in owner's session) can load it. Otherwise ask for it.
+      const res = await fetchOrderById(id, { phone: passedPhone });
       if (cancelled) return;
       if (res.order) setOrder(res.order);
       setRemoteChecked(true);
     })();
     return () => { cancelled = true; };
-  }, [id, order, remoteChecked]);
+  }, [id, order, remoteChecked, passedPhone]);
 
   useEffect(() => {
     if (!order || order.syncedAt) return;
@@ -97,7 +103,7 @@ export default function OrderConfirmation() {
       </main>
     );
   }
-  if (!order) return <Navigate to="/" replace />;
+  if (!order) return <OrderPhoneGate id={id} onFound={setOrder} />;
 
   const currentIndex = STATUS_FLOW.indexOf(order.status);
   const created = new Date(order.createdAt);
@@ -302,6 +308,80 @@ export default function OrderConfirmation() {
           Continue Shopping <ChevronRight size={16} />
         </Link>
       </section>
+    </main>
+  );
+}
+
+/**
+ * Shown when the order isn't saved on this device (another phone or
+ * browser, cleared storage). Same look as the receipt's phone check.
+ */
+function OrderPhoneGate({ id, onFound }) {
+  const [phoneInput, setPhoneInput] = useState("");
+  const [error, setError] = useState(null);
+  const [loading, setLoading] = useState(false);
+
+  async function onSubmit(e) {
+    e.preventDefault();
+    setError(null);
+    const phoneRes = checkPhoneField(phoneInput);
+    if (!phoneRes.ok) {
+      setError(phoneRes.error);
+      return;
+    }
+    setLoading(true);
+    const res = await fetchOrderById(id, { phone: phoneRes.phone });
+    setLoading(false);
+    if (res.order) onFound(res.order);
+    else setError(res.error || LOOKUP_MESSAGES.notFound);
+  }
+
+  return (
+    <main className="wrap receipt-page">
+      <nav className="crumb" aria-label="Breadcrumb">
+        <Link to="/"><HomeIcon size={13} /> Home</Link>
+      </nav>
+      <div className="receipt-challenge">
+        <span className="receipt-challenge__icon"><Receipt size={28} /></span>
+        <h1>Order {id}</h1>
+        <p>Enter the phone number used for this order to see its details.</p>
+
+        <form onSubmit={onSubmit}>
+          <label className="field">
+            <span className="field__label">Phone Number</span>
+            <span className="auth-input">
+              <input
+                type="tel"
+                inputMode="tel"
+                value={phoneInput}
+                onChange={(e) => { setPhoneInput(e.target.value); setError(null); }}
+                onBlur={() => phoneBlur(phoneInput, setPhoneInput, setError)}
+                maxLength={20}
+                placeholder="0803 123 4567"
+                autoComplete="tel"
+                disabled={loading}
+                aria-describedby={error ? "order-gate-error" : undefined}
+              />
+            </span>
+          </label>
+
+          {error && (
+            <div className="receipt-challenge__error" id="order-gate-error" role="alert">
+              <AlertCircle size={16} /> {error}
+            </div>
+          )}
+
+          <button type="submit" className="auth-submit" disabled={loading || !phoneInput.trim()}>
+            <Search size={16} />
+            {loading ? "Looking up…" : "View Order"}
+          </button>
+        </form>
+
+        <p className="receipt-challenge__help">
+          Can't find your order details?{" "}
+          <a href={SITE.whatsappLink} target="_blank" rel="noreferrer">Message us on WhatsApp</a>
+        </p>
+      </div>
     </main>
   );
 }
