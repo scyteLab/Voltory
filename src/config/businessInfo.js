@@ -36,10 +36,10 @@ export const BUSINESS_INFO = {
   },
 
   // ---- Contact ----------------------------------------------------
-  phone:        "+234 906 4998 654",
-  phoneTelHref: "tel:+2349064998654",
-  whatsapp:     "+234 906 4998 654",
-  whatsappLink: "https://wa.me/2349064998654",
+  phone:        "+234 911 444 0348",
+  phoneTelHref: "tel:+2349114440348",
+  whatsapp:     "+234 911 444 0348",
+  whatsappLink: "https://wa.me/2349114440348",
   email:        "support@mynaven.com",
   supportEmail: "support@mynaven.com",
   website:      "www.mynaven.com",

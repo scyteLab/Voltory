@@ -23,10 +23,10 @@ export const SITE = {
   siteUrl: "https://mynaven.com",
 
   // ---- Contact ----
-  phone: "+234 906 4998 654",
+  phone: "+234 911 444 0348",
   supportEmail: "support@mynaven.com",
-  whatsapp: "+234 906 4998 654",
-  whatsappLink: "https://wa.me/2349064998654",
+  whatsapp: "+234 911 444 0348",
+  whatsappLink: "https://wa.me/2349114440348",
 
   // ---- Commerce ----
   currency: "NGN",
