@@ -18,7 +18,7 @@ import { useCustomerAuth } from "../context/AuthContext.jsx";
  */
 export function useCustomerOrders() {
   const { customer } = useCustomerAuth();
-  const [state, setState] = useState({ orders: [], loading: true, error: null, source: null });
+  const [state, setState] = useState({ orders: [], loading: true, error: null, source: null, earlierGuestOrders: false });
 
   const customerId = customer?.id || null;
   const phone      = customer?.phone || null;
@@ -40,6 +40,7 @@ export function useCustomerOrders() {
         loading: false,
         error:   res.error,
         source:  res.source,
+        earlierGuestOrders: Boolean(res.earlierGuestOrders),
       });
     }
 
@@ -51,7 +52,7 @@ export function useCustomerOrders() {
     if (!customer) return;
     setState((s) => ({ ...s, loading: true }));
     const res = await fetchCustomerOrders({ customerId, phone });
-    setState({ orders: res.orders, loading: false, error: res.error, source: res.source });
+    setState({ orders: res.orders, loading: false, error: res.error, source: res.source, earlierGuestOrders: Boolean(res.earlierGuestOrders) });
   }
 
   return { ...state, refresh };

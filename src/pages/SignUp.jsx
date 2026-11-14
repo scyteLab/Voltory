@@ -140,7 +140,7 @@ export default function SignUp() {
                 id="password"
                 type={showPw ? "text" : "password"}
                 autoComplete="new-password"
-                placeholder="At least 6 characters"
+                placeholder="At least 8 characters"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 disabled={submitting}

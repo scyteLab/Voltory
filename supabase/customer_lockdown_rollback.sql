@@ -107,6 +107,18 @@ commit;
 
 
 -- ============================================================
+--  ROLLBACK STEP B-0 — removes the session guard. claimed_at and the
+--  copied hashes are additive and stay (harmless to the old code).
+-- ============================================================
+/*
+begin;
+drop trigger if exists customer_sessions_server_fields_guard on public.customer_sessions;
+drop function if exists public.customer_sessions_server_fields_guard();
+commit;
+*/
+
+
+-- ============================================================
 --  ROLLBACK STEP A — orders, order_items, order_tracking_attempts
 -- ============================================================
 /*

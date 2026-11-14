@@ -1,6 +1,6 @@
 import { normaliseNgPhone } from "../utils/phone.js";
 import { listOrders as listLocalOrders, getOrder as getLocalOrder } from "../utils/orders.js";
-import { getSessionToken } from "./customerAuth.js";
+import { getSessionToken, isProbablySignedIn, notifyUnauthorized } from "./customerAuth.js";
 
 /**
  * customerOrdersClient
@@ -13,7 +13,9 @@ import { getSessionToken } from "./customerAuth.js";
  *
  * Public API:
  *   fetchCustomerOrders({ customerId, phone })
- *       signed-in customer's history (session token header)
+ *       signed-in customer's history (session cookie). Orders placed
+ *       as a guest before the account existed aren't included (server
+ *       ownership rule); earlierGuestOrders says whether there are any.
  *   fetchOrderById(id, { phone })
  *       order confirmation page; the phone comes from the order saved
  *       on this device, or from the customer. Returns needsPhone when
@@ -35,10 +37,18 @@ export const LOOKUP_MESSAGES = {
    Transport
    ============================================================ */
 
-/** POST to customer-data. Never throws: { status, data } (status 0 = offline / no function). */
+const GUEST_ACTIONS = new Set(["order", "track"]);
+
+/**
+ * POST to customer-data. Never throws: { status, data } (status 0 =
+ * offline / no function). The session is the HttpOnly cookie, sent
+ * automatically (same origin). A 401 on a signed-in action signs the
+ * customer out locally (AuthContext listens) so account pages redirect
+ * to /login.
+ */
 export async function callCustomerData(payload) {
   const headers = { "Content-Type": "application/json" };
-  const token = getSessionToken();
+  const token = getSessionToken();                       // LEGACY (delete after Step B)
   if (token) headers["X-Customer-Session"] = token;
   try {
     const res = await fetch(ENDPOINT, {
@@ -51,6 +61,7 @@ export async function callCustomerData(payload) {
     // A non-JSON answer means the function isn't there (e.g. plain
     // `vite` dev without `netlify dev`): treat like being offline.
     if (!data) return { status: 0, data: null };
+    if (res.status === 401 && !GUEST_ACTIONS.has(payload?.action)) notifyUnauthorized();
     return { status: res.status, data };
   } catch {
     return { status: 0, data: null };
@@ -120,7 +131,7 @@ export async function fetchCustomerOrders({ customerId, phone: rawPhone }) {
   const { status, data } = await callCustomerData({ action: "orders" });
   if (status === 200 && Array.isArray(data?.orders)) {
     const merged = mergeOrders(data.orders, local);
-    return { orders: merged, error: null, source: data.orders.length ? "supabase" : "local" };
+    return { orders: merged, error: null, source: data.orders.length ? "supabase" : "local", earlierGuestOrders: Boolean(data.earlierGuestOrders) };
   }
   if (status === 0 || status === 401) return { orders: local, error: null, source: "local" };
   return { orders: local, error: LOOKUP_MESSAGES.failed, source: "local" };
@@ -142,7 +153,7 @@ export async function fetchOrderById(id, { phone } = {}) {
   const local = getLocalOrder(id) || getLocalOrder(cleanId);
   const usePhone = phone || local?.contact?.phone || "";
 
-  if (!usePhone && !getSessionToken()) {
+  if (!usePhone && !isProbablySignedIn()) {
     return { order: local, error: null, source: local ? "local" : null, needsPhone: !local };
   }
 

@@ -8,8 +8,9 @@
  *
  * Rules (decided, see docs/CUSTOMER_AUTH_LOCKDOWN_PLAN.md Phase 3):
  *   · Eligible = a DELIVERED order containing the SKU, owned by the
- *     customer (customer_id OR either phone spelling). Checked again
- *     on every write.
+ *     customer under THE ownership rule (_shared/orderOwnership.js:
+ *     customer_id = me, placed on/after the account's claimed_at).
+ *     Checked again on every write.
  *   · One review per customer per product. Every new review and every
  *     edit is saved as 'pending' (admin_note cleared); only 'approved'
  *     ones are public. order_id and status are always set here, never
@@ -42,15 +43,9 @@ export function toOwnReview(row) {
   };
 }
 
-export function createReviewActions({ db, env, attemptStore, now, log, reply, phoneSpellings }) {
-  const owner = (session) => ({
-    customerId: session.customer.id,
-    phones: phoneSpellings(session.customer.phone),
-  });
-
+export function createReviewActions({ db, env, attemptStore, now, log, reply }) {
   async function deliveredOrderId(session, sku) {
-    const { customerId, phones } = owner(session);
-    const row = await db.findDeliveredOrderWithSku(customerId, phones, sku);
+    const row = await db.findDeliveredOrderWithSku(session.owner, sku);
     return row?.id || null;
   }
 
@@ -147,10 +142,10 @@ export function createReviewActions({ db, env, attemptStore, now, log, reply, ph
   }
 
   async function myReviews(session) {
-    const { customerId, phones } = owner(session);
+    const customerId = session.customer.id;
     const [rows, delivered] = await Promise.all([
       db.listOwnReviews(customerId),
-      db.listDeliveredOrders(customerId, phones),
+      db.listDeliveredOrders(session.owner),
     ]);
     const reviewed = new Set(rows.map((r) => r.product_sku));
 

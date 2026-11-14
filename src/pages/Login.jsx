@@ -11,11 +11,10 @@ import { checkPhoneField, phoneBlur } from "../utils/phone.js";
 /**
  * Login  \u2014  /login
  *
- * Password-based sign-in with phone as the identifier.
- *
- * If the user's phone exists in customers but they have no
- * password (legacy row from guest checkout), the API returns
- * needsSignup: true so we can nudge them to the signup page.
+ * Password-based sign-in with phone as the identifier, checked by the
+ * customer-auth function. An unknown phone and a wrong password get the
+ * same answer (no account enumeration), so the page always offers
+ * "Create an account" next to the error.
  */
 /** ?return=/product/x#write-review → same-site paths only (no open redirect). */
 function safeReturn(v) {
@@ -119,7 +118,7 @@ export default function Login() {
                 id="password"
                 type={showPw ? "text" : "password"}
                 autoComplete="current-password"
-                placeholder="At least 6 characters"
+                placeholder="Your password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 disabled={submitting}
@@ -138,11 +137,11 @@ export default function Login() {
           {error && (
             <div className="ashell-error">
               {error}
-              {needsSignup && (
+              {(needsSignup || /invalid phone number or password/i.test(error)) && (
                 <>
                   {" "}
                   <Link to="/signup" style={{ textDecoration: "underline", fontWeight: 600 }}>
-                    Sign up here
+                    No account yet? Sign up
                   </Link>
                 </>
               )}
@@ -159,10 +158,10 @@ export default function Login() {
         </form>
 
         <p className="ashell-form__legal" style={{ marginTop: 24 }}>
-          Forgot your password?{" "}
+          Forgot password?{" "}
           <a href={`${SITE.whatsappLink}?text=${encodeURIComponent("Hi NAVEN, I forgot my password. My registered phone is: ")}`}
-             target="_blank" rel="noreferrer">
-            Contact support on WhatsApp
+             target="_blank" rel="noopener noreferrer">
+            Message us on WhatsApp to reset your password
           </a>
         </p>
 

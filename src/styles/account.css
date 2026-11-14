@@ -705,3 +705,19 @@ a.ovw-stat:hover { border-color: var(--p-line); background: var(--p-soft); }
 @media (max-width: 540px) {
   .wish-grid { grid-template-columns: 1fr; }
 }
+/* Guest orders placed before the account existed (hidden; Track Order). */
+.earlier-orders {
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+  margin: 0 0 16px;
+  padding: 10px 14px;
+  border-radius: 10px;
+  border: 1px solid #bfdbfe;
+  background: #eff6ff;
+  color: #1e3a8a;
+  font-size: 13px;
+  line-height: 1.5;
+}
+.earlier-orders svg { flex-shrink: 0; margin-top: 2px; }
+.earlier-orders a { color: inherit; font-weight: 700; text-decoration: underline; }

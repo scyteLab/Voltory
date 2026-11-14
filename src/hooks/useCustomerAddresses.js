@@ -11,7 +11,8 @@ import { useCustomerAuth } from "../context/AuthContext.jsx";
 /**
  * useCustomerAddresses
  *
- * Loads the signed-in customer's saved addresses and exposes CRUD
+ * Loads the signed-in customer's saved addresses (customer-data
+ * "address-*" actions; the server scopes them to the session) and exposes CRUD
  * helpers that re-fetch on success. Mirrors useCustomerOrders' shape
  * so account pages follow one convention.
  *
@@ -32,7 +33,7 @@ export function useCustomerAddresses() {
       return;
     }
     setState((s) => ({ ...s, loading: true }));
-    const res = await fetchAddresses(customerId);
+    const res = await fetchAddresses();
     setState({ addresses: res.addresses, loading: false, error: res.ok ? null : res.error });
   }, [customerId]);
 
@@ -41,25 +42,25 @@ export function useCustomerAddresses() {
   }, [load]);
 
   const create = useCallback(async (input) => {
-    const res = await createAddress(customerId, input);
+    const res = await createAddress(input);
     if (res.ok) await load();
     return res;
   }, [customerId, load]);
 
   const update = useCallback(async (id, patch) => {
-    const res = await updateAddress(customerId, id, patch);
+    const res = await updateAddress(id, patch);
     if (res.ok) await load();
     return res;
   }, [customerId, load]);
 
   const makeDefault = useCallback(async (id) => {
-    const res = await setDefaultAddress(customerId, id);
+    const res = await setDefaultAddress(id);
     if (res.ok) await load();
     return res;
   }, [customerId, load]);
 
   const remove = useCallback(async (id) => {
-    const res = await deleteAddress(customerId, id);
+    const res = await deleteAddress(id);
     if (res.ok) await load();
     return res;
   }, [customerId, load]);

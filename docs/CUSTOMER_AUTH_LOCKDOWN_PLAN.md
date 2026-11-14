@@ -375,6 +375,30 @@ Everything else in Step 0 is additive and harmless.
   stay.
 
 ### Phase 2: customer auth moves to the server
+
+> **Built (2026-11-15). Decisions that override the text below:**
+> - **Guest-phone protection, option (b), made precise:** an order belongs
+>   to a signed-in customer when `orders.customer_id = me` AND it was
+>   placed on/after `customer_credentials.claimed_at` (one helper:
+>   `netlify/functions/_shared/orderOwnership.js`, used by My Orders,
+>   single-order access by session, review eligibility and "waiting for
+>   your review"). Phone-only matches no longer count. Guest lookups
+>   (ID + phone) are unchanged. claimed_at = sign-up time; accounts that
+>   had a password before Phase 2 get their `created_at` (STEP B-0).
+> - **STEP B-0** (new, run before deploying): adds `claimed_at`, copies
+>   existing hashes, and a guard trigger so only the server can write
+>   `customer_sessions.token_hash` (until Step B the anon key could
+>   otherwise forge a cookie session that would survive Step B).
+> - A hash found only in `customers.password_hash` at sign-in (written
+>   after B-0) is copied with `claimed_at = now`.
+> - Old header sessions are accepted until Step B but never upgraded to
+>   cookies (`LEGACY_HEADER_FALLBACK` in `_shared/customerSession.js`).
+> - **Step B also revokes anon on the admin views** (`customers_summary`,
+>   `dashboard_kpis`, `sales_by_day`, `top_products_by_units`,
+>   `low_stock_products`, `orders_status_breakdown`): a live probe showed
+>   anon could read them, and views bypass the table lockdown.
+> - Password minimum is 8 characters; "Forgot password?" points to
+>   WhatsApp until SMS OTP exists.
 - **Ship:**
   - `customer-auth`, the cookie, `_shared/customerSession.js`;
   - `customer-data` addresses;

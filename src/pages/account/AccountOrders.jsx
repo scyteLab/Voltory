@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 import { ChevronRight, Package, Pencil, Star } from "lucide-react";
 import { useCustomerOrders } from "../../hooks/useCustomerOrders.js";
+import EarlierOrdersNotice from "../../components/account/EarlierOrdersNotice.jsx";
 import { useCustomerReviews } from "../../hooks/useCustomerReviews.js";
 import { useCatalog } from "../../context/CatalogContext.jsx";
 import { STATUS_LABEL } from "../../utils/orders.js";
@@ -14,7 +15,7 @@ import { naira } from "../../utils/format.js";
  * device sees their order history immediately.
  */
 export default function AccountOrders() {
-  const { orders, loading } = useCustomerOrders();
+  const { orders, loading, earlierGuestOrders } = useCustomerOrders();
   const { reviews } = useCustomerReviews();
   const { bySku } = useCatalog();
   const reviewed = new Set(reviews.map((r) => r.productSku));
@@ -40,6 +41,8 @@ export default function AccountOrders() {
             : `${orders.length} order${orders.length === 1 ? "" : "s"} placed.`}
         </p>
       </header>
+
+      <EarlierOrdersNotice show={earlierGuestOrders} />
 
       {orders.length === 0 ? (
         <div className="ord-empty">

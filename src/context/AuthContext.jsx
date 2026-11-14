@@ -6,18 +6,20 @@ import {
   signOutCurrent,
   updateProfile as apiUpdateProfile,
   changePassword as apiChangePassword,
+  UNAUTHORIZED_EVENT,
 } from "../lib/customerAuth.js";
 
 /**
  * AuthProvider  \u2014  storefront customer context (password-based)
  *
- * Pivoted from OTP to phone + password.
+ * Phone + password, checked by the customer-auth Netlify function;
+ * the session is an HttpOnly cookie (Phase 2 of the lockdown plan).
  *
  * Public API:
  *   customer          \u2014 signed-in customer or null
  *   isAuthenticated   \u2014 !!customer
  *   loading           \u2014 true during initial session resolve
- *   signUp({ phone, password, name, email? })
+ *   signUp({ phone, password, name, email? })   → { ok, customer, earlierGuestOrders }
  *   signIn({ phone, password })
  *   signOut()
  *   updateProfile(patch)
@@ -40,6 +42,15 @@ export function AuthProvider({ children }) {
     const c = await getCurrentCustomer();
     setCustomer(c);
     return c;
+  }, []);
+
+  // Any 401 from the customer functions (session expired, revoked by a
+  // password change elsewhere, …): sign out locally. Account pages
+  // then redirect to /login?return=<this page>.
+  useEffect(() => {
+    const onUnauthorized = () => setCustomer(null);
+    window.addEventListener(UNAUTHORIZED_EVENT, onUnauthorized);
+    return () => window.removeEventListener(UNAUTHORIZED_EVENT, onUnauthorized);
   }, []);
 
   useEffect(() => {

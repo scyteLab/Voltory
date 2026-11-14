@@ -13,6 +13,10 @@
 --    STEP A     Phase 1: anon loses SELECT/UPDATE/DELETE on orders,
 --               order_items, order_tracking_attempts. Constrained
 --               INSERT stays for checkout.
+--    STEP B-0   Phase 2 prep, additive: customer_credentials.claimed_at,
+--               existing hashes copied (claimed_at = created_at), and
+--               only the server may write session token hashes. Run
+--               BEFORE deploying the Phase 2 site code.
 --    STEP B     Phase 2: anon loses everything on customers,
 --               customer_sessions, customer_addresses,
 --               customer_otp_challenges. Hashes move to
@@ -472,6 +476,89 @@ commit;
 
 
 -- ============================================================
+--  STEP B-0 — Phase 2 prep (run BEFORE deploying the Phase 2 code)
+--
+--  Additive; no access is removed. The old browser login keeps
+--  working until the new site is deployed.
+--
+--  · customer_credentials.claimed_at: when the phone was claimed by an
+--    account. My Orders / reviews only count orders placed on or after
+--    it (netlify/functions/_shared/orderOwnership.js).
+--  · Accounts that already have a password (customers.password_hash,
+--    written by the old browser code) are copied NOW with
+--    claimed_at = the customer's created_at: they keep their full
+--    order history. Hashes that appear AFTER this runs are copied by
+--    customer-auth on first sign-in with claimed_at = that time.
+--    Before running, look at who will be migrated (read-only):
+--
+--      select id, phone, name, created_at from public.customers
+--       where password_hash is not null order by created_at;
+--
+--  · customer_sessions: until Step B the anon key can still insert and
+--    update this table. A guard trigger stops anon/authenticated from
+--    writing token_hash or revoked_at, so every cookie session (token
+--    hash) is guaranteed to come from customer-auth. Any token_hash
+--    row that exists before the new code is live can't be genuine, so
+--    it is deleted.
+--
+--  Safe to re-run. Rollback: customer_lockdown_rollback.sql
+--  "ROLLBACK STEP B-0".
+-- ============================================================
+/*
+begin;
+
+alter table public.customer_credentials add column if not exists claimed_at timestamptz;
+
+insert into public.customer_credentials (customer_id, password_hash, claimed_at, updated_at)
+select c.id, c.password_hash, coalesce(c.created_at, now()), now()
+  from public.customers c
+ where c.password_hash is not null
+on conflict (customer_id) do nothing;
+
+update public.customer_credentials cc
+   set claimed_at = coalesce(c.created_at, now())
+  from public.customers c
+ where c.id = cc.customer_id
+   and cc.claimed_at is null;
+update public.customer_credentials set claimed_at = now() where claimed_at is null;   -- orphan safety
+
+alter table public.customer_credentials alter column claimed_at set default now();
+alter table public.customer_credentials alter column claimed_at set not null;
+
+-- NOT security definer: current_user must be the caller's role.
+create or replace function public.customer_sessions_server_fields_guard()
+returns trigger
+language plpgsql
+as $$
+begin
+  if current_user in ('anon', 'authenticated') then
+    if tg_op = 'INSERT' and (new.token_hash is not null or new.revoked_at is not null) then
+      raise exception 'customer_sessions: token_hash / revoked_at are set by the server only' using errcode = '42501';
+    end if;
+    if tg_op = 'UPDATE' and (new.token_hash is distinct from old.token_hash
+                             or new.revoked_at is distinct from old.revoked_at) then
+      raise exception 'customer_sessions: token_hash / revoked_at are set by the server only' using errcode = '42501';
+    end if;
+  end if;
+  return new;
+end;
+$$;
+revoke all on function public.customer_sessions_server_fields_guard() from public, anon, authenticated;
+
+drop trigger if exists customer_sessions_server_fields_guard on public.customer_sessions;
+create trigger customer_sessions_server_fields_guard
+  before insert or update on public.customer_sessions
+  for each row execute function public.customer_sessions_server_fields_guard();
+
+-- Nothing legitimate has created hashed sessions yet (the Phase 2 code
+-- isn't deployed), so any that exist were not made by the server.
+delete from public.customer_sessions where token_hash is not null;
+
+commit;
+*/
+
+
+-- ============================================================
 --  STEP B — Phase 2 (customer-auth + addresses live)
 --  Run ONLY after the Phase 2 site code is live and tested.
 --  Everyone signs in again once (old sessions are deleted).
@@ -479,16 +566,36 @@ commit;
 /*
 begin;
 
+-- Precondition: STEP B-0 has run (claimed_at + the session guard).
+do $$
+begin
+  if not exists (select 1 from information_schema.columns
+                  where table_schema = 'public' and table_name = 'customer_credentials' and column_name = 'claimed_at')
+     or to_regprocedure('public.customer_sessions_server_fields_guard()') is null then
+    raise exception 'Run STEP B-0 first (customer_credentials.claimed_at / session guard missing).';
+  end if;
+end;
+$$;
+
 select public.lockdown_snapshot('B', array['customers', 'customer_sessions', 'customer_addresses',
-                                           'customer_otp_challenges', 'customer_credentials']);
+                                           'customer_otp_challenges', 'customer_credentials',
+                                           -- admin views (grants only; see the end of this step)
+                                           'customers_summary', 'dashboard_kpis', 'sales_by_day',
+                                           'top_products_by_units', 'low_stock_products',
+                                           'orders_status_breakdown']);
 
 -- Hashes: copy, then clear the public column (dropped in Step D).
-insert into public.customer_credentials (customer_id, password_hash)
-select id, password_hash from public.customers where password_hash is not null
+-- B-0 already copied the accounts that existed then (claimed_at =
+-- created_at). Anything left was written after B-0 (old browser code
+-- in an open tab, or a forged write through the anon key), so it is
+-- claimed NOW: it can't unlock older order history.
+insert into public.customer_credentials (customer_id, password_hash, claimed_at, updated_at)
+select id, password_hash, now(), now() from public.customers where password_hash is not null
 on conflict (customer_id) do nothing;
 update public.customers set password_hash = null where password_hash is not null;
 
 -- Browser-minted plain-text sessions can't be trusted: delete them.
+-- (Hashed sessions stay: since B-0 only the server can create them.)
 delete from public.customer_sessions where token_hash is null;
 
 select public.lockdown_drop_policies(array['customers', 'customer_sessions', 'customer_addresses',
@@ -511,6 +618,23 @@ create policy lockdown_admin_all on public.customer_addresses
 revoke all on public.customers, public.customer_sessions, public.customer_addresses,
               public.customer_otp_challenges, public.customer_credentials from anon, authenticated;
 grant select, insert, update, delete on public.customers, public.customer_addresses to authenticated;
+
+-- Admin-only views. A live read-only probe (2026-11-15) showed the anon
+-- key can SELECT all of them: customers_summary lists every customer's
+-- name and phone, and the dashboard views show revenue. Views run with
+-- their owner's rights, so locking the tables above does NOT close
+-- them. Only admin pages read them (authenticated keeps its grants).
+do $$
+declare v text;
+begin
+  foreach v in array array['customers_summary', 'dashboard_kpis', 'sales_by_day',
+                           'top_products_by_units', 'low_stock_products', 'orders_status_breakdown'] loop
+    if to_regclass('public.' || v) is not null then
+      execute format('revoke all on public.%I from anon', v);
+    end if;
+  end loop;
+end;
+$$;
 
 commit;
 */

@@ -1,4 +1,4 @@
-import { Link, NavLink, Navigate, Outlet, useNavigate } from "react-router-dom";
+import { Link, NavLink, Navigate, Outlet, useLocation, useNavigate } from "react-router-dom";
 import {
   ChevronRight, Heart, HelpCircle, Home as HomeIcon, LogOut, MapPin,
   MessageSquare, Package, User,
@@ -27,11 +27,16 @@ const LINKS = [
 export default function AccountLayout() {
   const { customer, loading, signOut } = useCustomerAuth();
   const navigate = useNavigate();
+  const location = useLocation();
 
   // Still resolving the session (initial mount) — render nothing.
   if (loading) return null;
-  // Session resolved and no customer — not signed in.
-  if (!customer) return <Navigate to="/login?return=/account" replace />;
+  // Not signed in, or the session ended (any 401 signs out locally):
+  // back to this page after signing in.
+  if (!customer) {
+    const back = `${location.pathname}${location.search}`;
+    return <Navigate to={`/login?return=${encodeURIComponent(back)}`} replace />;
+  }
 
   async function handleSignOut() {
     await signOut();

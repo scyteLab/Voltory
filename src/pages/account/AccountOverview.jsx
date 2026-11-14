@@ -8,11 +8,12 @@ import { useCustomerOrders } from "../../hooks/useCustomerOrders.js";
 import { ORDER_STATUS, STATUS_LABEL } from "../../utils/orders.js";
 import { naira } from "../../utils/format.js";
 import { formatNgPhone } from "../../utils/phone.js";
+import EarlierOrdersNotice from "../../components/account/EarlierOrdersNotice.jsx";
 
 export default function AccountOverview() {
   const { customer } = useCustomerAuth();
   const { wishlistCount } = useStore();
-  const { orders: myOrders } = useCustomerOrders();
+  const { orders: myOrders, earlierGuestOrders } = useCustomerOrders();
   if (!customer) return null; // AccountLayout redirects; this is belt+braces
   const displayPhone = formatNgPhone(customer.phone || "");
   const account = { name: customer.name || "", phone: displayPhone };
@@ -36,6 +37,8 @@ export default function AccountOverview() {
         </div>
         <span className="ovw-greet__icon"><User size={28} /></span>
       </div>
+
+      <EarlierOrdersNotice show={earlierGuestOrders} />
 
       {/* quick stats */}
       <div className="ovw-stats">
