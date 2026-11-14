@@ -28,6 +28,20 @@ export const SITE = {
   whatsapp: "+234 911 444 0348",
   whatsappLink: "https://wa.me/2349114440348",
 
+  // ---- Social media: the ONE place these live ----
+  // Footer icons, Organization "sameAs" (structured data, prerendered
+  // pages) and the twitter:site meta tag all read from here. To remove
+  // a network everywhere, delete its line (or set it to null).
+  social: {
+    x:         "https://x.com/navenhq",
+    tiktok:    "https://www.tiktok.com/@naven.hq",
+    instagram: "https://www.instagram.com/mynavenhq",
+    facebook:  "https://web.facebook.com/mynavenhq/",
+    youtube:   "https://www.youtube.com/@mynavenhq",
+    linkedin:  "https://www.linkedin.com/company/mynavenhq",
+  },
+  twitterHandle: "@navenhq",     // twitter:site (must match SITE.social.x)
+
   // ---- Commerce ----
   currency: "NGN",
   currencySymbol: "₦",
@@ -116,6 +130,17 @@ export const SITE = {
 
 // The POD badge only shows while Pay on Delivery is offered.
 if (!SITE.payOnDeliveryEnabled) SITE.footerBadges = SITE.footerBadges.filter((b) => b !== "Pay on Delivery");
+
+/** Display names for SITE.social keys (aria-labels: "NAVEN on X"). */
+export const SOCIAL_NAMES = {
+  x: "X", tiktok: "TikTok", instagram: "Instagram", facebook: "Facebook", youtube: "YouTube", linkedin: "LinkedIn",
+};
+
+/** Footer / follow-us order: [{ id, name, url }] for every network that has a URL. */
+export const socialLinks = () =>
+  ["facebook", "instagram", "x", "tiktok", "youtube", "linkedin"]
+    .filter((id) => SITE.social?.[id])
+    .map((id) => ({ id, name: SOCIAL_NAMES[id], url: SITE.social[id] }));
 
 /** Derived helpers — keep components dumb. */
 export const wordmarkParts = () => {

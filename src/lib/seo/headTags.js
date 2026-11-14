@@ -48,7 +48,7 @@ export function headTags(meta = {}) {
         ]
       : []),
     { name: "twitter:card", content: "summary_large_image" },
-    { name: "twitter:site", content: "@mynavenhq" },
+    ...(SITE.twitterHandle ? [{ name: "twitter:site", content: SITE.twitterHandle }] : []),
     { name: "twitter:title", content: title },
     { name: "twitter:description", content: description },
     { name: "twitter:image", content: image },

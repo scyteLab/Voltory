@@ -14,18 +14,11 @@
  * business info file or approved reviews.
  */
 import { SITE_URL } from "./defaults.js";
-import { SITE } from "../../config/site.js";
+import { SITE, socialLinks } from "../../config/site.js";
 import { BUSINESS_INFO } from "../../config/businessInfo.js";
 
-/** Same profiles as the footer. */
-export const SOCIAL_PROFILES = [
-  "https://web.facebook.com/mynavenhq/",
-  "https://www.instagram.com/mynavenhq",
-  "https://x.com/mynavenhq",
-  "https://www.tiktok.com/@mynavenhq",
-  "https://www.youtube.com/@mynavenhq",
-  "https://www.linkedin.com/company/mynavenhq",
-];
+/** Same profiles as the footer (SITE.social is the single source). */
+export const SOCIAL_PROFILES = socialLinks().map((s) => s.url);
 
 const ORG_ID = `${SITE_URL}/#organization`;
 

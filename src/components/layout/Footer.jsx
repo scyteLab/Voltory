@@ -1,11 +1,12 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import {
-  ArrowRight, BadgeCheck, Banknote, Check, CreditCard, Facebook,
-  Headphones, Instagram, Lock, Mail, MapPin, MessageCircle, Music2,
-  Phone, ShieldCheck, Smartphone, Truck, Twitter, Youtube,
+  ArrowRight, BadgeCheck, Banknote, Check, CreditCard,
+  Headphones, Lock, Mail, MapPin, MessageCircle,
+  Phone, ShieldCheck, Smartphone, Truck,
 } from "lucide-react";
-import { SITE } from "../../config/site.js";
+import { SITE, socialLinks } from "../../config/site.js";
+import { SOCIAL_ICONS } from "../ui/SocialIcons.jsx";
 import { legalNameWithReg } from "../../config/businessInfo.js";
 import { useStore } from "../../context/StoreContext.jsx";
 import { subscribeNewsletter } from "../../lib/publicFormsClient.js";
@@ -92,12 +93,15 @@ export default function Footer() {
             <span><MapPin size={13} /> Lagos, Nigeria</span>
           </div>
           <div className="ftr__social">
-            <a href="https://web.facebook.com/mynavenhq/" target="_blank" rel="noreferrer" aria-label="Facebook" className="ftr__social-icon"><Facebook size={15} /></a>
-            <a href="https://www.instagram.com/mynavenhq" target="_blank" rel="noreferrer" aria-label="Instagram" className="ftr__social-icon"><Instagram size={15} /></a>
-            <a href="https://x.com/mynavenhq" target="_blank" rel="noreferrer" aria-label="X (Twitter)" className="ftr__social-icon"><Twitter size={15} /></a>
-            <a href="https://www.tiktok.com/@mynavenhq" target="_blank" rel="noreferrer" aria-label="TikTok" className="ftr__social-icon"><Music2 size={15} /></a>
-            <a href="https://www.youtube.com/@mynavenhq" target="_blank" rel="noreferrer" aria-label="YouTube" className="ftr__social-icon"><Youtube size={15} /></a>
-            <a href={SITE.whatsappLink} target="_blank" rel="noreferrer" aria-label="WhatsApp" className="ftr__social-icon"><MessageCircle size={15} /></a>
+            {socialLinks().map(({ id, name, url }) => {
+              const Icon = SOCIAL_ICONS[id];
+              return (
+                <a key={id} href={url} target="_blank" rel="noopener noreferrer" aria-label={`${SITE.name} on ${name}`} title={name} className={`ftr__social-icon ftr__social-icon--${id}`}>
+                  <Icon size={15} />
+                </a>
+              );
+            })}
+            <a href={SITE.whatsappLink} target="_blank" rel="noopener noreferrer" aria-label={`${SITE.name} on WhatsApp`} title="WhatsApp" className="ftr__social-icon"><MessageCircle size={15} /></a>
           </div>
         </div>
 
