@@ -97,7 +97,7 @@ export default function AdminWhatsappQuoteDetail() {
   }
 
   async function handleConvert() {
-    if (!window.confirm("Convert this quote to a real order? The customer's cart contents at their current prices become an order.")) return;
+    if (!window.confirm("Convert this quote to a real order? The customer's cart contents at their current prices become an order. Payment is recorded as Pay on Delivery (admin only).")) return;
     setBusy(true);
     const res = await convertQuoteToOrder(id);
     setBusy(false);

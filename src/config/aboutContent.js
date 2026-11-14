@@ -7,6 +7,7 @@
  *  to be bigger than we are.
  * ============================================================
  */
+import { SITE } from "./site.js";
 
 export const ABOUT_MISSION = {
   headline: "Original appliances. Trusted performance.",
@@ -81,7 +82,7 @@ export const ABOUT_VALUES = [
     icon: "Users",
     title: "Built for Nigeria",
     body:
-      "Designed around Nigerian realities — phone-first accounts, Pay on Delivery, stabilizer awareness, real WhatsApp support.",
+      `Designed around Nigerian realities — phone-first accounts, ${SITE.payOnDeliveryEnabled ? "Pay on Delivery" : "bank transfer and USSD payments"}, stabilizer awareness, real WhatsApp support.`,
   },
 ];
 

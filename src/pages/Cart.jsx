@@ -190,7 +190,9 @@ export default function Cart() {
           </button>
 
           <p className="cart-secure">
-            🔒 Secure checkout · Pay on delivery available
+            {SITE.payOnDeliveryEnabled
+              ? "🔒 Secure checkout · Pay on delivery available"
+              : "🔒 Secure checkout · Bank transfer, card or USSD (Paystack)"}
           </p>
         </aside>
       </div>

@@ -196,11 +196,19 @@ function DeliveryPanel() {
         <b>Professional Installation</b>
         <p>Certified technicians available for ACs, TVs and washing machines. Add at checkout for {naira(SITE.installationFee)}.</p>
       </div>
-      <div className="info-card">
-        <ChevronRight size={20} />
-        <b>Pay on Delivery</b>
-        <p>Available for orders within Lagos. Confirmation by phone before dispatch.</p>
-      </div>
+      {SITE.payOnDeliveryEnabled ? (
+        <div className="info-card">
+          <ChevronRight size={20} />
+          <b>Pay on Delivery</b>
+          <p>Available for orders within Lagos. Confirmation by phone before dispatch.</p>
+        </div>
+      ) : (
+        <div className="info-card">
+          <ShieldCheck size={20} />
+          <b>Secure Online Payment</b>
+          <p>{SITE.paymentLine}</p>
+        </div>
+      )}
     </div>
   );
 }

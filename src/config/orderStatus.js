@@ -72,8 +72,10 @@ export function shortOrderId(id) {
 export const PAYMENT_LABELS = {
   card:     "Card",
   transfer: "Bank Transfer",
-  pod:      "Pay on Delivery",
+  pod:      "Pay on Delivery",           // storefront orders (kept for old orders)
   ussd:     "USSD",
+  // WhatsApp quotes converted by staff (Admin → WA Quotes → Convert).
+  pay_on_delivery: "Pay on Delivery (admin only)",
 };
 
 /**

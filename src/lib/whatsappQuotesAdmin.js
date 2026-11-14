@@ -265,8 +265,11 @@ async function recomputeQuoteSubtotal(quoteId) {
  *   · Uses current quote items and current customer info
  *   · Sets order status = 'confirmed' (the rep already knows the
  *     deal is closed by the time they click convert)
- *   · Payment method defaults to 'pay_on_delivery' since WhatsApp
- *     sales are typically cash / bank-transfer on delivery
+ *   · Payment method 'pay_on_delivery', shown as "Pay on Delivery
+ *     (admin only)": staff may still record it for WhatsApp sales
+ *     although the storefront no longer offers POD
+ *     (SITE.payOnDeliveryEnabled). supabase/pod_disable.sql blocks
+ *     only anon 'pod' inserts, so this authenticated insert works.
  *   · Address is left empty {} — rep will fill via the admin
  *     orders page after conversion
  *   · Won't convert if quote already has a linked_order_id (prevents

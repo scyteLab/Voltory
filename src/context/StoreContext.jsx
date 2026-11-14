@@ -552,7 +552,7 @@ export function StoreProvider({ children }) {
   // Card / Transfer / USSD: the order must exist in Supabase (as
   // 'pending') BEFORE the Paystack popup opens, so the server can
   // look it up when verifying. Unlike placeOrder this waits for the
-  // insert, keeps the cart (the customer may retry or switch to POD)
+  // insert, keeps the cart (the customer may retry the payment)
   // and sends no emails yet.
   const createPendingPaymentOrder = async ({ paystackRef, ...args }) => {
     let order;

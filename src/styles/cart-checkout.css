@@ -692,6 +692,24 @@
 }
 .ck-place:hover { filter: brightness(1.08); }
 .ck-place:disabled { background: #c7d0db; cursor: wait; }
+
+/* Payment not completed: retry the same order, or get help on WhatsApp. */
+.ck-retry { display: flex; flex-direction: column; gap: 8px; }
+.ck-retry .ck-place { display: inline-flex; align-items: center; justify-content: center; gap: 8px; }
+.ck-retry__wa {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px;
+  border: 1.5px solid #25d366;
+  border-radius: 10px;
+  color: #128c4b;
+  font-weight: 700;
+  font-size: 13.5px;
+  text-decoration: none;
+}
+.ck-retry__wa:hover { background: #f0fdf4; }
 .ck-summary__secure {
   display: flex;
   align-items: center;

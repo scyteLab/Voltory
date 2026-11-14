@@ -108,3 +108,24 @@ export function cartMessage({ items, gifts = [], total, name = "", phone = "", e
   }
   return text;
 }
+
+/**
+ * Checkout: an online payment wasn't completed. The order is saved
+ * (pending_payment); this asks us for help finishing it on WhatsApp.
+ *   orderId, items: [{ name, sku, qty, unitPrice }], total, name, phone
+ */
+export function unpaidOrderHelpMessage({ orderId, items = [], total, name = "", phone = "" }) {
+  const shown = items.slice(0, MAX_ITEMS);
+  const more = items.length - shown.length;
+  const lines = [
+    `Hello NAVEN, I need help completing payment for order ${orderId}:`,
+    "",
+    ...shown.map((i) => `${i.qty} × ${clean(i.name)}${i.sku ? ` (SKU ${i.sku})` : ""} — ${nairaText(i.unitPrice * i.qty)}`),
+    ...(more > 0 ? [`+ ${more} more item${more === 1 ? "" : "s"}`] : []),
+    "",
+    `Total: ${nairaText(total)}`,
+  ];
+  if (name) lines.push(`Name: ${clean(name, 60)}`);
+  if (phone) lines.push(`Phone: ${phone}`);
+  return lines.join("\n");
+}

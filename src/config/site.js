@@ -33,10 +33,20 @@ export const SITE = {
   currencySymbol: "₦",
   freeDeliveryOver: 150000,
   installationFee: 25000,
-  // Pay on Delivery is offered only up to this grand total (₦).
+  // ---- Payment ----
+  // Pay on Delivery for NEW storefront orders. Off: checkout offers
+  // Bank Transfer / Card / USSD (Paystack) only, and every POD claim on
+  // the site is hidden. To turn it back on, set this to true AND set the
+  // Netlify env var POD_ENABLED=true (order-switch-pod) AND run the
+  // rollback block of supabase/pod_disable.sql (the database trigger).
+  // Old POD orders always keep their "Pay on Delivery" label.
+  payOnDeliveryEnabled: false,
+  // Pay on Delivery is offered only up to this grand total (₦), when enabled.
   // Also enforced server-side: order-switch-pod (env POD_MAX_ORDER_TOTAL)
   // and supabase/pod_limit_guard.sql — keep all three in step.
   podMaxOrderTotal: 450000,
+  // One line wherever the site needs to say how customers pay.
+  paymentLine: "Pay securely online by bank transfer, card or USSD (Paystack).",
   welcomeCoupon: { code: "WELCOME10", percent: 10 },
 
   // ---- Top utility bar (right side links) ----
@@ -103,6 +113,9 @@ export const SITE = {
 
   footerBadges: ["Secure Payments", "Pay on Delivery", "Nationwide Delivery"],
 };
+
+// The POD badge only shows while Pay on Delivery is offered.
+if (!SITE.payOnDeliveryEnabled) SITE.footerBadges = SITE.footerBadges.filter((b) => b !== "Pay on Delivery");
 
 /** Derived helpers — keep components dumb. */
 export const wordmarkParts = () => {

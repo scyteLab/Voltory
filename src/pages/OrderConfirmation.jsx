@@ -57,7 +57,9 @@ export default function OrderConfirmation() {
         completePaidOrder(order.id, { clearCart: false, order });
         setOrder(getOrder(order.id) || { ...order, paymentStatus: "paid", status: ORDER_STATUS.CONFIRMED });
       } else if (outcome === "cancelled") {
-        setPayNotice("Payment not completed. You can try again, or contact us on WhatsApp to switch to Pay on Delivery.");
+        setPayNotice(SITE.payOnDeliveryEnabled
+          ? "Payment not completed. You can try again, or contact us on WhatsApp to switch to Pay on Delivery."
+          : "Payment not completed. You can try again, or contact us on WhatsApp for help.");
       } else {
         setPayNotice("We couldn't confirm your payment yet. If you were charged, this order will be confirmed automatically within a few minutes — please contact support before paying again.");
       }

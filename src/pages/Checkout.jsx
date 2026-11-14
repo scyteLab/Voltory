@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { Link, Navigate, useNavigate, useSearchParams } from "react-router-dom";
 import {
   BadgeCheck, Banknote, ChevronRight, CreditCard, Gift, Home as HomeIcon,
-  Info, Lock, MapPin, Phone, Smartphone as PhoneIcon, User, Wrench, Zap,
+  Info, Lock, MapPin, MessageCircle, Phone, RefreshCw, Smartphone as PhoneIcon, User, Wrench, Zap,
 } from "lucide-react";
 import { useStore } from "../context/StoreContext.jsx";
 import { useCatalog } from "../context/CatalogContext.jsx";
@@ -12,8 +12,9 @@ import { useCheckoutSettings } from "../hooks/useCheckoutSettings.js";
 import AddressPicker from "../components/checkout/AddressPicker.jsx";
 import {
   openPaystack, paystackChannelFor, isPaystackConfigured,
-  buildPaystackReference, verifyPaystackPayment,
+  buildPaystackReference, verifyPaystackPayment, payForExistingOrder,
 } from "../lib/paystackClient.js";
+import { unpaidOrderHelpMessage, whatsappUrl } from "../utils/whatsappMessage.js";
 import { generateOrderId } from "../utils/orders.js";
 import { naira } from "../utils/format.js";
 import { SITE } from "../config/site.js";
@@ -26,13 +27,18 @@ const NIGERIAN_STATES = [
 ];
 
 // Display order. Bank Transfer is the default for every new checkout;
-// the choice is never remembered between visits.
-const PAYMENT_METHODS = [
+// the choice is never remembered between visits. Pay on Delivery is
+// listed only while SITE.payOnDeliveryEnabled is true.
+const POD_ENABLED = Boolean(SITE.payOnDeliveryEnabled);
+const ALL_PAYMENT_METHODS = [
   { id: "transfer", icon: Banknote, label: "Bank Transfer", note: "Transfer to a one-time account number" },
   { id: "card", icon: CreditCard, label: "Pay with Card", note: "Visa, Mastercard, Verve — secured by Paystack" },
   { id: "ussd", icon: PhoneIcon, label: "USSD", note: "Dial a code from your bank app" },
   { id: "pod", icon: HomeIcon, label: "Pay on Delivery", note: "OTP-verified · Lagos zones only" },
 ];
+const PAYMENT_METHODS = ALL_PAYMENT_METHODS.filter((m) => m.id !== "pod" || POD_ENABLED);
+// Suffix for payment error messages ("…try again, or choose Pay on Delivery.").
+const OR_POD = POD_ENABLED ? ", or choose Pay on Delivery" : "";
 
 const POD_LIMIT = SITE.podMaxOrderTotal;
 const POD_LIMIT_MESSAGE =
@@ -76,19 +82,22 @@ export default function Checkout() {
     street: "",
     landmark: "",
   });
-  // When Paystack is not configured, only POD is available — default to it.
+  // When Paystack is not configured, only POD (if enabled) is available.
   const paystackReady = isPaystackConfigured();
-  const [payment, setPayment] = useState(paystackReady ? "transfer" : "pod");
+  const [payment, setPayment] = useState(paystackReady || !POD_ENABLED ? "transfer" : "pod");
   // Inline Pay-on-Delivery limit message; bumping `pulse` replays its
   // highlight when the disabled option is clicked again.
   const [podNotice, setPodNotice] = useState({ show: false, pulse: 0 });
   const [installation, setInstallation] = useState(false);
   const [errors, setErrors] = useState({});
   const [submitting, setSubmitting] = useState(false);
-  // Online-payment order awaiting confirmation: { id, grand, reference }.
-  // Kept so a retry (or a switch to POD) reuses the same order.
+  // Online-payment order awaiting confirmation: { id, grand, total, reference }.
+  // Kept so a retry reuses the same order.
   const [pendingOrder, setPendingOrder] = useState(null);
   const [paymentNotice, setPaymentNotice] = useState("");
+  // The Paystack popup was closed without paying: offer "Try payment
+  // again" (same pending_payment order) and WhatsApp help.
+  const [abandoned, setAbandoned] = useState(false);
 
   const installFee = installation ? SITE.installationFee : 0;
   // Delivery fee neutralised 2026-10-19 — policy pending CGCL decision.
@@ -97,7 +106,10 @@ export default function Checkout() {
   const freeDeliveryThreshold = getCheckoutSetting("free_delivery_threshold_ngn");
   const deliveryFee = 0;
   const grand = totals.subtotal - totals.discount + deliveryFee + installFee;
-  const podOverLimit = grand > POD_LIMIT;
+  const podOverLimit = POD_ENABLED && grand > POD_LIMIT;
+  // Retry panel only while the saved order still matches this checkout.
+  const showRetry = abandoned && pendingOrder && pendingOrder.grand === grand;
+  const canPay = paystackReady || POD_ENABLED;
 
   function showPodNotice() {
     setPodNotice((n) => ({ show: true, pulse: n.pulse + 1 }));
@@ -187,6 +199,11 @@ export default function Checkout() {
       showPodNotice();
       return;
     }
+    if (!canPay) {
+      setPaymentNotice("");
+      setErrors({ payment: "Online payment isn't available right now. Please order on WhatsApp and we'll help you complete it." });
+      return;
+    }
     if (!(grand > 0)) {
       setPaymentNotice("");
       setErrors({ payment: "Your order total is ₦0, so we can't place it. Please refresh the page and try again, or contact support." });
@@ -210,6 +227,7 @@ export default function Checkout() {
     const needsPaystack = payment !== "pod" && paystackReady;
     setPaymentNotice("");
     setErrors({});
+    setAbandoned(false);
 
     if (needsPaystack) {
       // Retry reuses the same pending order, unless the amount changed
@@ -229,11 +247,11 @@ export default function Checkout() {
         setErrors({
           payment: created.blocked
             ? created.error
-            : "We couldn't start your payment. Please check your connection and try again, or choose Pay on Delivery.",
+            : `We couldn't start your payment. Please check your connection and try again${OR_POD}.`,
         });
         return;
       }
-      setPendingOrder({ id: orderId, grand, reference });
+      setPendingOrder({ id: orderId, grand, total: created.order.totals.grand, reference });
 
       // 2. Open Paystack for exactly the stored order total, in kobo.
       const amountKobo = Math.round(created.order.totals.grand) * 100;
@@ -252,7 +270,8 @@ export default function Checkout() {
         });
         if (!result.ok) {
           setSubmitting(false);
-          setPaymentNotice("Payment not completed. You can try again or choose Pay on Delivery.");
+          setAbandoned(true);
+          setPaymentNotice(`Payment not completed. Your order ${orderId} is saved and waiting for payment.`);
           return;
         }
 
@@ -272,16 +291,17 @@ export default function Checkout() {
         setSubmitting(false);
         // eslint-disable-next-line no-console
         console.error("[checkout] paystack error:", err);
-        setErrors({ payment: err.message || "Payment failed. Please try again or choose Pay on Delivery." });
+        setErrors({ payment: err.message || `Payment failed. Please try again${OR_POD}.` });
       }
       return;
     }
 
-    // Switching to Pay on Delivery after an unfinished online attempt
-    // for the same amount: the server checks that attempt with Paystack
-    // (a late transfer may have gone through), otherwise converts that
-    // same order to POD instead of duplicating it.
-    if (pendingOrder && pendingOrder.grand === grand) {
+    // Switching to Pay on Delivery (only when enabled) after an
+    // unfinished online attempt for the same amount: the server checks
+    // that attempt with Paystack (a late transfer may have gone
+    // through), otherwise converts that same order to POD instead of
+    // duplicating it.
+    if (POD_ENABLED && payment === "pod" && pendingOrder && pendingOrder.grand === grand) {
       try {
         const res = await convertPendingOrderToPod({
           contact, address, payment, installation, deliveryFee, source,
@@ -319,8 +339,51 @@ export default function Checkout() {
     }, 400);
   }
 
+  // "Try payment again": reopen Paystack for the SAME pending_payment
+  // order (exact stored total, fresh reference), then verify server-side.
+  async function retryPayment() {
+    if (!pendingOrder) return;
+    setSubmitting(true);
+    setErrors({});
+    setPaymentNotice("");
+    try {
+      const { outcome } = await payForExistingOrder({
+        id: pendingOrder.id,
+        totals: { grand: pendingOrder.total },
+        contact,
+        payment,
+      });
+      if (outcome === "paid") {
+        completePaidOrder(pendingOrder.id, { source });
+        navigate(`/order/${pendingOrder.id}`);
+        return;
+      }
+      setSubmitting(false);
+      setPaymentNotice(outcome === "cancelled"
+        ? `Payment not completed. Your order ${pendingOrder.id} is saved and waiting for payment.`
+        : `We couldn't confirm your payment yet. If you were charged, order ${pendingOrder.id} will be confirmed automatically within a few minutes — please contact support before paying again.`);
+    } catch (err) {
+      setSubmitting(false);
+      setErrors({ payment: err.message || "Payment failed. Please try again." });
+    }
+  }
+
   /* Count of free gifts for the summary section */
   const giftCount = cart.filter((i) => i.isGift).length;
+
+  // WhatsApp help for an unpaid order: order ID + items, prefilled.
+  const unpaidHelpHref = pendingOrder
+    ? whatsappUrl(unpaidOrderHelpMessage({
+        orderId: pendingOrder.id,
+        items: cart.filter((i) => !i.isGift).map((i) => {
+          const p = bySku(i.sku);
+          return { name: p?.name || i.sku, sku: i.sku, qty: i.qty, unitPrice: p?.price || 0 };
+        }),
+        total: pendingOrder.total,
+        name: contact.name,
+        phone: contact.phone,
+      }))
+    : whatsappUrl();
 
   return (
     <main className="wrap">
@@ -523,7 +586,9 @@ export default function Checkout() {
             {!paystackReady && (
               <p className="ck-card__hint" style={{ marginTop: 12 }}>
                 <Info size={13} />{" "}
-                {podOverLimit
+                {!POD_ENABLED
+                  ? <>Online payment isn't available right now. Please <a href={whatsappUrl()} target="_blank" rel="noreferrer">order on WhatsApp</a> and we'll help you complete it.</>
+                  : podOverLimit
                   ? `Online payment isn't available yet, and Pay on Delivery is limited to orders up to ${naira(POD_LIMIT)}. Please contact us on WhatsApp to complete this order.`
                   : "Online payment (Card, Bank Transfer, USSD) is coming soon. For now, please pay on delivery."}
               </p>
@@ -616,13 +681,24 @@ export default function Checkout() {
               </p>
             )}
 
-            <button type="submit" className="ck-place" disabled={submitting}>
+            {showRetry && (
+              <div className="ck-retry">
+                <button type="button" className="ck-place" onClick={retryPayment} disabled={submitting}>
+                  <RefreshCw size={15} /> {submitting ? "Processing secure payment…" : "Try payment again"}
+                </button>
+                <a className="ck-retry__wa" href={unpaidHelpHref} target="_blank" rel="noreferrer">
+                  <MessageCircle size={15} /> Need help? Order on WhatsApp
+                </a>
+              </div>
+            )}
+
+            {!showRetry && <button type="submit" className="ck-place" disabled={submitting || !canPay}>
               {submitting
                 ? (payment !== "pod" && paystackReady ? "Processing secure payment…" : "Placing Order…")
                 : (payment !== "pod" && paystackReady
                     ? <>Pay {naira(grand)}</>
                     : <>Place Order · {naira(grand)}</>)}
-            </button>
+            </button>}
 
             <p className="ck-summary__secure">
               <BadgeCheck size={13} /> 100% Original ·{" "}

@@ -37,8 +37,8 @@ export function buildCanonical(path = "/") {
 export const DEFAULT_DESCRIPTION =
   "NAVEN — The Premium Electronics. Shop fridges, air conditioners, TVs, " +
   "washing machines, and premium home appliances from Scanfrost, Midea, " +
-  "Samsung, Sony, Panasonic, and Kenwood. Nationwide delivery across Nigeria " +
-  "with pay-on-delivery available.";
+  "Samsung, Sony, Panasonic, and Kenwood. Nationwide delivery across Nigeria" +
+  (SITE.payOnDeliveryEnabled ? " with pay-on-delivery available." : ", secure online payment.");
 
 /**
  * Default keywords (used sparingly — meta keywords is largely ignored by Google

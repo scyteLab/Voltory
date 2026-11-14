@@ -7,6 +7,11 @@
  * ============================================================
  */
 
+import { SITE } from "./site.js";
+
+// Pay on Delivery answers appear only while it's offered (SITE.payOnDeliveryEnabled).
+const POD = Boolean(SITE.payOnDeliveryEnabled);
+
 export const HELP_TOPICS = [
   {
     id: "ordering",
@@ -20,7 +25,9 @@ export const HELP_TOPICS = [
       },
       {
         q: "What payment methods do you accept?",
-        a: "We accept Card (Visa, Mastercard, Verve via Paystack), Bank Transfer (one-time account number generated at checkout), Pay on Delivery for orders within Lagos, and USSD from your bank app.",
+        a: POD
+          ? "We accept Card (Visa, Mastercard, Verve via Paystack), Bank Transfer (one-time account number generated at checkout), Pay on Delivery for orders within Lagos, and USSD from your bank app."
+          : `${SITE.paymentLine} Bank Transfer gives you a one-time account number at checkout; we accept Visa, Mastercard and Verve cards; USSD works from your bank app.`,
       },
       {
         q: "Can I change or cancel my order?",
@@ -80,7 +87,7 @@ export const HELP_TOPICS = [
       },
       {
         q: "How long do refunds take?",
-        a: "Once we receive and inspect the returned item, refunds are processed within 5–7 working days. Card payments are refunded to the original card; bank transfers are refunded to the originating account. Pay-on-Delivery orders are refunded by bank transfer to an account you provide.",
+        a: `Once we receive and inspect the returned item, refunds are processed within 5–7 working days. Card payments are refunded to the original card; bank transfers are refunded to the originating account. ${POD ? "Pay-on-Delivery orders are" : "Orders paid in cash are"} refunded by bank transfer to an account you provide.`,
       },
       {
         q: "My item arrived damaged — what do I do?",
@@ -120,7 +127,7 @@ export const HELP_TOPICS = [
     id: "payments",
     icon: "CreditCard",
     label: "Payments & Security",
-    blurb: "Card safety, transfer process, POD verification.",
+    blurb: POD ? "Card safety, transfer process, POD verification." : "Card safety, bank transfer and USSD.",
     items: [
       {
         q: "Is it safe to pay with my card on NAVEN?",
@@ -130,13 +137,15 @@ export const HELP_TOPICS = [
         q: "How does bank transfer work?",
         a: "We generate a unique virtual account number for your order. Transfer the exact amount, and confirmation is automatic within minutes. No need to send proof of payment — our system reconciles it directly.",
       },
-      {
+      ...(POD ? [{
         q: "Why does Pay on Delivery require OTP verification?",
         a: "POD orders are reserved stock that costs us money to hold. The OTP confirms you actually intend to receive the order. Without verification, fraudulent or accidental POD orders waste rider time and tie up inventory.",
-      },
+      }] : []),
       {
         q: "When am I charged?",
-        a: "Card and bank transfer: at checkout. Pay on Delivery: only when our rider hands you the order. Refunds for cancelled orders are processed within 24 hours.",
+        a: POD
+          ? "Card and bank transfer: at checkout. Pay on Delivery: only when our rider hands you the order. Refunds for cancelled orders are processed within 24 hours."
+          : "At checkout. Your order is confirmed as soon as Paystack confirms your bank transfer, card or USSD payment. Refunds for cancelled orders are processed within 24 hours.",
       },
     ],
   },

@@ -11,9 +11,14 @@
  * (env, naira; default 450000 — keep in step with SITE.podMaxOrderTotal
  * and supabase/pod_limit_guard.sql).
  *
+ * Pay on Delivery is OFF unless the env var POD_ENABLED is "true"
+ * (matches SITE.payOnDeliveryEnabled): every call then gets
+ * 403 { ok: false, error: "pod_disabled" } and nothing is changed.
+ *
  * Request:   POST { orderId: "VLT-..." }
  * Response:  200 { ok: true,  paymentStatus: "unpaid" }  — now POD
  *            200 { ok: false, paymentStatus: "paid" }    — it was paid after all
+ *            403 { ok: false, error: "pod_disabled" }
  *            422 { ok: false, error: "pod_limit_exceeded" }
  *            4xx/5xx { ok: false, error }
  */
@@ -29,6 +34,8 @@ function podMaxOrderTotal() {
   return Number.isFinite(n) && n > 0 ? n : DEFAULT_POD_MAX;
 }
 
+export const podEnabled = () => process.env.POD_ENABLED === "true";
+
 function reply(statusCode, body) {
   return { statusCode, headers, body: JSON.stringify(body) };
 }
@@ -36,6 +43,9 @@ function reply(statusCode, body) {
 export const handler = async (event) => {
   if (event.httpMethod !== "POST") {
     return reply(405, { ok: false, error: "Method not allowed" });
+  }
+  if (!podEnabled()) {
+    return reply(403, { ok: false, error: "pod_disabled" });
   }
 
   const missing = missingConfig();

@@ -124,7 +124,9 @@ export default function Returns() {
         <ul>
           <li><strong>Bank transfers and cards:</strong> Refunds are processed within 5-10 business days after approval. Your bank may take additional time to reflect the credit in your account.</li>
           <li><strong>Wallet credits:</strong> If you opt for a {SITE.name} store credit, the refund is applied to your account within 24 hours of approval.</li>
-          <li><strong>Pay-on-Delivery orders:</strong> Refunds for cash payments are processed via bank transfer. You will need to provide your bank account details.</li>
+          {SITE.payOnDeliveryEnabled
+            ? <li><strong>Pay-on-Delivery orders:</strong> Refunds for cash payments are processed via bank transfer. You will need to provide your bank account details.</li>
+            : <li><strong>Cash payments (earlier orders):</strong> Refunds are processed via bank transfer. You will need to provide your bank account details.</li>}
         </ul>
         <h3>5.3 Partial Refunds</h3>
         <p>

@@ -105,7 +105,9 @@ export default function Terms() {
         </p>
         <ul>
           <li>Payment must be completed before your order is processed for dispatch.</li>
-          <li>For Pay-on-Delivery orders (where available), full payment is due at the point of delivery.</li>
+          {SITE.payOnDeliveryEnabled
+            ? <li>For Pay-on-Delivery orders (where available), full payment is due at the point of delivery.</li>
+            : <li>Orders are paid online at checkout by bank transfer, card or USSD through Paystack.</li>}
           <li>We do not store your full card details on our servers.</li>
           <li>If payment fails or is reversed after dispatch, we reserve the right to recover the owed amount or cancel the order.</li>
           <li>Promotional codes and discounts are subject to specific terms and may not be combined unless stated otherwise.</li>

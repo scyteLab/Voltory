@@ -14,7 +14,8 @@
  * Behaviour when VITE_PAYSTACK_PUBLIC_KEY is not set:
  *   · openPaystack() rejects with a specific error
  *   · isPaystackConfigured() returns false, so callers can
- *     branch to an alternate flow (e.g. force pay-on-delivery)
+ *     branch to an alternate flow (WhatsApp, or Pay on Delivery
+ *     when SITE.payOnDeliveryEnabled)
  *
  * We NEVER hardcode a key. If the env var is missing the feature
  * is off, not broken.
@@ -127,7 +128,9 @@ export async function verifyPaystackPayment(reference) {
 
 /**
  * Ask the server to turn an unpaid online order into a Pay on Delivery
- * order (the browser can't update orders itself). The server checks
+ * order (the browser can't update orders itself). Only used while
+ * SITE.payOnDeliveryEnabled; the server refuses (403 pod_disabled)
+ * unless POD_ENABLED=true. The server checks
  * Paystack first, so a late payment is caught.
  *
  * Resolves with { ok, paymentStatus?, error? }. Never throws.

@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import {
   ArrowRight, BadgeCheck, Banknote, Check, CreditCard, Facebook,
   Headphones, Instagram, Lock, Mail, MapPin, MessageCircle, Music2,
-  Phone, ShieldCheck, Truck, Twitter, Youtube,
+  Phone, ShieldCheck, Smartphone, Truck, Twitter, Youtube,
 } from "lucide-react";
 import { SITE } from "../../config/site.js";
 import { legalNameWithReg } from "../../config/businessInfo.js";
@@ -149,7 +149,9 @@ export default function Footer() {
           <div className="ftr__pay">
             <span><CreditCard size={16} /> Cards</span>
             <span><Banknote size={16} /> Transfer</span>
-            <span><Banknote size={16} /> Pay on Delivery</span>
+            {SITE.payOnDeliveryEnabled
+              ? <span><Banknote size={16} /> Pay on Delivery</span>
+              : <span><Smartphone size={16} /> USSD</span>}
           </div>
         </div>
       </div>
