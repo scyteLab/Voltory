@@ -329,10 +329,8 @@ export default function Product() {
         </>
       )}
 
-      <div className="section-head" style={{ marginTop: 40 }}>
-        <h2>Recently Viewed</h2>
-      </div>
-      <LastViewed />
+      {/* LastViewed has its own heading and hides itself when empty. */}
+      <LastViewed excludeSku={product.sku} />
 
       <AddToCartBar product={product} anchorRef={buyBoxRef} qty={qty} />
     </main>

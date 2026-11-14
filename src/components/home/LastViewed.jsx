@@ -5,7 +5,14 @@ import { getRecentlyViewed } from "../../utils/recentlyViewed.js";
 import ProductCard from "../product/ProductCard.jsx";
 
 /**
- * LastViewed — "Recently Viewed" homepage row.
+ * LastViewed — "Recently Viewed" row (homepage section and the
+ * bottom of every product page). It renders its OWN heading and
+ * nothing at all when there's no history, so callers must not add a
+ * heading around it.
+ *
+ * excludeSku: the product page passes the product being viewed so it
+ * isn't listed in its own "Recently Viewed" row. The list is re-read
+ * when it changes (moving from one product page to another).
  *
  * Only ever shows products the visitor actually looked at (via
  * recentlyViewed.js, written from Product.jsx on every product page
@@ -13,14 +20,14 @@ import ProductCard from "../product/ProductCard.jsx";
  * browsing history yet gets nothing here at all, not a fake "recently
  * viewed" row of products they never opened.
  */
-export default function LastViewed() {
+export default function LastViewed({ excludeSku = null }) {
   const { bySku } = useCatalog();
   const [skus, setSkus] = useState([]);
   const ref = useRef(null);
 
   useEffect(() => {
     setSkus(getRecentlyViewed());
-  }, []);
+  }, [excludeSku]);
 
   function scroll(dir) {
     const el = ref.current;
@@ -29,7 +36,7 @@ export default function LastViewed() {
     el.scrollBy({ left: dir * amount, behavior: "smooth" });
   }
 
-  const products = skus.map(bySku).filter(Boolean).slice(0, 10);
+  const products = skus.filter((s) => s !== excludeSku).map(bySku).filter(Boolean).slice(0, 10);
   if (!products.length) return null;
 
   return (
