@@ -9,6 +9,7 @@ import { MAX_COMPARE } from "../utils/comparison.js";
 import { SITE } from "../config/site.js";
 import RatingStars from "../components/product/RatingStars.jsx";
 import SEOHead from "../components/seo/SEOHead.jsx";
+import { STATIC_META } from "../lib/seo/pageMeta.js";
 import { withoutWarrantyHighlights } from "../utils/warrantyDisplay.js";
 
 /**
@@ -62,8 +63,7 @@ export default function Compare() {
   return (
     <main className="wrap cmp-page">
       <SEOHead
-        title="Compare Products"
-        description="Compare appliances side-by-side at NAVEN. Make informed buying decisions on fridges, ACs, TVs, and more."
+        {...STATIC_META["/compare"]}
       />
       <nav className="crumb" aria-label="Breadcrumb">
         <Link to="/"><HomeIcon size={13} /> Home</Link>
@@ -189,7 +189,7 @@ function ProductHead({ product, onRemove }) {
         <X size={14} />
       </button>
       <Link to={`/product/${product.slug}`} className="cmp-prodhead__img">
-        {product.image && <img src={product.image} alt={product.name} />}
+        {product.image && <img src={product.image} alt={[product.name, product.brand].filter(Boolean).join(" — ")} loading="lazy" />}
       </Link>
       <span className="cmp-prodhead__brand">{product.brand}</span>
       <Link to={`/product/${product.slug}`} className="cmp-prodhead__name">

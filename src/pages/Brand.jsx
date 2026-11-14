@@ -13,6 +13,7 @@ import FilterSidebar from "../components/category/FilterSidebar.jsx";
 import Pagination from "../components/ui/Pagination.jsx";
 import BrandLogo from "../components/brand/BrandLogo.jsx";
 import SEOHead from "../components/seo/SEOHead.jsx";
+import { brandMeta } from "../lib/seo/pageMeta.js";
 
 const SORTS = [
   { id: "popular", label: "Popularity" },
@@ -33,7 +34,7 @@ const BRAND_FILTER_CONFIG = ["rating", "price", "availability"];
 
 export default function Brand() {
   const { id: brandId } = useParams();
-  const { findBrand, byBrand, loading } = useCatalog();
+  const { findBrand, byBrand, byId, loading } = useCatalog();
   const brand = findBrand(brandId);
   const [searchParams, setSearchParams] = useSearchParams();
   const [drawerOpen, setDrawerOpen] = useState(false);
@@ -87,8 +88,9 @@ export default function Brand() {
   return (
     <main className="wrap">
       <SEOHead
-        title={brand?.name}
-        description={`Shop ${brand?.name || "top brand"} appliances at NAVEN. Nationwide delivery across Nigeria.`}
+        {...brandMeta(brand, allProducts
+          .filter((p) => p.status !== "inactive")
+          .map((p) => ({ ...p, categoryLabel: byId(p.category)?.label })))}
       />
       <nav className="crumb" aria-label="Breadcrumb">
         <Link to="/"><HomeIcon size={13} /> Home</Link>
@@ -317,6 +319,7 @@ function clearOne(searchParams, setSearchParams, chip) {
 function BrandNotFound({ id }) {
   return (
     <main className="wrap" style={{ padding: "60px 24px", textAlign: "center" }}>
+      <SEOHead title="Brand not found" noindex />
       <h1 style={{ fontSize: 26, marginBottom: 10 }}>Brand not found</h1>
       <p style={{ color: "var(--mut)", marginBottom: 22 }}>
         We don't stock <b>{id}</b> products yet. Try browsing all our brands.

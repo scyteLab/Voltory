@@ -8,6 +8,7 @@ import { useCatalog } from "../context/CatalogContext.jsx";
 import { SITE } from "../config/site.js";
 import BrandLogo from "../components/brand/BrandLogo.jsx";
 import SEOHead from "../components/seo/SEOHead.jsx";
+import { STATIC_META } from "../lib/seo/pageMeta.js";
 
 /**
  * Brands directory  —  /brands
@@ -73,8 +74,7 @@ export default function Brands() {
   return (
     <main className="wrap bd-page">
       <SEOHead
-        title="Our Brand Partners"
-        description="The brands we stock at NAVEN — Scanfrost, Midea, Samsung, Sony, Panasonic, Kenwood and more. Shop premium Nigerian appliances."
+        {...STATIC_META["/brands"]}
       />
       <nav className="crumb" aria-label="Breadcrumb">
         <Link to="/"><HomeIcon size={13} /> Home</Link>

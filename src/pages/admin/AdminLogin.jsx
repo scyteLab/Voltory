@@ -8,6 +8,7 @@ import { useAdmin } from "../../context/AdminContext.jsx";
 import { AdminThemeProvider, useAdminTheme } from "../../context/AdminThemeContext.jsx";
 import Logo from "../../components/layout/Logo.jsx";
 import Tagline from "../../components/brand/Tagline.jsx";
+import SEOHead from "../../components/seo/SEOHead.jsx";
 
 /* Traveling streak lines behind the brand panel — same motion
    signature (and same handcrafted values) as AuthShowcase on the
@@ -154,6 +155,7 @@ function LoginInner() {
 
       {/* RIGHT: form panel */}
       <main className="adm-login__form">
+        <SEOHead title="Admin sign in" noindex />
         <div className="adm-login__card">
           <div className="adm-login__card-head">
             <span className="adm-login__spark">

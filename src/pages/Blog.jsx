@@ -10,6 +10,7 @@ import { usePublicFormGuard } from "../hooks/usePublicFormGuard.js";
 import HoneypotField from "../components/ui/HoneypotField.jsx";
 import FormSendError from "../components/ui/FormSendError.jsx";
 import SEOHead from "../components/seo/SEOHead.jsx";
+import { STATIC_META } from "../lib/seo/pageMeta.js";
 
 /**
  * Blog — Coming Soon page with newsletter capture and topic
@@ -78,8 +79,7 @@ export default function Blog() {
   return (
     <main className="wrap blog-page">
       <SEOHead
-        title="Blog"
-        description="Appliance buying guides, product reviews, and tips from NAVEN — Nigeria's premium electronics store."
+        {...STATIC_META["/blog"]}
       />
       <nav className="crumb" aria-label="Breadcrumb">
         <Link to="/"><HomeIcon size={13} /> Home</Link>

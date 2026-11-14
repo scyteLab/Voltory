@@ -19,6 +19,7 @@ import FormSendError from "../components/ui/FormSendError.jsx";
 import { checkPhoneField, phoneBlur } from "../utils/phone.js";
 import Icon from "../components/ui/Icon.jsx";
 import SEOHead from "../components/seo/SEOHead.jsx";
+import { STATIC_META } from "../lib/seo/pageMeta.js";
 
 const OPEN_APPLICATION = { id: "open", title: "Open Application — no specific role" };
 
@@ -123,8 +124,7 @@ export default function Careers() {
   return (
     <main className="wrap mkt-page">
       <SEOHead
-        title="Careers"
-        description="Join the NAVEN team. Open roles in Lagos, Nigeria across tech, operations, and customer service."
+        {...STATIC_META["/careers"]}
       />
       <nav className="crumb" aria-label="Breadcrumb">
         <Link to="/"><HomeIcon size={13} /> Home</Link>

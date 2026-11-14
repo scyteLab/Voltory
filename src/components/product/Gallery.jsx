@@ -1,7 +1,9 @@
 import { useCallback, useEffect, useState } from "react";
 import { ChevronLeft, ChevronRight, Maximize2, X } from "lucide-react";
 
-export default function Gallery({ images, name }) {
+export default function Gallery({ images, name, brand }) {
+  // Alt text: product name + brand (e.g. "Inverter AC 1.5HP — Midea").
+  const altText = [name, brand].filter(Boolean).join(" — ");
   const list = images && images.length ? [...new Set(images)].filter(Boolean) : [];
   const [active, setActive] = useState(0);
   const [zooming, setZooming] = useState(false);
@@ -51,7 +53,7 @@ export default function Gallery({ images, name }) {
               aria-selected={i === active}
               role="tab"
             >
-              <img src={src} alt="" loading="lazy" />
+              <img src={src} alt={`${altText}, image ${i + 1}`} loading="lazy" decoding="async" width="72" height="72" />
             </button>
           ))}
         </div>
@@ -63,7 +65,11 @@ export default function Gallery({ images, name }) {
         >
           <img
             src={list[active]}
-            alt={name}
+            alt={list.length > 1 ? `${altText}, image ${active + 1} of ${list.length}` : altText}
+            width="800"
+            height="800"
+            decoding="async"
+            fetchPriority="high"
             className="pgallery__main"
             style={
               zooming
@@ -95,7 +101,7 @@ export default function Gallery({ images, name }) {
               <X size={22} />
             </button>
             <div className="lightbox__stage">
-              <img src={list[active]} alt={name} />
+              <img src={list[active]} alt={altText} />
             </div>
             {list.length > 1 && (
               <>

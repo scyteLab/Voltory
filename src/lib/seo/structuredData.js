@@ -1,27 +1,68 @@
 /**
- * JSON-LD structured data generators.
+ * JSON-LD structured data generators (schema.org), checked against
+ * Google's Rich Results requirements:
+ *   Organization  — name, url, logo (≥112px), contact
+ *   WebSite       — SearchAction (sitelinks search box)
+ *   Product       — name, image, offers{price, priceCurrency,
+ *                   availability, itemCondition, seller}; ratings ONLY
+ *                   from approved reviews
+ *   BreadcrumbList, ItemList
  *
- * These produce schema.org structured data that Google reads to show rich
- * snippets in search results (prices, ratings, breadcrumbs, product info).
- *
- * Returns plain JavaScript objects — the SEOHead component wraps them in
- * <script type="application/ld+json"> tags.
+ * Pure (no browser APIs): used by the React pages AND by the build-time
+ * prerender (scripts/seo-build.mjs), so both always emit the same data.
+ * Nothing here is invented: every value comes from the catalogue, the
+ * business info file or approved reviews.
  */
-import { SITE_URL, DEFAULT_OG_IMAGE } from "./defaults.js";
+import { SITE_URL } from "./defaults.js";
 import { SITE } from "../../config/site.js";
 import { BUSINESS_INFO } from "../../config/businessInfo.js";
 
+/** Same profiles as the footer. */
+export const SOCIAL_PROFILES = [
+  "https://web.facebook.com/mynavenhq/",
+  "https://www.instagram.com/mynavenhq",
+  "https://x.com/mynavenhq",
+  "https://www.tiktok.com/@mynavenhq",
+  "https://www.youtube.com/@mynavenhq",
+  "https://www.linkedin.com/company/mynavenhq",
+];
+
+const ORG_ID = `${SITE_URL}/#organization`;
+
+/** Absolute URL for an image or path; null for empty input. */
+export function absoluteUrl(src) {
+  if (!src) return null;
+  const s = String(src).trim();
+  if (/^https?:\/\//i.test(s)) return s;
+  return `${SITE_URL}${s.startsWith("/") ? "" : "/"}${s}`;
+}
+
+/** Plain text for descriptions (strips tags, collapses whitespace). */
+export function plainText(v) {
+  return String(v || "").replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim();
+}
+
 /**
- * Organization schema — identifies NAVEN as a business entity.
- * Used on the homepage. Google uses this for the knowledge panel.
+ * Organization — NAVEN as a business (homepage). Legal name is the
+ * registered Business Name (no "Ltd").
  */
 export function organizationSchema() {
   return {
     "@context": "https://schema.org",
     "@type": "Organization",
+    "@id": ORG_ID,
     "name": SITE.name,
     "legalName": BUSINESS_INFO.legalName,
     "url": SITE_URL,
+    "logo": {
+      "@type": "ImageObject",
+      "url": `${SITE_URL}/android-chrome-512x512.png`,
+      "width": 512,
+      "height": 512,
+    },
+    "image": `${SITE_URL}/og-default.png`,
+    "email": BUSINESS_INFO.supportEmail,
+    "telephone": BUSINESS_INFO.phone,
     "address": {
       "@type": "PostalAddress",
       "streetAddress": BUSINESS_INFO.addressParts.street,
@@ -29,102 +70,106 @@ export function organizationSchema() {
       "addressRegion": BUSINESS_INFO.addressParts.region,
       "addressCountry": BUSINESS_INFO.addressParts.country,
     },
-    "logo": `${SITE_URL}/og-default.png`,
-    "sameAs": [
-      "https://web.facebook.com/mynavenhq/",
-      "https://www.instagram.com/mynavenhq",
-      "https://x.com/mynavenhq",
-      "https://www.tiktok.com/@mynavenhq",
-      "https://www.youtube.com/@mynavenhq",
-      "https://www.linkedin.com/company/mynavenhq",
-    ],
-    "contactPoint": {
+    "sameAs": SOCIAL_PROFILES,
+    "contactPoint": [{
       "@type": "ContactPoint",
-      "telephone": SITE.phone,
+      "telephone": BUSINESS_INFO.phone,
+      "email": BUSINESS_INFO.supportEmail,
       "contactType": "customer service",
       "areaServed": "NG",
       "availableLanguage": ["en"],
-    },
+    }],
   };
 }
 
-/**
- * LocalBusiness schema — identifies NAVEN as a Nigerian business.
- * Used on About and Contact pages. Helps with local search.
- */
+/** Store — used on About / Contact for local search. */
 export function localBusinessSchema() {
   return {
     "@context": "https://schema.org",
     "@type": "Store",
     "name": SITE.name,
+    "legalName": BUSINESS_INFO.legalName,
     "image": `${SITE_URL}/og-default.png`,
     "url": SITE_URL,
-    "telephone": SITE.phone,
+    "telephone": BUSINESS_INFO.phone,
+    "email": BUSINESS_INFO.supportEmail,
     "address": {
       "@type": "PostalAddress",
-      "addressCountry": "NG",
-      "addressLocality": "Lagos",
-      "addressRegion": "Lagos State",
+      "streetAddress": BUSINESS_INFO.addressParts.street,
+      "addressLocality": BUSINESS_INFO.addressParts.locality,
+      "addressRegion": BUSINESS_INFO.addressParts.region,
+      "addressCountry": BUSINESS_INFO.addressParts.country,
     },
-    "priceRange": "₦₦",
   };
 }
 
-/**
- * Website schema with search action — enables the sitelinks search box in Google.
- * Used on the homepage.
- */
+/** WebSite with SearchAction (homepage). */
 export function websiteSchema() {
   return {
     "@context": "https://schema.org",
     "@type": "WebSite",
+    "@id": `${SITE_URL}/#website`,
     "name": SITE.name,
     "url": SITE_URL,
+    "publisher": { "@id": ORG_ID },
     "potentialAction": {
       "@type": "SearchAction",
-      "target": `${SITE_URL}/search?q={search_term_string}`,
+      "target": { "@type": "EntryPoint", "urlTemplate": `${SITE_URL}/search?q={search_term_string}` },
       "query-input": "required name=search_term_string",
     },
   };
 }
 
+/** Main image + uploaded gallery, absolute, de-duplicated. */
+export function productImageUrls(product) {
+  const list = [product?.image, ...(Array.isArray(product?.gallery) ? product.gallery : [])]
+    .map(absoluteUrl)
+    .filter(Boolean);
+  return [...new Set(list)];
+}
+
 /**
- * Product schema — rich snippet with price, availability, ratings.
- * Used on Product pages. Google uses this for product rich cards.
+ * Product — price, availability, condition and seller.
  *
  * Ratings are only ever real, APPROVED reviews:
  *   reviewData.summary  { average, total }  from product_review_summary
  *   reviewData.reviews  up to 5 approved reviews (author "First L.")
- * aggregateRating is added only when at least 1 approved review
- * exists; nothing is added otherwise.
+ * Without a summary, products.rating / products.reviews are used
+ * (the database computes those from approved reviews only).
+ * aggregateRating is added only when at least 1 approved review exists.
+ *
+ * opts.brandName  canonical brand name (defaults to product.brand)
+ * opts.category   { label } for the product category
  */
-export function productSchema(product, reviewData = {}) {
+export function productSchema(product, reviewData = {}, opts = {}) {
   if (!product) return null;
   const url = `${SITE_URL}/product/${product.slug}`;
-  const image = product.image ? (product.image.startsWith("http") ? product.image : `${SITE_URL}${product.image}`) : DEFAULT_OG_IMAGE;
-  const availability = product.stock > 0 ? "https://schema.org/InStock" : "https://schema.org/OutOfStock";
+  const images = productImageUrls(product);
+  const inStock = Number(product.stock) > 0;
+  const brandName = opts.brandName || product.brand;
+  const description = plainText(product.description) ||
+    `${product.name}${brandName ? ` by ${brandName}` : ""}, sold by ${SITE.name} with delivery across Nigeria.`;
 
   const schema = {
     "@context": "https://schema.org",
     "@type": "Product",
+    "@id": `${url}#product`,
     "name": product.name,
-    "image": image,
-    "description": product.description || `${product.name} — available at ${SITE.name}, with nationwide delivery across Nigeria.`,
+    "url": url,
+    "description": description.slice(0, 5000),
     "sku": product.sku,
-    "brand": {
-      "@type": "Brand",
-      "name": product.brand || "Unbranded",
-    },
+    ...(product.model ? { "mpn": product.model } : {}),
+    ...(images.length ? { "image": images } : {}),
+    ...(brandName ? { "brand": { "@type": "Brand", "name": brandName } } : {}),
+    ...(opts.category?.label ? { "category": opts.category.label } : {}),
     "offers": {
       "@type": "Offer",
       "url": url,
       "priceCurrency": "NGN",
-      "price": product.price,
-      "availability": availability,
-      "seller": {
-        "@type": "Organization",
-        "name": SITE.name,
-      },
+      "price": String(Number(product.price)),
+      "availability": inStock ? "https://schema.org/InStock" : "https://schema.org/OutOfStock",
+      "itemCondition": "https://schema.org/NewCondition",
+      "seller": { "@type": "Organization", "name": SITE.name, "@id": ORG_ID },
     },
   };
 
@@ -155,10 +200,7 @@ export function productSchema(product, reviewData = {}) {
   return schema;
 }
 
-/**
- * BreadcrumbList schema — shows breadcrumb trail in Google search results.
- * Pass an array of { name, url } objects in display order.
- */
+/** BreadcrumbList — pass [{ name, url }] in display order. */
 export function breadcrumbSchema(items) {
   if (!items || items.length === 0) return null;
   return {
@@ -168,21 +210,18 @@ export function breadcrumbSchema(items) {
       "@type": "ListItem",
       "position": index + 1,
       "name": item.name,
-      "item": item.url.startsWith("http") ? item.url : `${SITE_URL}${item.url}`,
+      "item": absoluteUrl(item.url),
     })),
   };
 }
 
-/**
- * ItemList schema — used on category and brand pages that list products.
- * Pass products and the page URL.
- */
+/** ItemList — the products on a category or brand page (first 20). */
 export function itemListSchema(products, pageUrl) {
   if (!products || products.length === 0) return null;
   return {
     "@context": "https://schema.org",
     "@type": "ItemList",
-    "url": pageUrl.startsWith("http") ? pageUrl : `${SITE_URL}${pageUrl}`,
+    "url": absoluteUrl(pageUrl),
     "numberOfItems": products.length,
     "itemListElement": products.slice(0, 20).map((p, i) => ({
       "@type": "ListItem",

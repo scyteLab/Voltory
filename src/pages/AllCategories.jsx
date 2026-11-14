@@ -6,6 +6,7 @@ import { SITE } from "../config/site.js";
 import { useCatalog } from "../context/CatalogContext.jsx";
 import Icon from "../components/ui/Icon.jsx";
 import SEOHead from "../components/seo/SEOHead.jsx";
+import { STATIC_META } from "../lib/seo/pageMeta.js";
 
 const CAT_IMAGES = {
   "refrigerators-freezers": "/products/sbs_ref.png",
@@ -25,8 +26,7 @@ export default function AllCategories() {
   return (
     <main className="wrap cats-page">
       <SEOHead
-        title="All Categories"
-        description="Browse all appliance categories at NAVEN — fridges, air conditioners, TVs, washing machines, kitchen and small appliances."
+        {...STATIC_META["/categories"]}
       />
       <nav className="crumb" aria-label="Breadcrumb">
         <Link to="/"><HomeIcon size={13} /> Home</Link>

@@ -63,7 +63,7 @@ export default function Cart() {
                   {/* Paid product line */}
                   <li className="cart-line">
                     <Link to={`/product/${p.slug}`} className="cart-line__img">
-                      {p.image && <img src={p.image} alt={p.name} />}
+                      {p.image && <img src={p.image} alt={[p.name, p.brand].filter(Boolean).join(" — ")} />}
                     </Link>
                     <div className="cart-line__info">
                       <Link to={`/product/${p.slug}`} className="cart-line__name">

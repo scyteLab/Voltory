@@ -4,6 +4,7 @@ import { SITE } from "../config/site.js";
 import { businessIdentity } from "../config/businessInfo.js";
 import { useStore } from "../context/StoreContext.jsx";
 import SEOHead from "../components/seo/SEOHead.jsx";
+import { STATIC_META } from "../lib/seo/pageMeta.js";
 
 export default function Returns() {
   const { requestCall } = useStore();
@@ -11,8 +12,7 @@ export default function Returns() {
   return (
     <main className="wrap mkt-page">
       <SEOHead
-        title="Returns & Refunds"
-        description="Return and refund policy at NAVEN — aligned with the Federal Competition and Consumer Protection Act 2018."
+        {...STATIC_META["/returns"]}
       />
       <nav className="crumb" aria-label="Breadcrumb">
         <Link to="/"><HomeIcon size={13} /> Home</Link>

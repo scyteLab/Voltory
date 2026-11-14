@@ -12,6 +12,7 @@ import { usePublicFormGuard } from "../hooks/usePublicFormGuard.js";
 import HoneypotField from "../components/ui/HoneypotField.jsx";
 import FormSendError from "../components/ui/FormSendError.jsx";
 import SEOHead from "../components/seo/SEOHead.jsx";
+import { STATIC_META } from "../lib/seo/pageMeta.js";
 import { checkPhoneField, phoneBlur } from "../utils/phone.js";
 
 const SUBJECTS = [
@@ -115,8 +116,7 @@ export default function Contact() {
   return (
     <main className="wrap support-page">
       <SEOHead
-        title="Contact Us"
-        description="Contact NAVEN — phone, WhatsApp, email. We're here to help with orders, product questions, and after-sales support."
+        {...STATIC_META["/contact"]}
       />
       <nav className="crumb" aria-label="Breadcrumb">
         <Link to="/"><HomeIcon size={13} /> Home</Link>

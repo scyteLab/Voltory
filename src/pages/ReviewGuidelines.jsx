@@ -4,6 +4,7 @@ import {
 } from "lucide-react";
 import { SITE } from "../config/site.js";
 import SEOHead from "../components/seo/SEOHead.jsx";
+import { STATIC_META } from "../lib/seo/pageMeta.js";
 
 /**
  * Review Guidelines — /reviews-guidelines
@@ -21,8 +22,7 @@ export default function ReviewGuidelines() {
   return (
     <main className="wrap rg-page">
       <SEOHead
-        title="Review Guidelines"
-        description="How to write helpful product reviews on NAVEN. Our community guidelines for honest, useful feedback."
+        {...STATIC_META["/reviews-guidelines"]}
       />
       <nav className="crumbs">
         <Link to="/">Home</Link> <span>/</span> <b>Review Guidelines</b>

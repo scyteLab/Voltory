@@ -9,6 +9,7 @@ import AdminToastHost from "./AdminToastHost.jsx";
 import NoAccess from "./NoAccess.jsx";
 import { useAdmin } from "../../context/AdminContext.jsx";
 import { canOpenPage } from "../../config/permissions.js";
+import SEOHead from "../seo/SEOHead.jsx";
 
 /**
  * The primary admin layout. Replaces the older AdminLayout.jsx
@@ -128,6 +129,7 @@ function ShellInner() {
         />
         <Breadcrumbs />
         <main className="adm-content">
+          <SEOHead title="Admin" noindex />
           <GatedOutlet />
         </main>
       </div>

@@ -1,48 +1,12 @@
-import { BrowserRouter, Link, Navigate, Outlet, Route, Routes } from "react-router-dom";
+import { lazy, Suspense } from "react";
+import { BrowserRouter, Link, Navigate, Outlet, Route, Routes, useLocation } from "react-router-dom";
+import SEOHead from "./components/seo/SEOHead.jsx";
 import { HelmetProvider } from "react-helmet-async";
 import { StoreProvider } from "./context/StoreContext.jsx";
 import { AdminProvider } from "./context/AdminContext.jsx";
 import { CatalogProvider } from "./context/CatalogContext.jsx";
 import { AuthProvider } from "./context/AuthContext.jsx";
 import { SiteSectionsProvider } from "./context/SiteSectionsContext.jsx";
-import AdminGuard from "./components/admin/AdminGuard.jsx";
-import AdminShell from "./components/admin/AdminShell.jsx";
-import AdminLogin from "./pages/admin/AdminLogin.jsx";
-import AdminDashboard from "./pages/admin/AdminDashboard.jsx";
-import CatalogProducts from "./pages/admin/CatalogProducts.jsx";
-import CatalogProductsImport from "./pages/admin/CatalogProductsImport.jsx";
-import CatalogStockImport from "./pages/admin/CatalogStockImport.jsx";
-import CatalogPriceImport from "./pages/admin/CatalogPriceImport.jsx";
-import CatalogSpecsImport from "./pages/admin/CatalogSpecsImport.jsx";
-import AdminExports from "./pages/admin/AdminExports.jsx";
-import AdminInventory from "./pages/admin/AdminInventory.jsx";
-import AdminMarketing from "./pages/admin/AdminMarketing.jsx";
-import GMPortal from "./pages/admin/GMPortal.jsx";
-import GMSetup from "./pages/admin/GMSetup.jsx";
-import AdminCategories from "./pages/admin/AdminCategories.jsx";
-import AdminBrands from "./pages/admin/AdminBrands.jsx";
-import AdminCollections from "./pages/admin/AdminCollections.jsx";
-import AdminCollectionEdit from "./pages/admin/AdminCollectionEdit.jsx";
-import AdminOffers from "./pages/admin/AdminOffers.jsx";
-import AdminOfferEdit from "./pages/admin/AdminOfferEdit.jsx";
-import AdminAttributes from "./pages/admin/AdminAttributes.jsx";
-import AdminAttributeEdit from "./pages/admin/AdminAttributeEdit.jsx";
-import AdminOrders from "./pages/admin/AdminOrders.jsx";
-import AdminOrderDetail from "./pages/admin/AdminOrderDetail.jsx";
-import AdminReceipts from "./pages/admin/AdminReceipts.jsx";
-import AdminReceiptDetail from "./pages/admin/AdminReceiptDetail.jsx";
-import AdminCustomers from "./pages/admin/AdminCustomers.jsx";
-import AdminCustomerDetail from "./pages/admin/AdminCustomerDetail.jsx";
-import AdminTeam from "./pages/admin/AdminTeam.jsx";
-import AdminWarranty from "./pages/admin/AdminWarranty.jsx";
-import AdminWarrantyDetail from "./pages/admin/AdminWarrantyDetail.jsx";
-import AdminReports from "./pages/admin/AdminReports.jsx";
-import AdminSettings from "./pages/admin/AdminSettings.jsx";
-import AdminHomepage from "./pages/admin/AdminHomepage.jsx";
-import AdminReviews from "./pages/admin/AdminReviews.jsx";
-import AdminWhatsappQuotes from "./pages/admin/AdminWhatsappQuotes.jsx";
-import AdminWhatsappQuoteDetail from "./pages/admin/AdminWhatsappQuoteDetail.jsx";
-import AdminInbox from "./pages/admin/AdminInbox.jsx";
 import TopBar from "./components/layout/TopBar.jsx";
 import Header from "./components/layout/Header.jsx";
 import Tagline from "./components/brand/Tagline.jsx";
@@ -58,42 +22,88 @@ import Logo from "./components/layout/Logo.jsx";
 import Home from "./pages/Home.jsx";
 import Product from "./pages/Product.jsx";
 import Cart from "./pages/Cart.jsx";
-import Checkout from "./pages/Checkout.jsx";
-import OrderConfirmation from "./pages/OrderConfirmation.jsx";
-import Receipt from "./pages/Receipt.jsx";
 import Collection from "./pages/Collection.jsx";
 import Category from "./pages/Category.jsx";
 import AllCategories from "./pages/AllCategories.jsx";
 import Search from "./pages/Search.jsx";
-import Login from "./pages/Login.jsx";
-import SignUp from "./pages/SignUp.jsx";
 import Brands from "./pages/Brands.jsx";
 import Brand from "./pages/Brand.jsx";
 import Deals from "./pages/Deals.jsx";
 import NewArrivals from "./pages/NewArrivals.jsx";
 import BestSellers from "./pages/BestSellers.jsx";
-import TrackOrder from "./pages/TrackOrder.jsx";
-import HelpCenter from "./pages/HelpCenter.jsx";
-import Contact from "./pages/Contact.jsx";
-import InstallationServices from "./pages/InstallationServices.jsx";
-import Blog from "./pages/Blog.jsx";
-import About from "./pages/About.jsx";
-import Careers from "./pages/Careers.jsx";
-import ReviewGuidelines from "./pages/ReviewGuidelines.jsx";
-import Affiliate from "./pages/Affiliate.jsx";
-import Compare from "./pages/Compare.jsx";
-import Terms from "./pages/Terms.jsx";
-import Privacy from "./pages/Privacy.jsx";
-import Returns from "./pages/Returns.jsx";
 import NotFound from "./pages/NotFound.jsx";
-import AccountLayout from "./pages/account/AccountLayout.jsx";
-import AccountOverview from "./pages/account/AccountOverview.jsx";
-import AccountOrders from "./pages/account/AccountOrders.jsx";
-import AccountAddresses from "./pages/account/AccountAddresses.jsx";
-import AccountReviews from "./pages/account/AccountReviews.jsx";
-import AccountWishlist from "./pages/account/AccountWishlist.jsx";
 import { SITE } from "./config/site.js";
 import { BadgeCheck, ShieldCheck, Truck } from "lucide-react";
+
+/* Code-split routes: admin, account, checkout, order/receipt, sign-in and
+   info pages load on demand, so shoppers landing on a product or
+   category page don't download the admin panel. */
+const AdminGuard = lazy(() => import("./components/admin/AdminGuard.jsx"));
+const AdminShell = lazy(() => import("./components/admin/AdminShell.jsx"));
+const AdminLogin = lazy(() => import("./pages/admin/AdminLogin.jsx"));
+const AdminDashboard = lazy(() => import("./pages/admin/AdminDashboard.jsx"));
+const CatalogProducts = lazy(() => import("./pages/admin/CatalogProducts.jsx"));
+const CatalogProductsImport = lazy(() => import("./pages/admin/CatalogProductsImport.jsx"));
+const CatalogStockImport = lazy(() => import("./pages/admin/CatalogStockImport.jsx"));
+const CatalogPriceImport = lazy(() => import("./pages/admin/CatalogPriceImport.jsx"));
+const CatalogSpecsImport = lazy(() => import("./pages/admin/CatalogSpecsImport.jsx"));
+const AdminExports = lazy(() => import("./pages/admin/AdminExports.jsx"));
+const AdminInventory = lazy(() => import("./pages/admin/AdminInventory.jsx"));
+const AdminMarketing = lazy(() => import("./pages/admin/AdminMarketing.jsx"));
+const GMPortal = lazy(() => import("./pages/admin/GMPortal.jsx"));
+const GMSetup = lazy(() => import("./pages/admin/GMSetup.jsx"));
+const AdminCategories = lazy(() => import("./pages/admin/AdminCategories.jsx"));
+const AdminBrands = lazy(() => import("./pages/admin/AdminBrands.jsx"));
+const AdminCollections = lazy(() => import("./pages/admin/AdminCollections.jsx"));
+const AdminCollectionEdit = lazy(() => import("./pages/admin/AdminCollectionEdit.jsx"));
+const AdminOffers = lazy(() => import("./pages/admin/AdminOffers.jsx"));
+const AdminOfferEdit = lazy(() => import("./pages/admin/AdminOfferEdit.jsx"));
+const AdminAttributes = lazy(() => import("./pages/admin/AdminAttributes.jsx"));
+const AdminAttributeEdit = lazy(() => import("./pages/admin/AdminAttributeEdit.jsx"));
+const AdminOrders = lazy(() => import("./pages/admin/AdminOrders.jsx"));
+const AdminOrderDetail = lazy(() => import("./pages/admin/AdminOrderDetail.jsx"));
+const AdminReceipts = lazy(() => import("./pages/admin/AdminReceipts.jsx"));
+const AdminReceiptDetail = lazy(() => import("./pages/admin/AdminReceiptDetail.jsx"));
+const AdminCustomers = lazy(() => import("./pages/admin/AdminCustomers.jsx"));
+const AdminCustomerDetail = lazy(() => import("./pages/admin/AdminCustomerDetail.jsx"));
+const AdminTeam = lazy(() => import("./pages/admin/AdminTeam.jsx"));
+const AdminWarranty = lazy(() => import("./pages/admin/AdminWarranty.jsx"));
+const AdminWarrantyDetail = lazy(() => import("./pages/admin/AdminWarrantyDetail.jsx"));
+const AdminReports = lazy(() => import("./pages/admin/AdminReports.jsx"));
+const AdminSettings = lazy(() => import("./pages/admin/AdminSettings.jsx"));
+const AdminHomepage = lazy(() => import("./pages/admin/AdminHomepage.jsx"));
+const AdminReviews = lazy(() => import("./pages/admin/AdminReviews.jsx"));
+const AdminWhatsappQuotes = lazy(() => import("./pages/admin/AdminWhatsappQuotes.jsx"));
+const AdminWhatsappQuoteDetail = lazy(() => import("./pages/admin/AdminWhatsappQuoteDetail.jsx"));
+const AdminInbox = lazy(() => import("./pages/admin/AdminInbox.jsx"));
+const Checkout = lazy(() => import("./pages/Checkout.jsx"));
+const OrderConfirmation = lazy(() => import("./pages/OrderConfirmation.jsx"));
+const Receipt = lazy(() => import("./pages/Receipt.jsx"));
+const Login = lazy(() => import("./pages/Login.jsx"));
+const SignUp = lazy(() => import("./pages/SignUp.jsx"));
+const TrackOrder = lazy(() => import("./pages/TrackOrder.jsx"));
+const HelpCenter = lazy(() => import("./pages/HelpCenter.jsx"));
+const Contact = lazy(() => import("./pages/Contact.jsx"));
+const InstallationServices = lazy(() => import("./pages/InstallationServices.jsx"));
+const Blog = lazy(() => import("./pages/Blog.jsx"));
+const About = lazy(() => import("./pages/About.jsx"));
+const Careers = lazy(() => import("./pages/Careers.jsx"));
+const ReviewGuidelines = lazy(() => import("./pages/ReviewGuidelines.jsx"));
+const Affiliate = lazy(() => import("./pages/Affiliate.jsx"));
+const Compare = lazy(() => import("./pages/Compare.jsx"));
+const Terms = lazy(() => import("./pages/Terms.jsx"));
+const Privacy = lazy(() => import("./pages/Privacy.jsx"));
+const Returns = lazy(() => import("./pages/Returns.jsx"));
+const AccountLayout = lazy(() => import("./pages/account/AccountLayout.jsx"));
+const AccountOverview = lazy(() => import("./pages/account/AccountOverview.jsx"));
+const AccountOrders = lazy(() => import("./pages/account/AccountOrders.jsx"));
+const AccountAddresses = lazy(() => import("./pages/account/AccountAddresses.jsx"));
+const AccountReviews = lazy(() => import("./pages/account/AccountReviews.jsx"));
+const AccountWishlist = lazy(() => import("./pages/account/AccountWishlist.jsx"));
+
+function RouteLoading() {
+  return <div className="route-loading" role="status" aria-live="polite"><span className="route-loading__spin" aria-hidden="true" /> Loading…</div>;
+}
 
 const AUTH_TRUST = [
   { Icon: ShieldCheck, text: "100% Original Products — sourced from authorized distributors." },
@@ -101,13 +111,24 @@ const AUTH_TRUST = [
   { Icon: Truck, text: "Fast & reliable delivery across Nigeria." },
 ];
 
+/* Private paths: never indexed (also sent as an X-Robots-Tag header by
+   netlify.toml). A page's own SEOHead, rendered deeper, still wins. */
+const PRIVATE_PATH = /^\/(account|admin|cart|checkout|order|receipt|track-order|login|signup|verify-otp)(\/|$)/;
+function PrivateNoIndex() {
+  const { pathname } = useLocation();
+  return PRIVATE_PATH.test(pathname) ? <SEOHead title="NAVEN" noindex /> : null;
+}
+
 function StoreLayout() {
   return (
     <>
+      <PrivateNoIndex />
       <TopBar />
       <Header />
       <MainNav />
-      <Outlet />
+      <Suspense fallback={<RouteLoading />}>
+        <Outlet />
+      </Suspense>
       <Footer />
       <WhatsAppBubble />
       <MobileBottomNav />
@@ -145,7 +166,9 @@ function AuthLayout() {
         </p>
       </div>
       <div className="auth-form-panel">
-        <Outlet />
+        <Suspense fallback={<RouteLoading />}>
+          <Outlet />
+        </Suspense>
       </div>
     </div>
   );
@@ -161,6 +184,7 @@ export default function App() {
               <SiteSectionsProvider>
           <BrowserRouter>
             <ScrollToTop />
+            <Suspense fallback={<RouteLoading />}>
             <Routes>
               <Route element={<StoreLayout />}>
                 <Route path="/" element={<Home />} />
@@ -256,6 +280,7 @@ export default function App() {
                 <Route path="/admin/settings" element={<AdminSettings />} />
               </Route>
             </Routes>
+            </Suspense>
           </BrowserRouter>
               </SiteSectionsProvider>
             </AuthProvider>

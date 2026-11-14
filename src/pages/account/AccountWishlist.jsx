@@ -34,7 +34,7 @@ export default function AccountWishlist() {
             return (
               <li key={p.sku} className="wish-card">
                 <Link to={`/product/${p.slug}`} className="wish-card__img">
-                  {p.image && <img src={p.image} alt={p.name} />}
+                  {p.image && <img src={p.image} alt={[p.name, p.brand].filter(Boolean).join(" — ")} loading="lazy" />}
                 </Link>
                 <div className="wish-card__body">
                   <Link to={`/product/${p.slug}`} className="wish-card__name">

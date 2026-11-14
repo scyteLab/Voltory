@@ -13,6 +13,7 @@ import Icon from "../components/ui/Icon.jsx";
 import BrandLogo from "../components/brand/BrandLogo.jsx";
 import Tagline from "../components/brand/Tagline.jsx";
 import SEOHead from "../components/seo/SEOHead.jsx";
+import { STATIC_META } from "../lib/seo/pageMeta.js";
 
 export default function About() {
   const { brands: BRANDS } = useCatalog();
@@ -21,8 +22,7 @@ export default function About() {
   return (
     <main className="wrap mkt-page">
       <SEOHead
-        title="About"
-        description="Learn about NAVEN, Nigeria's premium electronics retailer. Our mission, our brands, and our commitment to quality home appliances."
+        {...STATIC_META["/about"]}
       />
       <nav className="crumb" aria-label="Breadcrumb">
         <Link to="/"><HomeIcon size={13} /> Home</Link>

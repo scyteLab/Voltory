@@ -7,6 +7,13 @@
 [functions]
   node_bundler = "esbuild"
 
+# One host: www → apex (also first in public/_redirects, which wins).
+[[redirects]]
+  from = "https://www.mynaven.com/*"
+  to = "https://mynaven.com/:splat"
+  status = 301
+  force = true
+
 # API routes for serverless functions — accessed at /api/*
 # (Netlify auto-serves under /.netlify/functions/*; the rewrite
 # below gives us cleaner URLs.)
@@ -36,9 +43,105 @@
   to   = "/.netlify/functions/order-switch-pod"
   status = 200
 
+# Real 404s for unknown products / categories / brands (prerendered
+# files win over these). Same as public/_redirects.
+[[redirects]]
+  from = "/product/*"
+  to = "/404.html"
+  status = 404
+
+[[redirects]]
+  from = "/category/*"
+  to = "/404.html"
+  status = 404
+
+[[redirects]]
+  from = "/brand/*"
+  to = "/404.html"
+  status = 404
+
 # SPA fallback — MUST be after the /api rewrites so it doesn't swallow
-# API paths.
+# API paths. _app.html = app shell with a generic head (index.html is
+# the prerendered homepage).
 [[redirects]]
   from = "/*"
-  to = "/index.html"
+  to = "/_app.html"
   status = 200
+
+# ------------------------------------------------------------------
+# Headers
+# ------------------------------------------------------------------
+
+# Vite's hashed bundles never change: cache for a year.
+[[headers]]
+  for = "/assets/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
+# Static images in public/ (not hashed): a week, then revalidate.
+[[headers]]
+  for = "/brands/*"
+  [headers.values]
+    Cache-Control = "public, max-age=604800, stale-while-revalidate=86400"
+[[headers]]
+  for = "/banners/*"
+  [headers.values]
+    Cache-Control = "public, max-age=604800, stale-while-revalidate=86400"
+[[headers]]
+  for = "/products/*"
+  [headers.values]
+    Cache-Control = "public, max-age=604800, stale-while-revalidate=86400"
+[[headers]]
+  for = "/illustrations/*"
+  [headers.values]
+    Cache-Control = "public, max-age=604800, stale-while-revalidate=86400"
+[[headers]]
+  for = "/menu/*"
+  [headers.values]
+    Cache-Control = "public, max-age=604800, stale-while-revalidate=86400"
+
+# Private pages: never indexed, even by crawlers that don't run JS.
+[[headers]]
+  for = "/admin/*"
+  [headers.values]
+    X-Robots-Tag = "noindex, nofollow"
+[[headers]]
+  for = "/admin"
+  [headers.values]
+    X-Robots-Tag = "noindex, nofollow"
+[[headers]]
+  for = "/account/*"
+  [headers.values]
+    X-Robots-Tag = "noindex, nofollow"
+[[headers]]
+  for = "/account"
+  [headers.values]
+    X-Robots-Tag = "noindex, nofollow"
+[[headers]]
+  for = "/order/*"
+  [headers.values]
+    X-Robots-Tag = "noindex, nofollow"
+[[headers]]
+  for = "/receipt/*"
+  [headers.values]
+    X-Robots-Tag = "noindex, nofollow"
+[[headers]]
+  for = "/cart"
+  [headers.values]
+    X-Robots-Tag = "noindex, nofollow"
+[[headers]]
+  for = "/checkout"
+  [headers.values]
+    X-Robots-Tag = "noindex, nofollow"
+[[headers]]
+  for = "/track-order"
+  [headers.values]
+    X-Robots-Tag = "noindex, nofollow"
+[[headers]]
+  for = "/login"
+  [headers.values]
+    X-Robots-Tag = "noindex, nofollow"
+[[headers]]
+  for = "/signup"
+  [headers.values]
+    X-Robots-Tag = "noindex, nofollow"

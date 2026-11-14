@@ -17,6 +17,7 @@ import {
   buildProductAttributeMap,
 } from "../lib/productAttributesClient.js";
 import SEOHead from "../components/seo/SEOHead.jsx";
+import { categoryMeta } from "../lib/seo/pageMeta.js";
 
 const SORTS = [
   { id: "popular", label: "Popularity" },
@@ -185,16 +186,13 @@ export default function Category() {
     : selectedBrandNames.length > 1
       ? `No ${label.toLowerCase()} from these brands match these filters`
       : "No products match these filters";
-  const seoTitle = oneBrand ? `${oneBrand} ${label}` : label;
-  const seoDescription = oneBrand
-    ? `Shop ${oneBrand} ${label.toLowerCase()} at NAVEN. Genuine products with manufacturer warranty and nationwide delivery across Nigeria.`
-    : `Shop ${label || "appliances"} at NAVEN. Browse top brands with nationwide delivery across Nigeria.`;
+  const seo = categoryMeta(category, baseProducts.filter((p) => p.status !== "inactive"), { brandFilter: oneBrand });
 
   return (
     <main className="wrap">
       {/* Canonical stays the plain category URL (SEOHead builds it from
           the pathname, never the query), so filtered views aren't duplicates. */}
-      <SEOHead title={seoTitle} description={seoDescription} />
+      <SEOHead {...seo} />
       <nav className="crumb" aria-label="Breadcrumb">
         <Link to="/"><HomeIcon size={13} /> Home</Link>
         <ChevronRight size={12} />
@@ -230,7 +228,7 @@ export default function Category() {
               <Link to={`/product/${p.slug}`} key={p.sku} className="cdeal-card">
                 <span className="cdeal-card__off">-{discountPct(p.price, p.was)}%</span>
                 <span className="cdeal-card__img">
-                  {p.image && <img src={p.image} alt={p.name} loading="lazy" />}
+                  {p.image && <img src={p.image} alt={[p.name, p.brand].filter(Boolean).join(" — ")} loading="lazy" decoding="async" />}
                 </span>
                 <span className="cdeal-card__name">{p.name}</span>
                 <span className="cdeal-card__price">{naira(p.price)}</span>
@@ -710,6 +708,7 @@ function clearOne(searchParams, setSearchParams, chip) {
 function CategoryNotFound({ id }) {
   return (
     <main className="wrap" style={{ padding: "60px 24px", textAlign: "center" }}>
+      <SEOHead title="Category not found" noindex />
       <h1 style={{ fontSize: 26, marginBottom: 10 }}>Category not found</h1>
       <p style={{ color: "var(--mut)", marginBottom: 22 }}>
         <b>{id}</b> isn't a category we currently stock. Try the home page or browse our categories.

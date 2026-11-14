@@ -85,7 +85,7 @@ export default function ProductCard({ product }) {
 
       <Link to={`/product/${p.slug}`} className="pcard__img" aria-label={p.name} onClick={recordView}>
         {p.image ? (
-          <img src={p.image} alt={p.name} loading="lazy" />
+          <img src={p.image} alt={[p.name, p.brand].filter(Boolean).join(" — ")} loading="lazy" decoding="async" width="300" height="300" />
         ) : (
           <Icon name={p.icon} size={52} strokeWidth={1.2} />
         )}

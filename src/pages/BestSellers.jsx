@@ -10,6 +10,7 @@ import ProductCard from "../components/product/ProductCard.jsx";
 import FilterSidebar from "../components/category/FilterSidebar.jsx";
 import Pagination from "../components/ui/Pagination.jsx";
 import SEOHead from "../components/seo/SEOHead.jsx";
+import { STATIC_META } from "../lib/seo/pageMeta.js";
 
 const SORTS = [
   { id: "bestseller", label: "Most Popular" },
@@ -72,8 +73,7 @@ export default function BestSellers() {
   return (
     <main className="wrap">
       <SEOHead
-        title="Best Sellers"
-        description="The most popular appliances on NAVEN. See what Nigerian customers are buying right now."
+        {...STATIC_META["/best-sellers"]}
       />
       <nav className="crumb" aria-label="Breadcrumb">
         <Link to="/"><HomeIcon size={13} /> Home</Link>

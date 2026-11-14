@@ -10,6 +10,7 @@ import ProductCard from "../components/product/ProductCard.jsx";
 import FilterSidebar from "../components/category/FilterSidebar.jsx";
 import Pagination from "../components/ui/Pagination.jsx";
 import SEOHead from "../components/seo/SEOHead.jsx";
+import { STATIC_META } from "../lib/seo/pageMeta.js";
 
 const SORTS = [
   { id: "newest", label: "Newest First" },
@@ -103,8 +104,7 @@ export default function NewArrivals() {
   return (
     <main className="wrap">
       <SEOHead
-        title="New Arrivals"
-        description="The freshest in-stock arrivals at NAVEN. Just-added products and recently restocked favourites across every category."
+        {...STATIC_META["/new"]}
       />
       <nav className="crumb" aria-label="Breadcrumb">
         <Link to="/"><HomeIcon size={13} /> Home</Link>

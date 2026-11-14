@@ -21,6 +21,7 @@ import { naira } from "../utils/format.js";
 import Icon from "../components/ui/Icon.jsx";
 import Tagline from "../components/brand/Tagline.jsx";
 import SEOHead from "../components/seo/SEOHead.jsx";
+import { STATIC_META } from "../lib/seo/pageMeta.js";
 
 const NG_STATES = [
   "Abia", "Adamawa", "Akwa Ibom", "Anambra", "Bauchi", "Bayelsa", "Benue",
@@ -131,8 +132,7 @@ export default function InstallationServices() {
   return (
     <main className="wrap install-page">
       <SEOHead
-        title="Installation Services"
-        description="Professional appliance installation across Lagos and Nigeria. Air conditioners, washing machines, cookers, and more."
+        {...STATIC_META["/services/installation"]}
       />
       <nav className="crumb" aria-label="Breadcrumb">
         <Link to="/"><HomeIcon size={13} /> Home</Link>

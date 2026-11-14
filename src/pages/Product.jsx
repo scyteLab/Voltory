@@ -23,11 +23,12 @@ import ProductCard from "../components/product/ProductCard.jsx";
 import LastViewed from "../components/home/LastViewed.jsx";
 import OfferBadge from "../components/product/OfferBadge.jsx";
 import SEOHead from "../components/seo/SEOHead.jsx";
-import { productSchema, breadcrumbSchema } from "../lib/seo/structuredData.js";
+import { productMeta } from "../lib/seo/pageMeta.js";
 
 function NotFound({ slug }) {
   return (
     <main className="wrap" style={{ padding: "80px 24px", textAlign: "center" }}>
+      <SEOHead title="Product not found" noindex />
       <h1 style={{ fontSize: 28, marginBottom: 10 }}>Product not found</h1>
       <p style={{ color: "var(--mut)", marginBottom: 24 }}>
         We couldn't find a product matching <b>{slug}</b>. It may have been
@@ -82,7 +83,7 @@ export default function Product() {
   const { slug } = useParams();
   const {
     products, loading, error, reload,
-    bySlug, bySku, byCategory, getOfferBySku,
+    bySlug, bySku, byCategory, byId, getOfferBySku,
   } = useCatalog();
   const navigate = useNavigate();
   const product = bySlug(slug);
@@ -140,18 +141,10 @@ export default function Product() {
   return (
     <main className="wrap">
       <SEOHead
-        title={product?.name}
-        description={product ? `Buy ${product.name} at NAVEN. ${(product.description || "").slice(0, 100)}` : undefined}
-        image={product?.image}
-        type="product"
-        jsonLd={product ? [productSchema(product, {
-          summary: reviews.summaryLoaded ? reviews.summary : null,
-          reviews: reviews.seoReviews,
-        }), breadcrumbSchema([
-          { name: "Home", url: "/" },
-          { name: "Products", url: "/categories" },
-          { name: product.name, url: `/product/${product.slug}` },
-        ])] : []}
+        {...productMeta(product, {
+          category: byId(product.category),
+          reviewData: { summary: reviews.summaryLoaded ? reviews.summary : null, reviews: reviews.seoReviews },
+        })}
       />
 
       <nav className="crumb" aria-label="Breadcrumb">
@@ -163,7 +156,7 @@ export default function Product() {
       </nav>
 
       <section className="pdp">
-        <Gallery images={productImages(product)} name={product.name} />
+        <Gallery images={productImages(product)} name={product.name} brand={product.brand} />
 
         <div className="pdp__buy" ref={buyBoxRef}>
           <div className="pdp__brand">
@@ -279,13 +272,13 @@ export default function Product() {
           </div>
           <div className="bundle__items">
             <div className="bundle__item">
-              <span className="bundle__img">{product.image && <img src={product.image} alt="" />}</span>
+              <span className="bundle__img">{product.image && <img src={product.image} alt={`${product.name} — ${product.brand}`} loading="lazy" width="80" height="80" />}</span>
               <p>{product.name}</p>
               <b>{naira(product.price)}</b>
             </div>
             <span className="bundle__plus">+</span>
             <div className="bundle__item">
-              <span className="bundle__img">{addon.image && <img src={addon.image} alt="" />}</span>
+              <span className="bundle__img">{addon.image && <img src={addon.image} alt={`${addon.name} — ${addon.brand}`} loading="lazy" width="80" height="80" />}</span>
               <p>{addon.name}</p>
               <b>{naira(addon.price)}</b>
             </div>

@@ -4,6 +4,7 @@ import { SITE } from "../config/site.js";
 import { businessIdentity } from "../config/businessInfo.js";
 import { useStore } from "../context/StoreContext.jsx";
 import SEOHead from "../components/seo/SEOHead.jsx";
+import { STATIC_META } from "../lib/seo/pageMeta.js";
 
 export default function Privacy() {
   const { requestCall } = useStore();
@@ -11,8 +12,7 @@ export default function Privacy() {
   return (
     <main className="wrap mkt-page">
       <SEOHead
-        title="Privacy Policy"
-        description="How NAVEN collects, uses, and protects your personal data under the Nigeria Data Protection Act 2023 (NDPA)."
+        {...STATIC_META["/privacy"]}
       />
       <nav className="crumb" aria-label="Breadcrumb">
         <Link to="/"><HomeIcon size={13} /> Home</Link>

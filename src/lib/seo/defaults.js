@@ -11,11 +11,12 @@ export const SITE_URL = "https://mynaven.com";
 export const DEFAULT_OG_IMAGE = `${SITE_URL}/og-default.png`;
 
 /**
- * Build a page title in the standard "<Page Title> — NAVEN" format.
+ * Page title: "<Page Title> | NAVEN" (products: "Name | Brand | NAVEN").
+ * No title → "NAVEN | The Premium Electronics" (homepage).
  */
 export function buildTitle(pageTitle) {
-  if (!pageTitle) return SITE.name;
-  return `${pageTitle} — ${SITE.name}`;
+  if (!pageTitle) return `${SITE.name} | ${SITE.tagline}`;
+  return `${pageTitle} | ${SITE.name}`;
 }
 
 /**
@@ -23,7 +24,9 @@ export function buildTitle(pageTitle) {
  * Strips trailing slashes except for the homepage.
  */
 export function buildCanonical(path = "/") {
-  const cleanPath = path === "/" ? "/" : path.replace(/\/+$/, "");
+  // Path only: never the ?query or #hash (filtered views aren't duplicates).
+  const pathOnly = String(path || "/").replace(/^https?:\/\/[^/]+/i, "").split(/[?#]/)[0] || "/";
+  const cleanPath = pathOnly === "/" ? "/" : pathOnly.replace(/\/+$/, "");
   return `${SITE_URL}${cleanPath}`;
 }
 

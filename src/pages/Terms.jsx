@@ -4,6 +4,7 @@ import { SITE } from "../config/site.js";
 import { businessIdentity } from "../config/businessInfo.js";
 import { useStore } from "../context/StoreContext.jsx";
 import SEOHead from "../components/seo/SEOHead.jsx";
+import { STATIC_META } from "../lib/seo/pageMeta.js";
 
 export default function Terms() {
   const { requestCall } = useStore();
@@ -11,8 +12,7 @@ export default function Terms() {
   return (
     <main className="wrap mkt-page">
       <SEOHead
-        title="Terms & Conditions"
-        description="NAVEN's Terms & Conditions — issued under the Federal Competition and Consumer Protection Act 2018 (FCCPC Act) and the Nigeria Data Protection Act 2023 (NDPA)."
+        {...STATIC_META["/terms"]}
       />
       <nav className="crumb" aria-label="Breadcrumb">
         <Link to="/"><HomeIcon size={13} /> Home</Link>

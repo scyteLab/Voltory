@@ -1,10 +1,24 @@
 # Netlify processes this file BEFORE the [[redirects]] in netlify.toml,
-# and stops at the first match — so the API rewrites must come before
-# the SPA catch-all, here as well as in netlify.toml.
+# and stops at the first match. Keep netlify.toml in sync.
+
+# One host: www → apex (and the canonical URLs all use https://mynaven.com).
+https://www.mynaven.com/*  https://mynaven.com/:splat  301!
+http://www.mynaven.com/*   https://mynaven.com/:splat  301!
+
+# API rewrites (must come before the catch-alls).
 /api/send-email          /.netlify/functions/send-email          200
 /api/paystack-verify     /.netlify/functions/paystack-verify     200
 /api/paystack-webhook    /.netlify/functions/paystack-webhook    200
 /api/order-switch-pod    /.netlify/functions/order-switch-pod    200
 
-# SPA fallback — must stay last.
-/*    /index.html   200
+# Real 404s. Every live product / category / brand has a prerendered
+# file (dist/product/<slug>.html etc., scripts/seo-build.mjs), and an
+# existing file always wins over these rules. Anything else under these
+# paths is unknown: HTTP 404 with the app shell (the app still loads
+# and shows its "not found" page).
+/product/*     /404.html   404
+/category/*    /404.html   404
+/brand/*       /404.html   404
+
+# SPA fallback (generic head, no canonical). Must stay last.
+/*    /_app.html   200

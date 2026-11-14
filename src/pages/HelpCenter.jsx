@@ -8,6 +8,7 @@ import { HELP_TOPICS } from "../config/helpCenter.js";
 import { SITE } from "../config/site.js";
 import Icon from "../components/ui/Icon.jsx";
 import SEOHead from "../components/seo/SEOHead.jsx";
+import { STATIC_META } from "../lib/seo/pageMeta.js";
 
 export default function HelpCenter() {
   const [query, setQuery] = useState("");
@@ -47,8 +48,7 @@ export default function HelpCenter() {
   return (
     <main className="wrap support-page">
       <SEOHead
-        title="Help Center"
-        description="Help Center at NAVEN. FAQs on orders, delivery, returns, warranty, and after-sales support."
+        {...STATIC_META["/help"]}
       />
       <nav className="crumb" aria-label="Breadcrumb">
         <Link to="/"><HomeIcon size={13} /> Home</Link>

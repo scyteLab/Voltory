@@ -1,7 +1,7 @@
 import { SITE } from "../config/site.js";
 import HomeRenderer from "../components/home/HomeRenderer.jsx";
 import SEOHead from "../components/seo/SEOHead.jsx";
-import { organizationSchema, websiteSchema } from "../lib/seo/structuredData.js";
+import { homeMeta } from "../lib/seo/pageMeta.js";
 
 /**
  * Home — the storefront landing page.
@@ -19,10 +19,7 @@ export default function Home() {
 
   return (
     <>
-      <SEOHead
-        description="NAVEN — The Premium Electronics. Shop fridges, air conditioners, TVs, washing machines and premium appliances from Scanfrost, Midea, Samsung, Sony, Panasonic, Kenwood. Nationwide delivery, pay-on-delivery available."
-        jsonLd={[organizationSchema(), websiteSchema()]}
-      />
+      <SEOHead {...homeMeta()} />
       <HomeRenderer />
     </>
   );

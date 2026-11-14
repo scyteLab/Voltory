@@ -1,24 +1,20 @@
-# NAVEN robots.txt
-# https://mynaven.com
+# NAVEN robots.txt — https://mynaven.com
+#
+# Everything is crawlable except private / per-customer pages (these
+# also send "X-Robots-Tag: noindex" and a noindex meta tag).
+# Paths without a trailing slash cover the page itself and its sub-pages.
 
 User-agent: *
 Allow: /
-
-# Block admin and auth areas
-# (/admin and /account without a trailing slash so the /admin login page
-# and the /account landing page are covered too, not just their sub-pages)
 Disallow: /admin
 Disallow: /account
 Disallow: /cart
 Disallow: /checkout
 Disallow: /order/
 Disallow: /receipt/
+Disallow: /track-order
 Disallow: /login
 Disallow: /signup
+Disallow: /verify-otp
 
-# Allow Google's image crawler full access
-User-agent: Googlebot-Image
-Allow: /
-
-# Sitemap location
 Sitemap: https://mynaven.com/sitemap.xml

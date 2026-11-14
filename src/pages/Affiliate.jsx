@@ -8,6 +8,7 @@ import {
 } from "lucide-react";
 import { SITE } from "../config/site.js";
 import SEOHead from "../components/seo/SEOHead.jsx";
+import { STATIC_META } from "../lib/seo/pageMeta.js";
 import { clip, isValidEmail, submitFormSubmission } from "../lib/publicFormsClient.js";
 import { usePublicFormGuard } from "../hooks/usePublicFormGuard.js";
 import HoneypotField from "../components/ui/HoneypotField.jsx";
@@ -24,8 +25,7 @@ export default function Affiliate() {
   return (
     <main className="wrap mkt-page">
       <SEOHead
-        title="Affiliate Program"
-        description="Join the NAVEN affiliate program. Earn commission by referring customers to premium Nigerian home appliances."
+        {...STATIC_META["/affiliate"]}
       />
       <nav className="crumb" aria-label="Breadcrumb">
         <Link to="/"><HomeIcon size={13} /> Home</Link>

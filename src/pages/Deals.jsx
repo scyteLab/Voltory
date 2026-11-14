@@ -12,6 +12,7 @@ import FilterSidebar from "../components/category/FilterSidebar.jsx";
 import CountdownTimer from "../components/home/CountdownTimer.jsx";
 import Pagination from "../components/ui/Pagination.jsx";
 import SEOHead from "../components/seo/SEOHead.jsx";
+import { STATIC_META } from "../lib/seo/pageMeta.js";
 
 const SORTS = [
   { id: "discount", label: "Biggest Discount First" },
@@ -139,8 +140,7 @@ export default function Deals() {
   return (
     <main className="wrap">
       <SEOHead
-        title="Deals & Offers"
-        description="Current deals on appliances at NAVEN. Discounts on fridges, ACs, TVs, washing machines — refreshed regularly."
+        {...STATIC_META["/deals"]}
       />
       <nav className="crumb" aria-label="Breadcrumb">
         <Link to="/"><HomeIcon size={13} /> Home</Link>
