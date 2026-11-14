@@ -33,7 +33,7 @@ export const lagosTime = (iso) =>
 /** One line, no control characters, bounded — safe for a Subject header. */
 export const subjectLine = (s) => String(s).replace(/[\r\n\t]+/g, " ").replace(/\s+/g, " ").trim().slice(0, 200);
 
-function shell({ title, preheader, body }) {
+function shell({ title, preheader, body, tag = "Team notification", footer = "Sent automatically when a new record was saved in the NAVEN database." }) {
   return `<!DOCTYPE html>
 <html>
 <head>
@@ -50,7 +50,7 @@ function shell({ title, preheader, body }) {
           <tr>
             <td style="background:${NAVY};padding:18px 24px;">
               <span style="font-size:20px;font-weight:800;color:#ffffff;letter-spacing:0.04em;">NAVEN</span>
-              <span style="font-size:12px;color:#c7c5ea;padding-left:8px;">Team notification</span>
+              ${tag ? `<span style="font-size:12px;color:#c7c5ea;padding-left:8px;">${esc(tag)}</span>` : ""}
             </td>
           </tr>
           <tr>
@@ -60,7 +60,7 @@ function shell({ title, preheader, body }) {
           </tr>
           <tr>
             <td style="background:${BG};padding:14px 24px;border-top:1px solid ${LINE};font-size:11px;color:${MUT};">
-              Sent automatically when a new record was saved in the NAVEN database.
+              ${footer}
             </td>
           </tr>
         </table>
@@ -157,4 +157,48 @@ export function notificationEmail({ heading, intro = "", rows, items = null, tot
   ].join("\n");
 
   return { html: shell({ title: heading, preheader: intro || heading, body }), text };
+}
+
+/**
+ * Customer email: a question they asked on a product page was answered.
+ *   productName, productUrl, question, answer, answeredAt (ISO)
+ *   support: { email, phone, whatsappLink }
+ */
+export function questionAnsweredEmail({ firstName = "", productName, productUrl, question, answer, answeredAt, support }) {
+  const hello = firstName ? `Hi ${firstName},` : "Hello,";
+  const quote = (label, value, strong) => `
+    <p style="margin:18px 0 6px;font-size:11px;color:${MUT};text-transform:uppercase;letter-spacing:0.04em;">${esc(label)}</p>
+    <div style="padding:14px;background:${strong ? "#eef2ff" : BG};border-radius:8px;font-size:14px;line-height:1.55;white-space:pre-wrap;word-break:break-word;">${esc(value)}</div>`;
+  const body = `
+    <p style="margin:0 0 10px;font-size:15px;">${esc(hello)}</p>
+    <p style="margin:0 0 4px;font-size:15px;line-height:1.5;">Our team has answered your question about <b>${esc(productName)}</b>.</p>
+    ${quote("Your question", question)}
+    ${quote(`NAVEN Team · ${lagosTime(answeredAt)}`, answer, true)}
+    <div style="margin:24px 0 4px;text-align:center;">
+      <a href="${esc(productUrl)}" style="display:inline-block;padding:12px 26px;background:${NAVY};color:#ffffff;text-decoration:none;border-radius:8px;font-weight:700;font-size:14px;">View the product</a>
+    </div>
+    <p style="margin:18px 0 0;font-size:13px;color:${MUT};line-height:1.5;">
+      More questions? Reply to this email, write to <a href="mailto:${esc(support.email)}" style="color:${NAVY};">${esc(support.email)}</a>
+      or <a href="${esc(support.whatsappLink)}" style="color:${NAVY};">WhatsApp us on ${esc(support.phone)}</a>.
+    </p>`;
+  const footer = `You're getting this because you asked a question on <a href="${esc(productUrl)}" style="color:${MUT};">mynaven.com</a>. We only email you about your questions and orders.`;
+  const text = [
+    hello,
+    "",
+    `Our team has answered your question about ${productName}.`,
+    "",
+    "Your question:",
+    question,
+    "",
+    `NAVEN Team (${lagosTime(answeredAt)}):`,
+    answer,
+    "",
+    `View the product: ${productUrl}`,
+    "",
+    `More questions? Reply to this email, write to ${support.email} or WhatsApp us on ${support.phone}.`,
+  ].join("\n");
+  return {
+    html: shell({ title: `Your question about ${productName}`, preheader: answer.slice(0, 120), body, tag: "", footer }),
+    text,
+  };
 }

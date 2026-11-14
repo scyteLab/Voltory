@@ -18,6 +18,8 @@ import SpecsTabs from "../components/product/SpecsTabs.jsx";
 import ProductSpecsSection from "../components/product/ProductSpecsSection.jsx";
 import ReviewsSection from "../components/product/ReviewsSection.jsx";
 import { useProductReviews } from "../hooks/useProductReviews.js";
+import QuestionsSection from "../components/product/QuestionsSection.jsx";
+import { useProductQuestions } from "../hooks/useProductQuestions.js";
 import AddToCartBar from "../components/product/AddToCartBar.jsx";
 import ProductCard from "../components/product/ProductCard.jsx";
 import LastViewed from "../components/home/LastViewed.jsx";
@@ -95,6 +97,8 @@ export default function Product() {
   const buyBoxRef = useRef(null);
   // Approved reviews: feeds both the reviews section and the structured data.
   const reviews = useProductReviews(product?.sku);
+  // Answered questions (public) + the customer's own pending ones.
+  const questions = useProductQuestions(product?.sku);
 
   useEffect(() => {
     if (!product) return;
@@ -176,6 +180,11 @@ export default function Product() {
               </a>
             ) : (
               <RatingStars rating={product.rating} reviews={product.reviews} size={14} />
+            )}
+            {questions.count > 0 && (
+              <a href="#questions-heading" className="pdp__qa-link">
+                {questions.count} answered question{questions.count === 1 ? "" : "s"}
+              </a>
             )}
             <span className="pdp__sku">SKU <b className="mono">{product.sku}</b></span>
             {product.model && <span className="pdp__sku">Model <b className="mono">{product.model}</b></span>}
@@ -298,6 +307,13 @@ export default function Product() {
       <ProductSpecsSection product={product} />
 
       <ReviewsSection productName={product.name} productSlug={product.slug} reviews={reviews} />
+
+      <QuestionsSection
+        productName={product.name}
+        productSlug={product.slug}
+        waHref={whatsappUrl(productHelpMessage(product))}
+        qa={questions}
+      />
 
       {related.length > 0 && (
         <>

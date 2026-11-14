@@ -479,7 +479,7 @@
 /* ---- Buttons inside reviews UI ----
    .btn-shop is a white banner button elsewhere and .btn-ghost has no
    global style, so both get a proper look in these areas. */
-:is(.revs, .myrev-waiting, .myrev-list, .ord-rate) .btn-shop {
+:is(.revs, .myrev-waiting, .myrev-list, .ord-rate, .qa, .myq) .btn-shop {
   display: inline-flex;
   align-items: center;
   gap: 6px;
@@ -495,8 +495,8 @@
   text-decoration: none;
   cursor: pointer;
 }
-:is(.revs, .myrev-waiting, .myrev-list, .ord-rate) .btn-shop:disabled { opacity: 0.6; cursor: default; transform: none; }
-:is(.revs, .myrev-waiting, .myrev-list, .ord-rate) .btn-ghost {
+:is(.revs, .myrev-waiting, .myrev-list, .ord-rate, .qa, .myq) .btn-shop:disabled { opacity: 0.6; cursor: default; transform: none; }
+:is(.revs, .myrev-waiting, .myrev-list, .ord-rate, .qa, .myq) .btn-ghost {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -512,8 +512,8 @@
   text-decoration: none;
   cursor: pointer;
 }
-:is(.revs, .myrev-waiting, .myrev-list, .ord-rate) .btn-ghost:hover:not(:disabled) { border-color: var(--p); }
-:is(.revs, .myrev-waiting, .myrev-list, .ord-rate) .btn-ghost--danger { color: #b91c1c; }
-:is(.revs, .myrev-waiting, .myrev-list, .ord-rate) .btn-ghost--danger:hover:not(:disabled) { border-color: #b91c1c; }
-:is(.revs, .myrev-waiting, .myrev-list, .ord-rate) :is(.btn-shop, .btn-ghost):focus-visible { outline: 2px solid var(--p); outline-offset: 2px; }
+:is(.revs, .myrev-waiting, .myrev-list, .ord-rate, .qa, .myq) .btn-ghost:hover:not(:disabled) { border-color: var(--p); }
+:is(.revs, .myrev-waiting, .myrev-list, .ord-rate, .qa, .myq) .btn-ghost--danger { color: #b91c1c; }
+:is(.revs, .myrev-waiting, .myrev-list, .ord-rate, .qa, .myq) .btn-ghost--danger:hover:not(:disabled) { border-color: #b91c1c; }
+:is(.revs, .myrev-waiting, .myrev-list, .ord-rate, .qa, .myq) :is(.btn-shop, .btn-ghost):focus-visible { outline: 2px solid var(--p); outline-offset: 2px; }
 .revs__more .btn-ghost { padding: 10px 22px; font-size: 13px; }

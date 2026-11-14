@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Link, NavLink } from "react-router-dom";
 import {
-  Boxes, ChevronDown, Download, FileText, Gift, Inbox, LayoutDashboard, LayoutGrid, LifeBuoy, Megaphone,
+  Boxes, ChevronDown, Download, FileText, Gift, HelpCircle, Inbox, LayoutDashboard, LayoutGrid, LifeBuoy, Megaphone,
   MessageCircle, Package, Receipt, Settings as SettingsIcon, ShieldCheck,
   ShoppingCart, Star, Tag, Tags, UserCog, Users,
 } from "lucide-react";
@@ -44,6 +44,7 @@ const TOP_LINKS = [
   { label: "Exports",    icon: Download,     live: true,  to: "/admin/exports" },
   { label: "Warranty",   icon: ShieldCheck,  live: true,  to: "/admin/warranty",  badgeKey: "openWarranty" },
   { label: "Reviews",    icon: Star,         live: true,  to: "/admin/reviews",   badgeKey: "pendingReviews" },
+  { label: "Questions",  icon: HelpCircle,   live: true,  to: "/admin/questions", badgeKey: "pendingQuestions" },
 ];
 
 const CHANNELS = ["Website", "Mobile App", "POS"];

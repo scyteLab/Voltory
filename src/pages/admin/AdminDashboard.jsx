@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Link } from "react-router-dom";
 import {
   AlertTriangle, Banknote, Boxes, ChevronRight, DownloadCloud,
-  FileSpreadsheet, LayoutGrid, Package, PackagePlus, PackageSearch,
+  FileSpreadsheet, HelpCircle, LayoutGrid, Package, PackagePlus, PackageSearch,
   RefreshCw, ShieldAlert, ShoppingCart, Tag, TrendingUp,
 } from "lucide-react";
 import { useDashboardData, computeDelta } from "../../hooks/useDashboardData.js";
@@ -10,6 +10,7 @@ import KpiCard from "../../components/admin/KpiCard.jsx";
 import { usePermission } from "../../lib/permissions.js";
 import { useAdmin } from "../../context/AdminContext.jsx";
 import { canOpenPage } from "../../config/permissions.js";
+import { useAdminCounters } from "../../hooks/useAdminCounters.js";
 
 /**
  * Admin dashboard — Voltory operator's home page.
@@ -61,6 +62,7 @@ export default function AdminDashboard() {
   const { role } = useAdmin();
   const canOpen = (to) => canOpenPage(role, to);
   const { loading, error, data } = useDashboardData(tick);
+  const { pendingQuestions } = useAdminCounters();
 
   if (loading) {
     return (
@@ -253,6 +255,13 @@ export default function AdminDashboard() {
             {kpisReady && ` · ${Number(k.awaiting_payment || 0)} awaiting payment`}
           </small>
         </div>
+        {canOpen("/admin/questions") && <Link to="/admin/questions" className="adm-catalog-summary__cell" style={{ textDecoration: "none", color: "inherit" }}>
+          <span className="adm-catalog-summary__label">Questions to answer</span>
+          <span className="adm-catalog-summary__value">
+            <HelpCircle size={18} /> {pendingQuestions ?? "—"}
+          </span>
+          <small>Product questions waiting · open Questions</small>
+        </Link>}
         {showRevenue && <div className="adm-catalog-summary__cell">
           <span className="adm-catalog-summary__label">Total revenue (all time)</span>
           <span className="adm-catalog-summary__value">

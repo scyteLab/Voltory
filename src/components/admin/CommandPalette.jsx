@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
-  ArrowRight, Box, LayoutDashboard, Package, Search,
+  ArrowRight, Box, HelpCircle, LayoutDashboard, Package, Search,
   Settings as SettingsIcon, ShoppingCart, Users, X,
 } from "lucide-react";
 import { supabase } from "../../lib/supabaseClient.js";
@@ -27,6 +27,7 @@ const NAV_ITEMS = [
   { id: "nav-products",  label: "Catalog Products",  to: "/admin/products",   icon: Package },
   { id: "nav-orders",    label: "Orders",            to: "/admin/orders",     icon: ShoppingCart },
   { id: "nav-customers", label: "Customers",         to: "/admin/customers",  icon: Users },
+  { id: "nav-questions", label: "Questions",         to: "/admin/questions",  icon: HelpCircle },
   { id: "nav-settings",  label: "Settings",          to: "/admin/settings",   icon: SettingsIcon },
 ];
 

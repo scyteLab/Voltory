@@ -35,6 +35,7 @@ import "./styles/admin-categories.css";
 import "./styles/account-addresses.css";
 import "./styles/reviews.css";
 import "./styles/admin-reviews.css";
+import "./styles/questions.css";
 import "./styles/review-guidelines.css";
 import "./styles/whatsapp-quotes.css";
 import "./styles/admin-whatsapp.css";

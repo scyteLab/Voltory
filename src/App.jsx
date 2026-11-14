@@ -73,6 +73,7 @@ const AdminReports = lazy(() => import("./pages/admin/AdminReports.jsx"));
 const AdminSettings = lazy(() => import("./pages/admin/AdminSettings.jsx"));
 const AdminHomepage = lazy(() => import("./pages/admin/AdminHomepage.jsx"));
 const AdminReviews = lazy(() => import("./pages/admin/AdminReviews.jsx"));
+const AdminQuestions = lazy(() => import("./pages/admin/AdminQuestions.jsx"));
 const AdminWhatsappQuotes = lazy(() => import("./pages/admin/AdminWhatsappQuotes.jsx"));
 const AdminWhatsappQuoteDetail = lazy(() => import("./pages/admin/AdminWhatsappQuoteDetail.jsx"));
 const AdminInbox = lazy(() => import("./pages/admin/AdminInbox.jsx"));
@@ -99,6 +100,7 @@ const AccountOverview = lazy(() => import("./pages/account/AccountOverview.jsx")
 const AccountOrders = lazy(() => import("./pages/account/AccountOrders.jsx"));
 const AccountAddresses = lazy(() => import("./pages/account/AccountAddresses.jsx"));
 const AccountReviews = lazy(() => import("./pages/account/AccountReviews.jsx"));
+const AccountQuestions = lazy(() => import("./pages/account/AccountQuestions.jsx"));
 const AccountWishlist = lazy(() => import("./pages/account/AccountWishlist.jsx"));
 
 function RouteLoading() {
@@ -222,6 +224,7 @@ export default function App() {
                   <Route path="orders/:id" element={<OrderConfirmation />} />
                   <Route path="addresses" element={<AccountAddresses />} />
                   <Route path="reviews"   element={<AccountReviews />} />
+                  <Route path="questions" element={<AccountQuestions />} />
                   <Route path="wishlist" element={<AccountWishlist />} />
                 </Route>
 
@@ -273,6 +276,7 @@ export default function App() {
                 <Route path="/admin/reports" element={<AdminReports />} />
                 <Route path="/admin/homepage" element={<AdminHomepage />} />
                 <Route path="/admin/reviews" element={<AdminReviews />} />
+                <Route path="/admin/questions" element={<AdminQuestions />} />
                 <Route path="/admin/whatsapp-quotes" element={<AdminWhatsappQuotes />} />
                 <Route path="/admin/whatsapp-quotes/:id" element={<AdminWhatsappQuoteDetail />} />
                 <Route path="/admin/inbox" element={<AdminInbox />} />

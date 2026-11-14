@@ -12,6 +12,10 @@
  *   newsletter_subscribers  INSERT          → NOTIFY_SUPPORT_TO
  *   reviews                 INSERT + UPDATE → NOTIFY_SUPPORT_TO  (when a review
  *                           needs moderating: new, or edited back to pending)
+ *   product_questions       INSERT          → NOTIFY_SUPPORT_TO  (new question)
+ *                           UPDATE          → the CUSTOMER, once, when their
+ *                           question is published with an answer and they
+ *                           have an email (claimed via answered_notified_at)
  *
  * Supabase sends:  { type, table, schema, record, old_record }
  * with our header  x-webhook-secret: <WEBHOOK_SECRET>
@@ -22,6 +26,8 @@
  * The order is claimed by setting orders.admin_notified_at (only if
  * still null) before sending, so retries and duplicate deliveries
  * can't send it twice. If Resend refuses, the claim is released.
+ * Answered questions use the same pattern with
+ * product_questions.answered_notified_at.
  *
  * Env vars (Netlify):
  *   WEBHOOK_SECRET      — required; anything without it gets 401
@@ -40,7 +46,8 @@ import {
   isValidEmail, missingResendConfig, recipientsFromEnv, sendViaResend, siteOrigin,
   supabaseConfigured, supabaseGet, supabasePatch,
 } from "./_shared/email.js";
-import { lagosTime, naira, notificationEmail, subjectLine } from "./_shared/notifyTemplates.js";
+import { lagosTime, naira, notificationEmail, questionAnsweredEmail, subjectLine } from "./_shared/notifyTemplates.js";
+import { BUSINESS_INFO } from "../../src/config/businessInfo.js";
 
 const MAX_BODY_BYTES = 50 * 1024;
 
@@ -235,6 +242,90 @@ async function handleReview({ type, record: r, old_record: old }) {
 }
 
 /* ------------------------------------------------------------------
+   product_questions
+   ------------------------------------------------------------------ */
+
+const hasText = (v) => typeof v === "string" && v.trim() !== "";
+const firstName = (name) => String(name || "").trim().split(/\s+/)[0] || "";
+
+/**
+ * "staff"    → new question: email the team.
+ * "customer" → published with an answer and not emailed yet: email the asker.
+ * null       → nothing (answer edits, notes, moves back to pending, …).
+ */
+export function questionNotification(type, record) {
+  if (type === "INSERT") return "staff";
+  if (type === "UPDATE" && record?.status === "published" && hasText(record.answer) && !record.answered_notified_at) {
+    return "customer";
+  }
+  return null;
+}
+
+async function questionContext(q) {
+  if (!supabaseConfigured()) return { productName: q.product_sku, productSlug: null, customer: null };
+  const [prod, cust] = await Promise.all([
+    supabaseGet(`products?sku=eq.${encodeURIComponent(q.product_sku)}&select=name,slug&limit=1`),
+    q.customer_id ? supabaseGet(`customers?id=eq.${encodeURIComponent(q.customer_id)}&select=name,email&limit=1`) : null,
+  ]);
+  return { productName: prod?.[0]?.name || q.product_sku, productSlug: prod?.[0]?.slug || null, customer: cust?.[0] || null };
+}
+
+async function handleQuestion({ type, record: q }) {
+  const kind = questionNotification(type, q);
+  if (!kind) return { skipped: "no_question_email" };
+
+  if (kind === "staff") {
+    const { productName, productSlug, customer } = await questionContext(q);
+    return supportEmail({
+      subject: `❓ New product question — ${productName}`,
+      heading: "New product question",
+      rows: [
+        ["Product", `${productName} (${q.product_sku})`],
+        ["Asked by", firstName(customer?.name) || "Customer"],
+        ["Received", lagosTime(q.created_at)],
+        ...(productSlug ? [["Product page", path(`/product/${productSlug}`)]] : []),
+      ],
+      longText: ["Question", q.question || ""],
+      adminPath: "/admin/questions",
+    });
+  }
+
+  // kind === "customer"
+  if (!supabaseConfigured()) return { notConfigured: "SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY" };
+  const { productName, productSlug, customer } = await questionContext(q);
+  if (!isValidEmail(customer?.email)) return { skipped: "no_customer_email" };
+
+  const id = encodeURIComponent(q.id);
+  const claimedAt = new Date().toISOString();
+  const claimed = await supabasePatch(
+    `product_questions?id=eq.${id}&status=eq.published&answer=not.is.null&answered_notified_at=is.null&select=*`,
+    { answered_notified_at: claimedAt },
+  );
+  const row = Array.isArray(claimed) ? claimed[0] : null;
+  if (!row) return { skipped: "already_notified" };
+
+  const { html, text } = questionAnsweredEmail({
+    firstName: firstName(customer.name),
+    productName,
+    productUrl: path(productSlug ? `/product/${productSlug}#questions` : "/"),
+    question: row.question,
+    answer: row.answer,
+    answeredAt: row.answered_at || claimedAt,
+    support: { email: BUSINESS_INFO.supportEmail, phone: BUSINESS_INFO.whatsapp, whatsappLink: BUSINESS_INFO.whatsappLink },
+  });
+  return {
+    to: [customer.email.trim()],
+    subject: `Your question about ${productName} has been answered`,
+    html, text,
+    replyTo: BUSINESS_INFO.supportEmail,
+    onFail: () => supabasePatch(
+      `product_questions?id=eq.${id}&answered_notified_at=eq.${encodeURIComponent(claimedAt)}`,
+      { answered_notified_at: null },
+    ),
+  };
+}
+
+/* ------------------------------------------------------------------
    Support forms
    ------------------------------------------------------------------ */
 
@@ -335,6 +426,7 @@ function secretMatches(given) {
 function route(type, table) {
   if (table === "orders" && (type === "INSERT" || type === "UPDATE")) return handleOrder;
   if (table === "reviews" && (type === "INSERT" || type === "UPDATE")) return handleReview;
+  if (table === "product_questions" && (type === "INSERT" || type === "UPDATE")) return handleQuestion;
   if (type !== "INSERT") return null;
   if (table === "whatsapp_quotes") return handleWhatsappQuote;
   const build = SUPPORT[table];

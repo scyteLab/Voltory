@@ -13,8 +13,8 @@
 
 export const ROLES = {
   gm:      { label: "GM",      description: "Everything, incl. team, settings, approvals, refunds and cancellations." },
-  store:   { label: "Store",   description: "Orders fulfilment, catalog, inventory, receipts, quotes, homepage. Prices and offers need GM approval." },
-  support: { label: "Support", description: "Inbox, warranty, reviews, quotes (no convert), orders view + notes." },
+  store:   { label: "Store",   description: "Orders fulfilment, catalog, inventory, receipts, quotes, homepage, product questions. Prices and offers need GM approval." },
+  support: { label: "Support", description: "Inbox, warranty, reviews, product questions, quotes (no convert), orders view + notes." },
 };
 
 /** Roles staff can be given from the Team page, in display order. */
@@ -58,6 +58,7 @@ export const PERMISSIONS = {
   "inbox.view":         "Inbox (all tabs)",
   "warranty.manage":    "Warranty claims",
   "reviews.manage":     "Moderate reviews",
+  "questions.manage":   "Answer and moderate product questions",
   "marketing.manage":   "Checkout discounts and thresholds",
   "exports.run":        "Data exports",
   "team.manage":        "Team: add staff, change roles, deactivate",
@@ -72,6 +73,7 @@ const STORE = [
   "catalog.edit", "catalog.delete", "prices.propose", "offers.propose",
   "inventory.edit", "homepage.edit",
   "quotes.view", "quotes.update", "quotes.editItems", "quotes.convert",
+  "questions.manage",
 ];
 
 const SUPPORT = [
@@ -79,7 +81,7 @@ const SUPPORT = [
   "orders.view", "orders.notes",
   "receipts.view", "customers.view",
   "quotes.view", "quotes.update",
-  "inbox.view", "warranty.manage", "reviews.manage",
+  "inbox.view", "warranty.manage", "reviews.manage", "questions.manage",
 ];
 
 // The GM gets every key except the "propose" ones: their changes
@@ -120,6 +122,7 @@ const PAGE_PERMISSIONS = [
   ["/admin/messages",        "inbox.view"],
   ["/admin/warranty",        "warranty.manage"],
   ["/admin/reviews",         "reviews.manage"],
+  ["/admin/questions",       "questions.manage"],
   ["/admin/homepage",        "homepage.edit"],
   ["/admin/marketing",       "marketing.manage"],
   ["/admin/reports",         "reports.full"],

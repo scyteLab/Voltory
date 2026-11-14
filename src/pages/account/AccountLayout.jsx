@@ -1,6 +1,6 @@
 import { Link, NavLink, Navigate, Outlet, useNavigate } from "react-router-dom";
 import {
-  ChevronRight, Heart, Home as HomeIcon, LogOut, MapPin,
+  ChevronRight, Heart, HelpCircle, Home as HomeIcon, LogOut, MapPin,
   MessageSquare, Package, User,
 } from "lucide-react";
 import { useCustomerAuth } from "../../context/AuthContext.jsx";
@@ -20,6 +20,7 @@ const LINKS = [
   { to: "/account/orders",    icon: Package,       label: "My Orders" },
   { to: "/account/addresses", icon: MapPin,        label: "Saved Addresses" },
   { to: "/account/reviews",   icon: MessageSquare, label: "My Reviews" },
+  { to: "/account/questions", icon: HelpCircle,    label: "My Questions" },
   { to: "/account/wishlist",  icon: Heart,         label: "Wishlist" },
 ];
 

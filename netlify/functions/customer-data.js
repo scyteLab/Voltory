@@ -28,13 +28,21 @@
  *       Public review reads don't come here: the product page calls the
  *       product_reviews_public / product_review_summary RPCs (Step C).
  *
+ *   Product Q&A (signed-in only; see _shared/questionActions.js):
+ *   { action: "question-ask", sku, question }
+ *   { action: "question-delete", id }
+ *   { action: "my-questions" }
+ *       Public Q&A reads use the product_questions_public /
+ *       product_questions_count RPCs (supabase/product_questions.sql).
+ *
  * Responses: 200 { ok:true, orders } | { ok:true, order }
  *            400 bad input · 401 no session · 403 bad origin
  *            404 { error:"not_found" } (unknown id and wrong phone look
  *                the same) · 405 · 413 · 415 · 429 + Retry-After · 500
  *
  * Rate limits: order lookups 5 per order id / 10 per IP per 10 min
- * (failed only); review writes 10 per customer per hour (all).
+ * (failed only); review writes 10 per customer per hour (all);
+ * questions asked 5 per customer per hour (all).
  * See _shared/rateLimit.js.
  *
  * Sessions: sessionFromEvent() is the ONE place a request becomes a
@@ -47,6 +55,7 @@ import {
   RateLimitConfigError, clientIp, createRateLimiter, restAttemptStore, tooManyRequests,
 } from "./_shared/rateLimit.js";
 import { createReviewActions } from "./_shared/reviewActions.js";
+import { createQuestionActions } from "./_shared/questionActions.js";
 
 const MAX_BODY = 8 * 1024;   // a 2000-character review plus JSON escaping
 const LOOKUP_WINDOW_SEC = 10 * 60;
@@ -155,7 +164,7 @@ export function restDb(rest) {
       return r.data || [];
     },
     async getProduct(sku) {
-      const r = await rest("GET", `products?select=sku,name,slug,image&sku=eq.${enc(sku)}&limit=1`);
+      const r = await rest("GET", `products?select=sku,name,slug,image,status&sku=eq.${enc(sku)}&limit=1`);
       return r.data?.[0] || null;
     },
     async getProducts(skus) {
@@ -190,6 +199,34 @@ export function restDb(rest) {
       const r = await rest(
         "DELETE",
         `reviews?customer_id=eq.${enc(customerId)}&product_sku=eq.${enc(sku)}`,
+        { prefer: "return=representation" },
+      );
+      return Array.isArray(r.data) && r.data.length > 0;
+    },
+
+    /* ---- product Q&A ---- */
+    async insertQuestion(row) {
+      const r = await rest("POST", "product_questions", { body: row, prefer: "return=representation" });
+      return r.data?.[0] || null;
+    },
+    async getOwnQuestion(customerId, id) {
+      const r = await rest(
+        "GET",
+        `product_questions?select=*&id=eq.${enc(id)}&customer_id=eq.${enc(customerId)}&limit=1`,
+      );
+      return r.data?.[0] || null;
+    },
+    async listOwnQuestions(customerId) {
+      const r = await rest(
+        "GET",
+        `product_questions?select=*&customer_id=eq.${enc(customerId)}&order=created_at.desc&limit=200`,
+      );
+      return r.data || [];
+    },
+    async deleteOwnPendingQuestion(customerId, id) {
+      const r = await rest(
+        "DELETE",
+        `product_questions?id=eq.${enc(id)}&customer_id=eq.${enc(customerId)}&status=eq.pending&answer=is.null`,
         { prefer: "return=representation" },
       );
       return Array.isArray(r.data) && r.data.length > 0;
@@ -264,6 +301,10 @@ export function createHandler({ env, db, attemptStore, now = () => Date.now(), l
   }
 
   const reviewActions = createReviewActions({ db, env, attemptStore, now, log, reply, phoneSpellings });
+  const signedInActions = {
+    ...reviewActions,
+    ...createQuestionActions({ db, env, attemptStore, now, log, reply }),
+  };
 
   return async function handler(event) {
     if (event.httpMethod !== "POST") return reply(405, { ok: false, error: "method_not_allowed" });
@@ -284,11 +325,11 @@ export function createHandler({ env, db, attemptStore, now = () => Date.now(), l
     try {
       const session = await sessionFromEvent(event);
 
-      const reviewAction = typeof body.action === "string" && Object.hasOwn(reviewActions, body.action)
-        ? reviewActions[body.action] : null;
-      if (reviewAction) {
+      const signedInAction = typeof body.action === "string" && Object.hasOwn(signedInActions, body.action)
+        ? signedInActions[body.action] : null;
+      if (signedInAction) {
         if (!session) return reply(401, { ok: false, error: "unauthorized" });
-        return await reviewAction(body, session);
+        return await signedInAction(body, session);
       }
 
       switch (body.action) {
